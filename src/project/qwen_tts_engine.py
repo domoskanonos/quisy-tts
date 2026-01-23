@@ -1,5 +1,7 @@
+from collections.abc import Generator
 from pathlib import Path
 
+import numpy as np
 import soundfile as sf
 import torch
 
@@ -7,7 +9,6 @@ from project.audio.processor import AudioUtils, SoxAudioProcessor
 from project.config import ProjectConfig
 from project.models.manager import ModelManager
 from project.schemas import TTSParams
-from project.text.optimizer import NaturalOptimizer
 
 
 logger = ProjectConfig.get_logger()
@@ -19,7 +20,6 @@ class QwenTextToSpeech:
     def __init__(self) -> None:
         """Initialize the Qwen Text-to-Speech engine."""
         self.settings = ProjectConfig.get_settings()
-        self.optimizer = NaturalOptimizer()
 
     def generate_audio(
         self, text: str, params: TTSParams = None
@@ -28,11 +28,8 @@ class QwenTextToSpeech:
         if params is None:
             params = TTSParams()
 
-        # 1. Optimize Text
-        clean_text = self.optimizer.optimize(text)
-        logger.info(
-            f"Generating audio for: '{clean_text[:50]}...' in mode '{params.mode}'"
-        )
+        # 1. Log Generation
+        logger.info(f"Generating audio for: '{text[:50]}...' in mode '{params.mode}'")
 
         # 2. Get Model
         model = ModelManager.get_model(mode=params.mode, size=params.model_size)
@@ -44,11 +41,11 @@ class QwenTextToSpeech:
         try:
             if params.mode == "voice_design":
                 audio_list, sr = model.generate_voice_design(
-                    clean_text, instruct=params.instruct, language=params.language_id
+                    text, instruct=params.instruct, language=params.language_id
                 )
             elif params.mode == "custom_voice":
                 audio_list, sr = model.generate_custom_voice(
-                    clean_text,
+                    text,
                     speaker=params.speaker,
                     instruct=params.instruct,
                     language=params.language_id,
@@ -56,7 +53,7 @@ class QwenTextToSpeech:
             else:  # base / voice cloning
                 xvec = params.ref_text is None or params.ref_text == ""
                 audio_list, sr = model.generate_voice_clone(
-                    clean_text,
+                    text,
                     language=params.language_id,
                     ref_audio=ref_audio_data,
                     ref_text=params.ref_text,
@@ -101,6 +98,27 @@ class QwenTextToSpeech:
 
         logger.info(f"Audio saved to {output_path}")
         return output_path
+
+    def generate_audio_stream(
+        self, text: str, params: TTSParams = None, chunk_size: int = 4096
+    ) -> Generator[bytes, None, None]:
+        """Generates audio and yields it in chunks."""
+        waveform, sr = self.generate_audio(text, params)
+
+        # Convert to int16 for playback (standard for streaming)
+        audio_np = waveform.squeeze().cpu().numpy()
+        audio_int16 = (audio_np * 32767).astype(np.int16)
+
+        # We can yield a WAV header first or just raw PCM.
+        # For simplicity and "real-time" feeling, raw PCM is common.
+        # But some players expect WAV. Let's provide a raw stream.
+
+        # If we want a valid WAV stream, we'd need to yield the header once.
+        # Let's just yield the raw bytes of the int16 data.
+        audio_bytes = audio_int16.tobytes()
+
+        for i in range(0, len(audio_bytes), chunk_size):
+            yield audio_bytes[i : i + chunk_size]
 
     def _get_reference_audio(self, params: TTSParams) -> tuple | None:
         """Helper to load reference audio."""

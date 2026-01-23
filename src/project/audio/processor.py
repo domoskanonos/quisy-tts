@@ -47,13 +47,6 @@ class AudioUtils:
     """Utilities for audio manipulation."""
 
     @staticmethod
-    def concatenate_audio_segments(segments: list[torch.Tensor]) -> torch.Tensor:
-        """Concatenates multiple audio tensors."""
-        if not segments:
-            return torch.zeros((1, 0))
-        return torch.cat(segments, dim=1)
-
-    @staticmethod
-    def save_waveform(waveform: torch.Tensor, sr: int, path: str):
+    def save_waveform(waveform: torch.Tensor, sr: int, path: str) -> None:
         """Saves a waveform tensor to a file."""
         sf.write(path, waveform.squeeze().cpu().numpy(), sr)

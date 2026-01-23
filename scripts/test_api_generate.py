@@ -5,6 +5,7 @@ import requests
 
 ENDPOINT = "http://localhost:8000/generate"
 OUTPUT_DIR = Path("output")
+HTTP_OK = 200
 
 
 def test_generate(
@@ -27,7 +28,7 @@ def test_generate(
     print(f"Testing {size} {mode} mode...")
     response = requests.post(ENDPOINT, json=payload)
 
-    if response.status_code == 200:
+    if response.status_code == HTTP_OK:
         filename = (
             response.headers.get("Content-Disposition", "").split("filename=")[-1]
             or "output.wav"

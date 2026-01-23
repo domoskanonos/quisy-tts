@@ -25,3 +25,4 @@ class GenerateRequest(BaseModel):
     instruct: str | None = None
     speaker: str | None = None
     model_size: str | None = None
+    stream: bool = False
