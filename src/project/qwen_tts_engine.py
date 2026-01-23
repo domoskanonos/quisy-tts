@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import traceback
+from pathlib import Path
 
 import soundfile as sf
 import torch
@@ -41,7 +42,7 @@ class SoxAudioProcessor:
 
     @staticmethod
     def apply_effects(input_path: str, output_path: str) -> bool:
-        """Applies normalization and subtle effects to the audio."""
+        """Applies normalization and subtle effects to the audio using Sox."""
         try:
             # Example: normalize to -3dB and apply a slight treble boost
             # --norm=-3: normalize to -3dB
@@ -110,6 +111,7 @@ class QwenTextToSpeech:
 
         try:
             if "cuda" in str(device):
+                # Check if device supports bfloat16 (mostly RTX 30+ and A100+)
                 if torch.cuda.get_device_capability(0)[0] >= 8:
                     dtype = torch.bfloat16
                 else:
@@ -119,14 +121,12 @@ class QwenTextToSpeech:
                 dtype = torch.float32
 
             # Check if model exists in local models directory
-            local_model_path = os.path.join(
-                settings.MODELS_DIR, model_name.replace("/", "--")
-            )
+            local_model_path = Path(settings.MODELS_DIR) / model_name.replace("/", "--")
             load_path = (
-                local_model_path if os.path.exists(local_model_path) else model_name
+                str(local_model_path) if local_model_path.exists() else model_name
             )
 
-            if os.path.exists(local_model_path):
+            if local_model_path.exists():
                 logger.info(f"Loading model from local path: {local_model_path}")
             else:
                 logger.info(
@@ -141,8 +141,8 @@ class QwenTextToSpeech:
             logger.info(f"Qwen3-TTS model '{model_name}' initialized on {device}.")
 
             # Ensure directories exist
-            os.makedirs(settings.VOICES_DIR, exist_ok=True)
-            os.makedirs(settings.OUTPUT_DIR, exist_ok=True)
+            Path(settings.VOICES_DIR).mkdir(parents=True, exist_ok=True)
+            Path(settings.OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 
         except Exception as e:
             logger.error(f"Failed to initialize Qwen3-TTS model '{model_name}': {e}")
@@ -213,10 +213,10 @@ class QwenTextToSpeech:
         # Load reference audio
         ref_audio_tuple = None
         if params.reference_audio:
-            ref_path = os.path.join(self.settings.VOICES_DIR, params.reference_audio)
-            if os.path.exists(ref_path):
+            ref_path = Path(self.settings.VOICES_DIR) / params.reference_audio
+            if ref_path.exists():
                 try:
-                    ref_data, rsr = sf.read(ref_path)
+                    ref_data, rsr = sf.read(str(ref_path))
                     if ref_data.ndim > 1:
                         ref_data = ref_data.mean(axis=1)
                     ref_audio_tuple = (ref_data, rsr)

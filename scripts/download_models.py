@@ -1,6 +1,5 @@
 import os
 import sys
-from concurrent.futures import ThreadPoolExecutor
 
 from huggingface_hub import snapshot_download
 
@@ -36,13 +35,10 @@ def main():
 
     os.makedirs(models_dir, exist_ok=True)
 
-    print(
-        f"Downloading {len(models_to_download)} models to {models_dir} in parallel..."
-    )
+    print(f"Downloading {len(models_to_download)} models to {models_dir}...")
 
-    with ThreadPoolExecutor(max_workers=len(models_to_download)) as executor:
-        for model_id in models_to_download:
-            executor.submit(download_model, model_id, models_dir)
+    for model_id in models_to_download:
+        download_model(model_id, models_dir)
 
 
 if __name__ == "__main__":

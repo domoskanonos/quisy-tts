@@ -40,7 +40,7 @@ def test_modes():
     # 3. Test CustomVoice Mode (Speaker ID)
     logger.info("--- Testing CustomVoice Mode (Speaker ID) ---")
     output_custom = os.path.join(settings.OUTPUT_DIR, "test_custom_voice.wav")
-    params_custom = TTSParams(mode="custom_voice", language_id="de", speaker="Sonia")
+    params_custom = TTSParams(mode="custom_voice", language_id="de", speaker="eric")
     tts.generate_and_save(
         "Dies ist ein Test mit einer spezifischen Sprecher-ID.",
         output_custom,
