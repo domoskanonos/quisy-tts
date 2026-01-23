@@ -1,5 +1,7 @@
 import json
 import uuid
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +14,22 @@ from project.qwen_tts_engine import QwenTextToSpeech
 from project.schemas import GenerateRequest, TTSParams
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Manages the application lifecycle."""
+    # Startup: Log all registered routes
+    logger.info("Registered Routes:")
+    for route in app.routes:
+        if hasattr(route, "methods"):
+            methods = ", ".join(route.methods)
+            logger.info(f" -> {methods} {route.path}")
+        else:
+            logger.info(f" -> {route.path}")
+    yield
+    # Shutdown logic (if any) can go here
+    logger.info("Application shutting down...")
+
+
 app = FastAPI(
     title="Cosmo TTS API",
     description=(
@@ -22,6 +40,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
+    lifespan=lifespan,
 )
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
@@ -116,18 +135,6 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
         await websocket.close()
-
-
-@app.on_event("startup")
-async def startup_event() -> None:
-    """Log all registered routes on startup."""
-    logger.info("Registered Routes:")
-    for route in app.routes:
-        if hasattr(route, "methods"):
-            methods = ", ".join(route.methods)
-            logger.info(f" -> {methods} {route.path}")
-        else:
-            logger.info(f" -> {route.path}")
 
 
 def main() -> None:
