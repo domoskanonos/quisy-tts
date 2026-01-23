@@ -42,18 +42,6 @@ Leo zögerte keine Sekunde. Er schlüpfte in seine Gummistiefel, schnappte sich 
 Der Wald sah nachts ganz anders aus. Die Farne wirkten wie große, grüne Drachenflügel und die Eulen riefen sich Geheimnisse zu. „Hab keine Angst“, flüsterte Leo, eher zu sich selbst als zu Flitzi.
 
 Nach einer Weile erreichten sie den Funkel-Bach. Das Wasser plätscherte über glatte Steine. Leo leuchtete mit seiner Taschenlampe ins Wasser. Da! Zwischen zwei silbernen Kieseln blitzte etwas Goldenes auf.
-
-Ein kleiner Trick
-„Da ist der Schlüssel!“, rief Leo. Aber der Bach war zu tief für seine Hände. Er überlegte kurz. Er nahm einen langen, stabilen Ast und suchte in seiner Hosentasche nach seinem Kaugummi, den er gerade erst ausgepackt hatte. Er klebte den klebrigen Kaugummi fest an die Spitze des Astes.
-
-Vorsichtig angelte Leo im Wasser. Zack! Der goldene Schlüssel klebte am Kaugummi fest.
-
-Ein helles Ende
-Als sie dem Dachs den Schlüssel brachten, war dieser so froh, dass er Leo eine alte, glänzende Kastanie schenkte – ein Glücksbringer. In diesem Moment geschah etwas Wundersames: Flitzis Leuchten veränderte sich. Aus dem ängstlichen Blau wurde ein warmes, kräftiges Goldgelb.
-
-„Danke, Leo! Du bist der mutigste Junge im ganzen Wald“, sagte Flitzi.
-
-Leo kletterte zurück durch sein Fenster in sein warmes Bett. Er wusste jetzt: Man muss nicht groß sein, um ein echter Held zu sein. Man braucht nur eine gute Idee und ein bisschen Kaugummi.
     
     
     """
