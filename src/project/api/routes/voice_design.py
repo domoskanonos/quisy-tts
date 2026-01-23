@@ -39,6 +39,7 @@ async def generate_voice_design_17b(
             path=str(result_path),
             media_type="audio/wav",
             filename=result_path.name,
+            headers={"Content-Disposition": "inline"},
         )
 
     except AudioGenerationError as e:

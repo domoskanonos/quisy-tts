@@ -49,12 +49,14 @@ class BaseGenerateRequest(BaseModel):
     text: str = Field(
         ...,
         description="The text to convert to speech.",
-        json_schema_extra={"example": "Hallo, das ist ein Test."},
+        json_schema_extra={
+            "example": "Ich freu mich Sie kennen zu lernen. Gerne leihe ich ihnen meine Stimme."
+        },
     )
     language: str = Field(
-        default="german",
-        description="Language: 'german', 'english', 'french', etc. or short codes 'de', 'en'.",
-        json_schema_extra={"example": "german"},
+        default="German",
+        description="Language: 'German', 'English', 'French', etc.",
+        json_schema_extra={"example": "German"},
     )
     reference_audio: str | None = Field(
         default_factory=lambda: ProjectSettings().DEFAULT_REFERENCE_AUDIO,
@@ -82,17 +84,21 @@ class VoiceDesignRequest(BaseModel):
     text: str = Field(
         ...,
         description="The text to convert to speech.",
-        json_schema_extra={"example": "Hello, this is a designed voice."},
+        json_schema_extra={
+            "example": "Ich freu mich Sie kennen zu lernen. Gerne leihe ich ihnen meine Stimme."
+        },
     )
     language: str = Field(
-        default="english",
-        description="Language: 'german', 'english', 'french', etc.",
-        json_schema_extra={"example": "english"},
+        default="German",
+        description="Language: 'German', 'English', 'French', etc.",
+        json_schema_extra={"example": "German"},
     )
     instruct: str = Field(
         ...,
         description="Natural language voice description.",
-        json_schema_extra={"example": "a calm, professional female narrator"},
+        json_schema_extra={
+            "example": "Eine tiefe, ruhige männliche Stimme, wie ein professioneller Podcaster."
+        },
     )
 
 
@@ -107,12 +113,14 @@ class CustomVoiceRequest(BaseModel):
     text: str = Field(
         ...,
         description="The text to convert to speech.",
-        json_schema_extra={"example": "Dies ist ein Test mit Eric."},
+        json_schema_extra={
+            "example": "Ich freu mich Sie kennen zu lernen. Gerne leihe ich ihnen meine Stimme."
+        },
     )
     language: str = Field(
-        default="german",
-        description="Language: 'german', 'english', 'french', etc.",
-        json_schema_extra={"example": "german"},
+        default="German",
+        description="Language: 'German', 'English', 'French', etc.",
+        json_schema_extra={"example": "German"},
     )
     speaker: str = Field(
         ...,
@@ -121,7 +129,10 @@ class CustomVoiceRequest(BaseModel):
     )
     instruct: str | None = Field(
         default=None,
-        description="Optional style instruction for the speaker.",
+        description="Optional style instruction for the speaker (e.g. 'happy', 'sad').",
+        json_schema_extra={
+            "example": "Sprich wie ein professioneller Podcaster mit tiefer, ruhiger Stimme."
+        },
     )
 
 
