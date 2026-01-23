@@ -109,11 +109,15 @@ class QwenTextToSpeech(TTSEngine):
         temp_path = Path(output_path).with_suffix(".tmp.wav")
         AudioUtils.save_waveform(waveform, sr, str(temp_path))
 
-        if not SoxAudioProcessor.apply_effects(str(temp_path), output_path):
+        if SoxAudioProcessor.apply_effects(str(temp_path), output_path):
+            # Sox success, output_path exists, remove temp
             if temp_path.exists():
-                temp_path.replace(output_path)
+                temp_path.unlink()
+        # Sox failed/missing, use temp file as output
         elif temp_path.exists():
-            temp_path.unlink()
+            if Path(output_path).exists():
+                Path(output_path).unlink()
+            temp_path.replace(output_path)
 
         logger.info(f"Audio saved to {output_path}")
         return output_path

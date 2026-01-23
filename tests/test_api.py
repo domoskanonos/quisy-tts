@@ -68,7 +68,7 @@ class TestRequestSchemas:
         """Test BaseGenerateRequest with minimal fields."""
         request = BaseGenerateRequest(text="Hello world")
         assert request.text == "Hello world"
-        assert request.language == "german"
+        assert request.language == "German"
 
     def test_voice_design_request(self) -> None:
         """Test VoiceDesignRequest."""
