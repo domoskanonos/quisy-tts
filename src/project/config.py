@@ -29,6 +29,7 @@ class ProjectSettings(BaseSettings):
     VOICES_DIR: Path = Path("voices")
     OUTPUT_DIR: Path = Path("output")
     DEFAULT_LANGUAGE: str = "de"
+    DEFAULT_REFERENCE_AUDIO: str | None = "dominik_bruhn.wav"
 
     # Configuration for Pydantic
     model_config = SettingsConfigDict(

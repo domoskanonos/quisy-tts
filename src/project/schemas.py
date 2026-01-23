@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel, Field
 
+from project.config import ProjectSettings
+
 
 # Map short language codes to full names expected by Qwen TTS
 LANGUAGE_MAP: dict[str, str] = {
@@ -43,7 +45,7 @@ class BaseGenerateRequest(BaseModel):
         json_schema_extra={"example": "german"},
     )
     reference_audio: str | None = Field(
-        default=None,
+        default_factory=lambda: ProjectSettings().DEFAULT_REFERENCE_AUDIO,
         description="Filename of reference voice in voices/ directory. Uses default if not provided.",
     )
     ref_text: str | None = Field(

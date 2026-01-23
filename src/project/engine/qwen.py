@@ -114,11 +114,28 @@ class QwenTextToSpeech(TTSEngine):
         """Helper to load reference audio."""
         if not params.reference_audio or params.reference_audio == "string":
             if params.mode == "base":
+                # Try configured default first
+                default_ref = self.settings.DEFAULT_REFERENCE_AUDIO
+                if default_ref:
+                    ref_path = self.settings.VOICES_DIR / default_ref
+                    if ref_path.exists():
+                        logger.info(
+                            f"Using configured default reference audio: {default_ref}"
+                        )
+                        data, sr = sf.read(str(ref_path))
+                        return (data, sr)
+                    logger.warning(
+                        f"Configured default reference audio not found: {default_ref}. "
+                        "Falling back to directory scan."
+                    )
+
+                # Fallback: scan directory
                 voices = list(self.settings.VOICES_DIR.glob("*.wav"))
                 if voices:
-                    logger.info(f"Using default reference audio: {voices[0].name}")
+                    logger.info(f"Using fallback reference audio: {voices[0].name}")
                     data, sr = sf.read(str(voices[0]))
                     return (data, sr)
+
                 logger.error(
                     f"Base mode requires reference audio. "
                     f"No .wav files found in {self.settings.VOICES_DIR.absolute()}"
