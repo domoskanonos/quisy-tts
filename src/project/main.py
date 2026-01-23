@@ -12,7 +12,17 @@ from project.qwen_tts_engine import QwenTextToSpeech
 from project.schemas import GenerateRequest, TTSParams
 
 
-app = FastAPI(title="Cosmo TTS API")
+app = FastAPI(
+    title="Cosmo TTS API",
+    description=(
+        "Modern Text-to-Speech API powered by Qwen3-TTS "
+        "with streaming and voice design capabilities."
+    ),
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+)
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
 

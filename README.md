@@ -107,6 +107,16 @@ Check the health and configuration of the API.
 
 ---
 
+## 📖 API Documentation
+
+FastAPI automatically generates interactive documentation for the API:
+
+- **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs) - Test the API directly from your browser.
+- **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc) - Clean, searchable documentation.
+- **OpenAPI JSON**: [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
+
+---
+
 ## 🧪 Testing
 
 We provide dedicated scripts to test all generation modes:
