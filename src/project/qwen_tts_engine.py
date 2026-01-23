@@ -1,5 +1,6 @@
 import os
 import re
+import subprocess
 import traceback
 
 import soundfile as sf
@@ -30,6 +31,44 @@ class NaturalOptimizer:
         text = text.replace("\n", " ")
         text = re.sub(r"\s+", " ", text).strip()
         return text
+
+
+
+class SoxAudioProcessor:
+    """Handles audio post-processing using Sox."""
+
+    @staticmethod
+    def apply_effects(input_path: str, output_path: str) -> bool:
+        """Applies normalization and subtle effects to the audio."""
+        try:
+            # Example: normalize to -3dB and apply a slight treble boost
+            # --norm=-3: normalize to -3dB
+            # treble 1: slight treble boost for clarity
+            command = [
+                "sox",
+                input_path,
+                output_path,
+                "norm",
+                "-3",
+                "treble",
+                "1",
+                "channels",
+                "1",
+            ]
+            logger.info(f"Applying Sox post-processing: {' '.join(command)}")
+            subprocess.run(command, check=True, capture_output=True)
+            return True
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Sox processing failed: {e.stderr.decode()}")
+            return False
+        except FileNotFoundError:
+            logger.error(
+                "Sox binary not found. Please ensure 'sox' is installed and in PATH."
+            )
+            return False
+        except Exception as e:
+            logger.error(f"Error during Sox processing: {e}")
+            return False
 
 
 class AudioUtils:
@@ -64,12 +103,21 @@ class QwenTextToSpeech:
 
             try:
                 # Use bfloat16 for better precision on newer NVIDIA cards
-                dtype = torch.bfloat16 if "cuda" in str(device) else torch.float32
+                # float16 is also common, but bfloat16 is preferred if supported
+                if "cuda" in str(device):
+                    # Check if device supports bfloat16 (mostly RTX 30+ and A100+)
+                    if torch.cuda.get_device_capability(0)[0] >= 8:
+                        dtype = torch.bfloat16
+                    else:
+                        dtype = torch.float16
+                    logger.info(f"Using {dtype} for GPU acceleration.")
+                else:
+                    dtype = torch.float32
 
                 cls._shared_model = Qwen3TTSModel.from_pretrained(
                     settings.MODEL_NAME,
                     device_map=device,
-                    dtype=dtype,
+                    torch_dtype=dtype,  # Correct parameter name usually torch_dtype
                 )
                 logger.info(
                     f"Qwen3-TTS model '{settings.MODEL_NAME}' initialized on {device}."
@@ -236,12 +284,32 @@ class QwenTextToSpeech:
     ) -> str | None:
         wav = self.generate_audio(text, params)
         if wav is not None:
+            # Save raw output first
+            raw_path = output_path.replace(".wav", "_raw.wav")
             wav_np = (
                 wav.squeeze().cpu().numpy() if isinstance(wav, torch.Tensor) else wav
             )
-            sf.write(output_path, wav_np, self._sr)
-            logger.info(f"Audio saved to: {output_path}")
-            return output_path
+            sf.write(raw_path, wav_np, self._sr)
+            logger.info(f"Raw audio saved to: {raw_path}")
+
+            # Apply Sox post-processing
+            if SoxAudioProcessor.apply_effects(raw_path, output_path):
+                logger.info(f"Post-processed audio saved to: {output_path}")
+                # Clean up raw file
+                try:
+                    os.remove(raw_path)
+                except:
+                    pass
+                return output_path
+            else:
+                # If Sox fails, fallback to raw output
+                logger.warning("Sox failed, falling back to raw audio.")
+                try:
+                    os.replace(raw_path, output_path)
+                except Exception as e:
+                    logger.error(f"Failed to replace raw file: {e}")
+                    return raw_path  # Return raw path if replace fails
+                return output_path
         return None
 
     @property
