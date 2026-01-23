@@ -35,6 +35,12 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
+### 🔊 Audio Processing (Sox)
+This project requires **Sox** for high-quality audio normalization.
+- **Windows**: `scoop install sox`, `choco install sox`, or download from [SourceForge](http://sox.sourceforge.net/).
+- **macOS**: `brew install sox`
+- **Linux**: `sudo apt install sox libsox-fmt-all`
+
 ---
 
 ## 🚀 Quick Start

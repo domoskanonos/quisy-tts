@@ -29,7 +29,7 @@ def read_root() -> dict[str, Any]:
     }
 
 
-@app.post("/generate")
+@app.post("/generate", response_model=None)
 async def generate_audio(request: GenerateRequest) -> StreamingResponse | FileResponse:
     """Generate audio from text and return the WAV file or stream chunks."""
     try:

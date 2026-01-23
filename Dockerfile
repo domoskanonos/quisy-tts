@@ -1,5 +1,12 @@
-# Use a slim Python image
-FROM python:3.14-slim-bookworm
+# Use a stable Python image
+FROM python:3.12-slim-bookworm
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    sox \
+    libsox-fmt-all \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -17,6 +24,9 @@ RUN uv sync --frozen --no-dev
 
 # Place executable on the PATH
 ENV PATH="/app/.venv/bin:$PATH"
+
+# Expose the API port
+EXPOSE 8000
 
 # Run the application
 CMD ["python", "src/project/main.py"]
