@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 
 from huggingface_hub import snapshot_download
 
@@ -7,19 +8,19 @@ from huggingface_hub import snapshot_download
 # Disable progress bars to avoid thread-safety issues with tqdm in parallel downloads
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 
-
 # Add src to path to import config
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
+sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
 
 from project.config import ProjectConfig
 
 
-def download_model(model_id: str, models_dir: str):
+def download_model(model_id: str, models_dir: Path):
+    """Downloads a single model from Hugging Face."""
     print(f"Starting download of {model_id}...")
     try:
-        local_dir = os.path.join(models_dir, model_id.replace("/", "--"))
+        local_dir = models_dir / model_id.replace("/", "--")
         snapshot_download(
-            repo_id=model_id, local_dir=local_dir, local_dir_use_symlinks=False
+            repo_id=model_id, local_dir=str(local_dir), local_dir_use_symlinks=False
         )
         print(f"Successfully downloaded {model_id} to {local_dir}")
     except Exception as e:
@@ -27,13 +28,15 @@ def download_model(model_id: str, models_dir: str):
 
 
 def main():
+    """Main downloader loop."""
     settings = ProjectConfig.get_settings()
     models_to_download = [
-        m.strip() for m in settings.DOWNLOAD_MODELS.split(",") if m.strip()
+        m.strip()
+        for m in settings.DOWNLOAD_MODELS.replace("\n", "").split(",")
+        if m.strip()
     ]
-    models_dir = os.path.abspath(settings.MODELS_DIR)
-
-    os.makedirs(models_dir, exist_ok=True)
+    models_dir = Path(settings.MODELS_DIR).resolve()
+    models_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Downloading {len(models_to_download)} models to {models_dir}...")
 

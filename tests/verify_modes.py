@@ -1,53 +1,58 @@
-import os
 import sys
+from pathlib import Path
 
 
 # Add src to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
+sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
 
 from project.config import ProjectConfig
 from project.qwen_tts_engine import QwenTextToSpeech, TTSParams
 
 
-def test_modes():
+def test_modes() -> None:
     logger = ProjectConfig.get_logger()
     settings = ProjectConfig.get_settings()
     tts = QwenTextToSpeech()
 
-    # 1. Test Base Mode (Voice Cloning)
-    logger.info("--- Testing Base Mode (Voice Cloning) ---")
-    output_base = os.path.join(settings.OUTPUT_DIR, "test_base_clone.wav")
-    params_base = TTSParams(mode="base", language_id="en")
-    # This will use default reference logic in generate_audio if no ref passed
-    tts.generate_and_save(
-        "This is a test of voice cloning in base mode.", output_base, params_base
-    )
+    # Test for both 1.7B and 0.6B
+    for size in ["1.7B", "0.6B"]:
+        logger.info(f"=== Testing Model Size: {size} ===")
 
-    # 2. Test VoiceDesign Mode (Instruction)
-    logger.info("--- Testing VoiceDesign Mode (Instruction) ---")
-    output_design = os.path.join(settings.OUTPUT_DIR, "test_voice_design.wav")
-    params_design = TTSParams(
-        mode="voice_design",
-        language_id="en",
-        instruct="Generate a voice of a middle-aged man with a deep and calm tone.",
-    )
-    tts.generate_and_save(
-        "This is a test of voice design with natural language instructions.",
-        output_design,
-        params_design,
-    )
+        # 1. Base Mode
+        logger.info(f"--- Testing Base Mode ({size}) ---")
+        output_base = Path(settings.OUTPUT_DIR) / f"test_base_{size}.wav"
+        params_base = TTSParams(mode="base", model_size=size, language_id="german")
+        tts.generate_and_save(
+            "This is a test of voice cloning.", str(output_base), params_base
+        )
 
-    # 3. Test CustomVoice Mode (Speaker ID)
-    logger.info("--- Testing CustomVoice Mode (Speaker ID) ---")
-    output_custom = os.path.join(settings.OUTPUT_DIR, "test_custom_voice.wav")
-    params_custom = TTSParams(mode="custom_voice", language_id="de", speaker="eric")
-    tts.generate_and_save(
-        "Dies ist ein Test mit einer spezifischen Sprecher-ID.",
-        output_custom,
-        params_custom,
-    )
+        # 2. VoiceDesign Mode
+        if size != "0.6B":
+            logger.info(f"--- Testing VoiceDesign Mode ({size}) ---")
+            output_design = Path(settings.OUTPUT_DIR) / f"test_design_{size}.wav"
+            params_design = TTSParams(
+                mode="voice_design",
+                model_size=size,
+                instruct="Generate a friendly voice.",
+                language_id="german",
+            )
+            tts.generate_and_save(
+                "Hello, this is a designed voice.", str(output_design), params_design
+            )
+        else:
+            logger.info(f"--- Skipping VoiceDesign Mode ({size}) - Not Supported ---")
 
-    logger.info("Verification complete. Check the output directory for results.")
+        # 3. CustomVoice Mode
+        logger.info(f"--- Testing CustomVoice Mode ({size}) ---")
+        output_custom = Path(settings.OUTPUT_DIR) / f"test_custom_{size}.wav"
+        params_custom = TTSParams(
+            mode="custom_voice", model_size=size, speaker="eric", language_id="german"
+        )
+        tts.generate_and_save(
+            "Dies ist ein Test mit Eric.", str(output_custom), params_custom
+        )
+
+    logger.info("Verification complete. Check the output directory.")
 
 
 if __name__ == "__main__":

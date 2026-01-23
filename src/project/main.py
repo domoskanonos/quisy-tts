@@ -1,12 +1,13 @@
 import os
 import uuid
+from pathlib import Path
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
 
 from project.config import ProjectConfig
-from project.qwen_tts_engine import QwenTextToSpeech, TTSParams
+from project.qwen_tts_engine import QwenTextToSpeech
+from project.schemas import GenerateRequest, TTSParams
 
 
 app = FastAPI(title="Cosmo TTS API")
@@ -17,33 +18,20 @@ settings = ProjectConfig.get_settings()
 tts_engine = QwenTextToSpeech()
 
 
-class GenerateRequest(BaseModel):
-    text: str
-    language_id: str | None = "de"
-    reference_audio: str | None = None
-    ref_text: str | None = None
-    mode: str = "base"
-    instruct: str | None = None
-    speaker: str | None = None
-
-
-@app.on_event("startup")
-async def startup_event():
-    logger.info("Initializing TTS Engine...")
-    tts_engine.initialize()
-
-
 @app.get("/")
 def read_root():
-    return {"message": "Cosmo TTS API is running", "model": settings.MODEL_NAME}
+    return {
+        "message": "Cosmo TTS API is running",
+        "model_size": settings.DEFAULT_MODEL_SIZE,
+    }
 
 
 @app.post("/generate")
-async def generate_audio(request: GenerateRequest, background_tasks: BackgroundTasks):
+async def generate_audio(request: GenerateRequest):
     """Generate audio from text and return the WAV file."""
     try:
         filename = f"{uuid.uuid4()}.wav"
-        output_path = os.path.join(settings.OUTPUT_DIR, filename)
+        output_path = Path(settings.OUTPUT_DIR) / filename
 
         params = TTSParams(
             language_id=request.language_id or settings.DEFAULT_LANGUAGE,
@@ -52,13 +40,14 @@ async def generate_audio(request: GenerateRequest, background_tasks: BackgroundT
             mode=request.mode,
             instruct=request.instruct,
             speaker=request.speaker,
+            model_size=request.model_size,
         )
 
-        result_path = tts_engine.generate_and_save(request.text, output_path, params)
+        result_path = tts_engine.generate_and_save(
+            request.text, str(output_path), params
+        )
 
-        if result_path and os.path.exists(result_path):
-            # Schedule file deletion after some time if needed,
-            # or just return it. For now, we return it.
+        if os.path.exists(result_path):
             return FileResponse(
                 path=result_path, media_type="audio/wav", filename=filename
             )
