@@ -173,11 +173,12 @@ class QwenTextToSpeech:
         optimizer = NaturalOptimizer()
         text = optimizer.optimize(text)
 
-        # Split by punctuation
-        segments = [
-            s.strip() for s in re.split(r"(?<=[\.\!\?\:\;])\s+", text) if s.strip()
-        ]
-        logger.info(f"📝 Text split into {len(segments)} segment(s)")
+        # TODO: Segmentation disabled for testing
+        # segments = [
+        #     s.strip() for s in re.split(r"(?<=[\.\!\?\:\;])\s+", text) if s.strip()
+        # ]
+        segments = [text.strip()]
+        logger.info(f"📝 Using entire text as 1 segment (segmentation disabled)")
 
         model = self.get_model()
         audio_segments = []
