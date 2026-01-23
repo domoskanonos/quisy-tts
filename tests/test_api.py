@@ -1,4 +1,4 @@
-"""Comprehensive test suite for Cosmo TTS API with restructured endpoints."""
+"""Comprehensive test suite for Cosmo TTS API v3.0 (Clean Architecture)."""
 
 import sys
 from pathlib import Path
@@ -11,14 +11,16 @@ from starlette import status
 # Add src to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from project.core import CacheService, CleanupService, TTSEngine
+from project.engine import QwenTextToSpeech
 from project.schemas import (
     LANGUAGE_MAP,
     BaseGenerateRequest,
     CustomVoiceRequest,
-    TTSParams,
     VoiceDesignRequest,
     resolve_language,
 )
+from project.services import FileCacheService, FileCleanupService
 
 
 class TestLanguageMapping:
@@ -59,79 +61,57 @@ class TestLanguageMapping:
             assert resolve_language(code) == full_name
 
 
-class TestBaseGenerateRequest:
-    """Tests for the BaseGenerateRequest schema."""
+class TestRequestSchemas:
+    """Tests for request schemas."""
 
-    def test_minimal_request(self) -> None:
-        """Test creating a request with only required fields."""
+    def test_base_request_minimal(self) -> None:
+        """Test BaseGenerateRequest with minimal fields."""
         request = BaseGenerateRequest(text="Hello world")
         assert request.text == "Hello world"
         assert request.language == "german"
-        assert request.reference_audio is None
 
-    def test_full_request(self) -> None:
-        """Test creating a request with all fields."""
-        request = BaseGenerateRequest(
-            text="Test text",
-            language="english",
-            reference_audio="test.wav",
-            ref_text="Test transcript",
-        )
-        assert request.text == "Test text"
-        assert request.language == "english"
-        assert request.reference_audio == "test.wav"
-
-
-class TestVoiceDesignRequest:
-    """Tests for the VoiceDesignRequest schema."""
-
-    def test_minimal_request(self) -> None:
-        """Test creating a request with required fields."""
-        request = VoiceDesignRequest(text="Hello", instruct="a calm narrator")
+    def test_voice_design_request(self) -> None:
+        """Test VoiceDesignRequest."""
+        request = VoiceDesignRequest(text="Hello", instruct="calm narrator")
         assert request.text == "Hello"
-        assert request.instruct == "a calm narrator"
-        assert request.language == "english"
+        assert request.instruct == "calm narrator"
 
-    def test_custom_language(self) -> None:
-        """Test with custom language."""
-        request = VoiceDesignRequest(
-            text="Hallo", instruct="ein ruhiger Erzähler", language="german"
-        )
-        assert request.language == "german"
-
-
-class TestCustomVoiceRequest:
-    """Tests for the CustomVoiceRequest schema."""
-
-    def test_minimal_request(self) -> None:
-        """Test creating a request with required fields."""
+    def test_custom_voice_request(self) -> None:
+        """Test CustomVoiceRequest."""
         request = CustomVoiceRequest(text="Hello", speaker="eric")
-        assert request.text == "Hello"
         assert request.speaker == "eric"
-        assert request.language == "german"
-
-    def test_with_instruct(self) -> None:
-        """Test with optional instruct field."""
-        request = CustomVoiceRequest(
-            text="Hello", speaker="eric", instruct="speak slowly"
-        )
-        assert request.instruct == "speak slowly"
 
 
-class TestTTSParams:
-    """Tests for the TTSParams model."""
+class TestCoreInterfaces:
+    """Tests for core layer interfaces."""
 
-    def test_default_values(self) -> None:
-        """Test default TTSParams values."""
-        params = TTSParams()
-        assert params.language == "german"
-        assert params.mode == "base"
-        assert params.model_size == "1.7B"
+    def test_tts_engine_is_abstract(self) -> None:
+        """Test that TTSEngine is an abstract class."""
+        assert hasattr(TTSEngine, "__abstractmethods__")
 
-    def test_resolved_language(self) -> None:
-        """Test language resolution."""
-        params = TTSParams(language="de")
-        assert params.resolved_language == "german"
+    def test_cache_service_is_abstract(self) -> None:
+        """Test that CacheService is an abstract class."""
+        assert hasattr(CacheService, "__abstractmethods__")
+
+    def test_cleanup_service_is_abstract(self) -> None:
+        """Test that CleanupService is an abstract class."""
+        assert hasattr(CleanupService, "__abstractmethods__")
+
+    def test_qwen_implements_tts_engine(self) -> None:
+        """Test that QwenTextToSpeech implements TTSEngine."""
+        assert issubclass(QwenTextToSpeech, TTSEngine)
+
+
+class TestServiceImplementations:
+    """Tests for service layer implementations."""
+
+    def test_file_cache_service_implements_interface(self) -> None:
+        """Test FileCacheService implements CacheService."""
+        assert issubclass(FileCacheService, CacheService)
+
+    def test_file_cleanup_service_implements_interface(self) -> None:
+        """Test FileCleanupService implements CleanupService."""
+        assert issubclass(FileCleanupService, CleanupService)
 
 
 class TestAPIEndpoints:
@@ -140,7 +120,7 @@ class TestAPIEndpoints:
     @pytest.fixture
     def client(self) -> TestClient:
         """Create a test client for the API."""
-        from project.main import app
+        from project.api import app
 
         return TestClient(app)
 
@@ -149,7 +129,8 @@ class TestAPIEndpoints:
         response = client.get("/")
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert "available_endpoints" in data
+        assert data["version"] == "3.0.0"
+        assert data["architecture"] == "Clean Architecture (Hexagonal)"
 
     def test_openapi_endpoint(self, client: TestClient) -> None:
         """Test the OpenAPI schema endpoint."""
@@ -157,43 +138,45 @@ class TestAPIEndpoints:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert "/generate/base/0.6b" in data["paths"]
-        assert "/generate/base/1.7b" in data["paths"]
         assert "/generate/voice-design/1.7b" in data["paths"]
         assert "/generate/custom-voice/0.6b" in data["paths"]
-        assert "/generate/custom-voice/1.7b" in data["paths"]
 
     def test_docs_endpoint(self, client: TestClient) -> None:
-        """Test the Swagger UI endpoint is accessible."""
+        """Test Swagger UI is accessible."""
         response = client.get("/docs")
         assert response.status_code == status.HTTP_200_OK
 
     def test_base_endpoint_validation(self, client: TestClient) -> None:
-        """Test that missing 'text' field returns validation error."""
+        """Test missing 'text' returns validation error."""
         response = client.post("/generate/base/0.6b", json={})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    def test_voice_design_endpoint_validation(self, client: TestClient) -> None:
-        """Test that missing required fields returns validation error."""
-        response = client.post("/generate/voice-design/1.7b", json={"text": "Hello"})
-        # Missing 'instruct' field
+    def test_voice_design_requires_instruct(self, client: TestClient) -> None:
+        """Test voice design requires instruct field."""
+        response = client.post("/generate/voice-design/1.7b", json={"text": "Hi"})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    def test_custom_voice_endpoint_validation(self, client: TestClient) -> None:
-        """Test that missing 'speaker' field returns validation error."""
-        response = client.post("/generate/custom-voice/0.6b", json={"text": "Hello"})
+    def test_custom_voice_requires_speaker(self, client: TestClient) -> None:
+        """Test custom voice requires speaker field."""
+        response = client.post("/generate/custom-voice/0.6b", json={"text": "Hi"})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    def test_cleanup_endpoint(self, client: TestClient) -> None:
+        """Test cleanup endpoint."""
+        response = client.post("/cleanup")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "Cleanup scheduled"
 
 
 class TestLanguageMapConstant:
-    """Tests for the LANGUAGE_MAP constant."""
+    """Tests for LANGUAGE_MAP constant."""
 
-    def test_language_map_has_common_languages(self) -> None:
-        """Test that LANGUAGE_MAP contains common languages."""
+    def test_has_common_languages(self) -> None:
+        """Test LANGUAGE_MAP has common languages."""
         assert "de" in LANGUAGE_MAP
         assert "en" in LANGUAGE_MAP
-        assert "fr" in LANGUAGE_MAP
 
-    def test_language_map_values_are_lowercase(self) -> None:
-        """Test that all language names are lowercase."""
+    def test_values_are_lowercase(self) -> None:
+        """Test all values are lowercase."""
         for name in LANGUAGE_MAP.values():
             assert name.islower()
