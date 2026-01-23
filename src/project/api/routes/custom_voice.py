@@ -62,7 +62,7 @@ async def _generate(
             path=str(result_path),
             media_type="audio/wav",
             filename=result_path.name,
-            headers={"Content-Disposition": "inline"},
+            headers={"Content-Disposition": f"attachment; filename={result_path.name}"},
         )
 
     except AudioGenerationError as e:
