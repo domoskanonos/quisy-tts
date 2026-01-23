@@ -44,20 +44,20 @@ class QwenTextToSpeech:
         try:
             if params.mode == "voice_design":
                 audio_list, sr = model.generate_voice_design(
-                    text, instruct=params.instruct, language=params.language_id
+                    text, instruct=params.instruct, language=params.resolved_language
                 )
             elif params.mode == "custom_voice":
                 audio_list, sr = model.generate_custom_voice(
                     text,
                     speaker=params.speaker,
                     instruct=params.instruct,
-                    language=params.language_id,
+                    language=params.resolved_language,
                 )
             else:  # base / voice cloning
                 xvec = params.ref_text is None or params.ref_text == ""
                 audio_list, sr = model.generate_voice_clone(
                     text,
-                    language=params.language_id,
+                    language=params.resolved_language,
                     ref_audio=ref_audio_data,
                     ref_text=params.ref_text,
                     x_vector_only_mode=xvec,
@@ -127,17 +127,24 @@ class QwenTextToSpeech:
 
     def _get_reference_audio(self, params: TTSParams) -> tuple | None:
         """Helper to load reference audio."""
-        if not params.reference_audio:
+        # Skip if reference_audio is empty, None, or the Swagger placeholder 'string'
+        if not params.reference_audio or params.reference_audio == "string":
             # Load default if base mode
             if params.mode == "base":
                 voices = list(self.settings.VOICES_DIR.glob("*.wav"))
                 if voices:
+                    logger.info(f"Using default reference audio: {voices[0].name}")
                     data, sr = sf.read(str(voices[0]))
                     return (data, sr)
+                logger.error(
+                    f"Base mode requires reference audio. "
+                    f"No .wav files found in {self.settings.VOICES_DIR.absolute()}"
+                )
             return None
 
         ref_path = self.settings.VOICES_DIR / params.reference_audio
         if ref_path.exists():
+            logger.info(f"Using reference audio: {ref_path.name}")
             data, sr = sf.read(str(ref_path))
             return (data, sr)
 
