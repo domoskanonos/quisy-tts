@@ -29,7 +29,10 @@ class QwenTextToSpeech:
             params = TTSParams()
 
         # 1. Log Generation
-        logger.info(f"Generating audio for: '{text[:50]}...' in mode '{params.mode}'")
+        logger.info(
+            f"Starting audio generation | Mode: {params.mode} | "
+            f"Text Length: {len(text)} | Language: {params.language_id}"
+        )
 
         # 2. Get Model
         model = ModelManager.get_model(mode=params.mode, size=params.model_size)
@@ -65,6 +68,7 @@ class QwenTextToSpeech:
                 raise ValueError("Model returned empty audio list")
 
             final_audio = torch.from_numpy(audio_list[0]).unsqueeze(0)
+            logger.info(f"Audio generation successful. Shape: {final_audio.shape}")
 
             return final_audio, sr
 
@@ -103,6 +107,7 @@ class QwenTextToSpeech:
         self, text: str, params: TTSParams = None, chunk_size: int = 4096
     ) -> Generator[bytes, None, None]:
         """Generates audio and yields it in chunks."""
+        logger.info("Starting audio stream generation...")
         waveform, sr = self.generate_audio(text, params)
 
         # Convert to int16 for playback (standard for streaming)

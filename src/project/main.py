@@ -118,6 +118,18 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
         await websocket.close()
 
 
+@app.on_event("startup")
+async def startup_event() -> None:
+    """Log all registered routes on startup."""
+    logger.info("Registered Routes:")
+    for route in app.routes:
+        if hasattr(route, "methods"):
+            methods = ", ".join(route.methods)
+            logger.info(f" -> {methods} {route.path}")
+        else:
+            logger.info(f" -> {route.path}")
+
+
 def main() -> None:
     """Start the FastAPI server."""
     logger.info(
