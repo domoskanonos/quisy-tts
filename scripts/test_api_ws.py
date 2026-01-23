@@ -1,12 +1,21 @@
 import asyncio
 import json
+import sys
 from pathlib import Path
 
 import websockets
 
 
-ENDPOINT = "ws://localhost:8000/ws"
-OUTPUT_DIR = Path("output")
+# Add src to path to import config
+sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
+
+from project.config import ProjectConfig
+
+
+settings = ProjectConfig.get_settings()
+host = settings.HOST if settings.HOST != "0.0.0.0" else "localhost"
+ENDPOINT = f"ws://{host}:{settings.PORT}/ws"
+OUTPUT_DIR = settings.OUTPUT_DIR
 
 
 async def test_ws() -> None:

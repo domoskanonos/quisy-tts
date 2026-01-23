@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -11,6 +12,8 @@ class ProjectSettings(BaseSettings):
     PROJECT_NAME: str = "cosmo-tts"
     LOG_LEVEL: str = "INFO"
     DEVICE: str = "cuda"  # "cuda" or "cpu"
+    HOST: str = "0.0.0.0"
+    PORT: int = 8000
 
     # TTS Settings
     DEFAULT_MODEL_SIZE: str = "1.7B"  # "1.7B" or "0.6B"
@@ -19,16 +22,17 @@ class ProjectSettings(BaseSettings):
         "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign,"
         "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice,"
         "Qwen/Qwen3-TTS-12Hz-0.6B-Base,"
+        "Qwen/Qwen3-TTS-12Hz-0.6B-VoiceDesign,"
         "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice"
     )
-    MODELS_DIR: str = "models"
-    VOICES_DIR: str = "voices"
-    OUTPUT_DIR: str = "output"
+    MODELS_DIR: Path = Path("models")
+    VOICES_DIR: Path = Path("voices")
+    OUTPUT_DIR: Path = Path("output")
     DEFAULT_LANGUAGE: str = "de"
 
     # Configuration for Pydantic
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=Path(__file__).resolve().parent.parent.parent / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )

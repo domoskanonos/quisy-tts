@@ -1,7 +1,19 @@
+import sys
+from pathlib import Path
+
 import requests
 
 
-ENDPOINT = "http://localhost:8000/"
+# Add src to path to import config
+sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
+
+from project.config import ProjectConfig
+
+
+settings = ProjectConfig.get_settings()
+host = settings.HOST if settings.HOST != "0.0.0.0" else "localhost"
+ENDPOINT = f"http://{host}:{settings.PORT}/"
+HTTP_OK = 200
 
 
 def test_status() -> None:
@@ -10,7 +22,7 @@ def test_status() -> None:
         print(f"Testing API status at {ENDPOINT}...")
         response = requests.get(ENDPOINT)
 
-        if response.status_code == 200:
+        if response.status_code == HTTP_OK:
             data = response.json()
             print("Success! API is running.")
             print(f"Response: {data}")

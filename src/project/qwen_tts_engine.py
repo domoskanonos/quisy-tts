@@ -125,13 +125,13 @@ class QwenTextToSpeech:
         if not params.reference_audio:
             # Load default if base mode
             if params.mode == "base":
-                voices = list(Path(self.settings.VOICES_DIR).glob("*.wav"))
+                voices = list(self.settings.VOICES_DIR.glob("*.wav"))
                 if voices:
                     data, sr = sf.read(str(voices[0]))
                     return (data, sr)
             return None
 
-        ref_path = Path(self.settings.VOICES_DIR) / params.reference_audio
+        ref_path = self.settings.VOICES_DIR / params.reference_audio
         if ref_path.exists():
             data, sr = sf.read(str(ref_path))
             return (data, sr)

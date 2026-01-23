@@ -50,7 +50,7 @@ async def generate_audio(request: GenerateRequest) -> StreamingResponse | FileRe
             )
 
         filename = f"{uuid.uuid4()}.wav"
-        output_path = Path(settings.OUTPUT_DIR) / filename
+        output_path = settings.OUTPUT_DIR / filename
 
         result_path = tts_engine.generate_and_save(
             request.text, str(output_path), params
@@ -110,8 +110,10 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
 
 def main() -> None:
     """Start the FastAPI server."""
-    logger.info(f"Starting {settings.PROJECT_NAME} on http://0.0.0.0:8000")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    logger.info(
+        f"Starting {settings.PROJECT_NAME} on http://{settings.HOST}:{settings.PORT}"
+    )
+    uvicorn.run(app, host=settings.HOST, port=settings.PORT)
 
 
 if __name__ == "__main__":

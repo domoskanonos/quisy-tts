@@ -20,7 +20,7 @@ def test_modes() -> None:
 
         # 1. Base Mode
         logger.info(f"--- Testing Base Mode ({size}) ---")
-        output_base = Path(settings.OUTPUT_DIR) / f"test_base_{size}.wav"
+        output_base = settings.OUTPUT_DIR / f"test_base_{size}.wav"
         params_base = TTSParams(mode="base", model_size=size, language_id="german")
         tts.generate_and_save(
             "This is a test of voice cloning.", str(output_base), params_base
@@ -29,7 +29,7 @@ def test_modes() -> None:
         # 2. VoiceDesign Mode
         if size != "0.6B":
             logger.info(f"--- Testing VoiceDesign Mode ({size}) ---")
-            output_design = Path(settings.OUTPUT_DIR) / f"test_design_{size}.wav"
+            output_design = settings.OUTPUT_DIR / f"test_design_{size}.wav"
             params_design = TTSParams(
                 mode="voice_design",
                 model_size=size,
@@ -44,7 +44,7 @@ def test_modes() -> None:
 
         # 3. CustomVoice Mode
         logger.info(f"--- Testing CustomVoice Mode ({size}) ---")
-        output_custom = Path(settings.OUTPUT_DIR) / f"test_custom_{size}.wav"
+        output_custom = settings.OUTPUT_DIR / f"test_custom_{size}.wav"
         params_custom = TTSParams(
             mode="custom_voice", model_size=size, speaker="eric", language_id="german"
         )

@@ -35,7 +35,7 @@ def main():
         for m in settings.DOWNLOAD_MODELS.replace("\n", "").split(",")
         if m.strip()
     ]
-    models_dir = Path(settings.MODELS_DIR).resolve()
+    models_dir = settings.MODELS_DIR.resolve()
     models_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Downloading {len(models_to_download)} models to {models_dir}...")
