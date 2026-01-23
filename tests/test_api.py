@@ -28,15 +28,15 @@ class TestLanguageMapping:
 
     def test_short_code_to_full_name(self) -> None:
         """Test that short codes are correctly resolved to full names."""
-        assert resolve_language("de") == "german"
+        assert resolve_language("de") == "German"
 
     def test_english_mapping(self) -> None:
         """Test English language mapping."""
-        assert resolve_language("en") == "english"
+        assert resolve_language("en") == "English"
 
     def test_full_name_passthrough(self) -> None:
-        """Test that full names pass through unchanged."""
-        assert resolve_language("german") == "german"
+        """Test that full names are mapped to capitalized versions."""
+        assert resolve_language("german") == "German"
 
     def test_unknown_code_passthrough(self) -> None:
         """Test that unknown codes pass through unchanged."""
@@ -45,17 +45,17 @@ class TestLanguageMapping:
     def test_all_supported_languages(self) -> None:
         """Test all supported language mappings."""
         expected = {
-            "de": "german",
-            "en": "english",
-            "fr": "french",
-            "es": "spanish",
-            "it": "italian",
-            "pt": "portuguese",
-            "ru": "russian",
-            "ja": "japanese",
-            "ko": "korean",
-            "zh": "chinese",
-            "auto": "auto",
+            "de": "German",
+            "en": "English",
+            "fr": "French",
+            "es": "Spanish",
+            "it": "Italian",
+            "pt": "Portuguese",
+            "ru": "Russian",
+            "ja": "Japanese",
+            "ko": "Korean",
+            "zh": "Chinese",
+            "auto": "Auto",
         }
         for code, full_name in expected.items():
             assert resolve_language(code) == full_name
@@ -176,7 +176,7 @@ class TestLanguageMapConstant:
         assert "de" in LANGUAGE_MAP
         assert "en" in LANGUAGE_MAP
 
-    def test_values_are_lowercase(self) -> None:
-        """Test all values are lowercase."""
+    def test_values_are_capitalized(self) -> None:
+        """Test all values are capitalized (title case)."""
         for name in LANGUAGE_MAP.values():
-            assert name.islower()
+            assert name[0].isupper()

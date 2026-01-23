@@ -1,6 +1,7 @@
 """Qwen3-TTS engine implementation."""
 
 from collections.abc import Generator
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -15,6 +16,14 @@ from project.schemas import TTSParams
 
 
 logger = ProjectConfig.get_logger()
+
+
+@lru_cache(maxsize=16)
+def _load_cached_audio(path: str) -> tuple:
+    """Load audio file with caching to avoid repeated disk I/O."""
+    logger.info(f"Loading audio file into cache: {path}")
+    data, sr = sf.read(path)
+    return (data, sr)
 
 
 class QwenTextToSpeech(TTSEngine):
@@ -40,9 +49,20 @@ class QwenTextToSpeech(TTSEngine):
         ref_audio_data = self._get_reference_audio(params)
 
         try:
+            # Generation parameters for optimal speed/quality
+            gen_kwargs = {
+                "do_sample": True,
+                "temperature": 0.7,
+                "top_p": 0.9,
+                "max_new_tokens": 2048,  # Limit generation length
+            }
+
             if params.mode == "voice_design":
                 audio_list, sr = model.generate_voice_design(
-                    text, instruct=params.instruct, language=params.resolved_language
+                    text,
+                    instruct=params.instruct,
+                    language=params.resolved_language,
+                    **gen_kwargs,
                 )
             elif params.mode == "custom_voice":
                 audio_list, sr = model.generate_custom_voice(
@@ -50,6 +70,7 @@ class QwenTextToSpeech(TTSEngine):
                     speaker=params.speaker,
                     instruct=params.instruct,
                     language=params.resolved_language,
+                    **gen_kwargs,
                 )
             else:  # base / voice cloning
                 xvec = params.ref_text is None or params.ref_text == ""
@@ -59,6 +80,7 @@ class QwenTextToSpeech(TTSEngine):
                     ref_audio=ref_audio_data,
                     ref_text=params.ref_text,
                     x_vector_only_mode=xvec,
+                    **gen_kwargs,
                 )
 
             if not audio_list:
@@ -122,8 +144,7 @@ class QwenTextToSpeech(TTSEngine):
                         logger.info(
                             f"Using configured default reference audio: {default_ref}"
                         )
-                        data, sr = sf.read(str(ref_path))
-                        return (data, sr)
+                        return _load_cached_audio(str(ref_path))
                     logger.warning(
                         f"Configured default reference audio not found: {default_ref}. "
                         "Falling back to directory scan."
@@ -133,8 +154,7 @@ class QwenTextToSpeech(TTSEngine):
                 voices = list(self.settings.VOICES_DIR.glob("*.wav"))
                 if voices:
                     logger.info(f"Using fallback reference audio: {voices[0].name}")
-                    data, sr = sf.read(str(voices[0]))
-                    return (data, sr)
+                    return _load_cached_audio(str(voices[0]))
 
                 logger.error(
                     f"Base mode requires reference audio. "
@@ -145,8 +165,7 @@ class QwenTextToSpeech(TTSEngine):
         ref_path = self.settings.VOICES_DIR / params.reference_audio
         if ref_path.exists():
             logger.info(f"Using reference audio: {ref_path.name}")
-            data, sr = sf.read(str(ref_path))
-            return (data, sr)
+            return _load_cached_audio(str(ref_path))
 
         logger.warning(f"Reference audio not found: {ref_path}")
         return None

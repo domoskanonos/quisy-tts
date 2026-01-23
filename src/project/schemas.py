@@ -6,18 +6,30 @@ from project.config import ProjectSettings
 
 
 # Map short language codes to full names expected by Qwen TTS
+# Official Qwen3-TTS uses capitalized names: Chinese, English, German, etc.
 LANGUAGE_MAP: dict[str, str] = {
-    "de": "german",
-    "en": "english",
-    "fr": "french",
-    "es": "spanish",
-    "it": "italian",
-    "pt": "portuguese",
-    "ru": "russian",
-    "ja": "japanese",
-    "ko": "korean",
-    "zh": "chinese",
-    "auto": "auto",
+    "de": "German",
+    "en": "English",
+    "fr": "French",
+    "es": "Spanish",
+    "it": "Italian",
+    "pt": "Portuguese",
+    "ru": "Russian",
+    "ja": "Japanese",
+    "ko": "Korean",
+    "zh": "Chinese",
+    "auto": "Auto",
+    # Also support lowercase full names
+    "german": "German",
+    "english": "English",
+    "french": "French",
+    "spanish": "Spanish",
+    "italian": "Italian",
+    "portuguese": "Portuguese",
+    "russian": "Russian",
+    "japanese": "Japanese",
+    "korean": "Korean",
+    "chinese": "Chinese",
 }
 
 
@@ -46,11 +58,16 @@ class BaseGenerateRequest(BaseModel):
     )
     reference_audio: str | None = Field(
         default_factory=lambda: ProjectSettings().DEFAULT_REFERENCE_AUDIO,
-        description="Filename of reference voice in voices/ directory. Uses default if not provided.",
+        description="Filename of reference voice in voices/ directory.",
+        json_schema_extra={"example": "dominik_bruhn.wav"},
     )
     ref_text: str | None = Field(
         default=None,
-        description="Transcript of reference audio for improved cloning quality.",
+        description=(
+            "Transcript of reference audio. Leave empty for faster x_vector_only mode. "
+            "Provide text for better quality ICL mode cloning."
+        ),
+        json_schema_extra={"example": None},
     )
 
 
