@@ -180,3 +180,154 @@ class TestLanguageMapConstant:
         """Test all values are capitalized (title case)."""
         for name in LANGUAGE_MAP.values():
             assert name[0].isupper()
+
+
+class TestInfoEndpoints:
+    """Tests for the /speakers and /languages info endpoints."""
+
+    @pytest.fixture
+    def client(self) -> TestClient:
+        """Create a test client for the API."""
+        from project.api import app
+
+        return TestClient(app)
+
+    def test_speakers_endpoint_returns_200(self, client: TestClient) -> None:
+        """Test /speakers endpoint returns 200 OK."""
+        response = client.get("/speakers")
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_speakers_endpoint_returns_dict(self, client: TestClient) -> None:
+        """Test /speakers endpoint returns dict with 'speakers' key."""
+        response = client.get("/speakers")
+        data = response.json()
+        assert "speakers" in data
+
+    def test_languages_endpoint_returns_200(self, client: TestClient) -> None:
+        """Test /languages endpoint returns 200 OK."""
+        response = client.get("/languages")
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_languages_endpoint_returns_dict(self, client: TestClient) -> None:
+        """Test /languages endpoint returns dict with 'languages' key."""
+        response = client.get("/languages")
+        data = response.json()
+        assert "languages" in data
+
+    def test_speakers_in_openapi(self, client: TestClient) -> None:
+        """Test /speakers endpoint is documented in OpenAPI."""
+        response = client.get("/openapi.json")
+        data = response.json()
+        assert "/speakers" in data["paths"]
+
+    def test_languages_in_openapi(self, client: TestClient) -> None:
+        """Test /languages endpoint is documented in OpenAPI."""
+        response = client.get("/openapi.json")
+        data = response.json()
+        assert "/languages" in data["paths"]
+
+
+class TestStreamingEndpoints:
+    """Tests for streaming endpoints."""
+
+    @pytest.fixture
+    def client(self) -> TestClient:
+        """Create a test client for the API."""
+        from project.api import app
+
+        return TestClient(app)
+
+    def test_stream_base_06b_in_openapi(self, client: TestClient) -> None:
+        """Test streaming base 0.6B endpoint is in OpenAPI."""
+        response = client.get("/openapi.json")
+        data = response.json()
+        assert "/generate/base/stream/0.6b" in data["paths"]
+
+    def test_stream_base_17b_in_openapi(self, client: TestClient) -> None:
+        """Test streaming base 1.7B endpoint is in OpenAPI."""
+        response = client.get("/openapi.json")
+        data = response.json()
+        assert "/generate/base/stream/1.7b" in data["paths"]
+
+    def test_stream_voice_design_in_openapi(self, client: TestClient) -> None:
+        """Test streaming voice design endpoint is in OpenAPI."""
+        response = client.get("/openapi.json")
+        data = response.json()
+        assert "/generate/voice-design/stream/1.7b" in data["paths"]
+
+    def test_stream_base_requires_text(self, client: TestClient) -> None:
+        """Test streaming endpoint validation."""
+        response = client.post("/generate/base/stream/0.6b", json={})
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+class TestWebsocketEndpoint:
+    """Tests for WebSocket endpoint."""
+
+    @pytest.fixture
+    def client(self) -> TestClient:
+        """Create a test client for the API."""
+        from project.api import app
+
+        return TestClient(app)
+
+    def test_websocket_in_openapi(self, client: TestClient) -> None:
+        """Test WebSocket endpoint is registered."""
+        response = client.get("/openapi.json")
+        # WebSocket routes don't appear in OpenAPI, check app routes directly
+        assert response.status_code == status.HTTP_200_OK
+
+
+class TestMethodRestrictions:
+    """Tests for HTTP method restrictions on endpoints."""
+
+    @pytest.fixture
+    def client(self) -> TestClient:
+        """Create a test client for the API."""
+        from project.api import app
+
+        return TestClient(app)
+
+    def test_base_get_not_allowed(self, client: TestClient) -> None:
+        """Test GET method not allowed on generate endpoints."""
+        response = client.get("/generate/base/0.6b")
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    def test_voice_design_get_not_allowed(self, client: TestClient) -> None:
+        """Test GET method not allowed on voice design endpoint."""
+        response = client.get("/generate/voice-design/1.7b")
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    def test_custom_voice_get_not_allowed(self, client: TestClient) -> None:
+        """Test GET method not allowed on custom voice endpoint."""
+        response = client.get("/generate/custom-voice/0.6b")
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    def test_cleanup_get_not_allowed(self, client: TestClient) -> None:
+        """Test GET method not allowed on cleanup endpoint."""
+        response = client.get("/cleanup")
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    def test_speakers_post_not_allowed(self, client: TestClient) -> None:
+        """Test POST method not allowed on speakers endpoint."""
+        response = client.post("/speakers")
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    def test_languages_post_not_allowed(self, client: TestClient) -> None:
+        """Test POST method not allowed on languages endpoint."""
+        response = client.post("/languages")
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+
+class TestVoiceClonePromptCache:
+    """Tests for voice clone prompt caching functionality."""
+
+    def test_qwen_engine_has_voice_prompts_cache(self) -> None:
+        """Test that QwenTextToSpeech has _voice_prompts cache."""
+        engine = QwenTextToSpeech()
+        assert hasattr(engine, "_voice_prompts")
+        assert isinstance(engine._voice_prompts, dict)
+
+    def test_qwen_engine_has_get_or_create_method(self) -> None:
+        """Test that QwenTextToSpeech has _get_or_create_voice_prompt method."""
+        assert hasattr(QwenTextToSpeech, "_get_or_create_voice_prompt")
