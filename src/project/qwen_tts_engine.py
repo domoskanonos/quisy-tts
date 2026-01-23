@@ -21,6 +21,9 @@ class TTSParams(BaseModel):
     reference_audio: str | None = None
     ref_text: str | None = None
     speed: float = 1.0
+    mode: str = "base"  # "base", "voice_design", "custom_voice"
+    instruct: str | None = None
+    speaker: str | None = None
 
 
 class NaturalOptimizer:
@@ -31,7 +34,6 @@ class NaturalOptimizer:
         text = text.replace("\n", " ")
         text = re.sub(r"\s+", " ", text).strip()
         return text
-
 
 
 class SoxAudioProcessor:
@@ -85,7 +87,7 @@ class AudioUtils:
 
 
 class QwenTextToSpeech:
-    _shared_model = None
+    _models = {}  # Dictionary to store loaded models by name
     _sr = 24000  # Default sample rate
 
     def __init__(self):
@@ -93,49 +95,74 @@ class QwenTextToSpeech:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     @classmethod
-    def initialize(cls, device=None):
-        if cls._shared_model is None:
-            settings = ProjectConfig.get_settings()
-            logger.info(f"Initializing Qwen3-TTS model: {settings.MODEL_NAME}...")
+    def initialize(cls, model_name=None, device=None):
+        settings = ProjectConfig.get_settings()
+        if model_name is None:
+            model_name = settings.MODEL_NAME
 
-            if device is None:
-                device = "cuda" if torch.cuda.is_available() else "cpu"
+        if model_name in cls._models:
+            return
 
-            try:
-                # Use bfloat16 for better precision on newer NVIDIA cards
-                # float16 is also common, but bfloat16 is preferred if supported
-                if "cuda" in str(device):
-                    # Check if device supports bfloat16 (mostly RTX 30+ and A100+)
-                    if torch.cuda.get_device_capability(0)[0] >= 8:
-                        dtype = torch.bfloat16
-                    else:
-                        dtype = torch.float16
-                    logger.info(f"Using {dtype} for GPU acceleration.")
+        logger.info(f"Initializing Qwen3-TTS model: {model_name}...")
+
+        if device is None:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        try:
+            if "cuda" in str(device):
+                if torch.cuda.get_device_capability(0)[0] >= 8:
+                    dtype = torch.bfloat16
                 else:
-                    dtype = torch.float32
+                    dtype = torch.float16
+                logger.info(f"Using {dtype} for GPU acceleration.")
+            else:
+                dtype = torch.float32
 
-                cls._shared_model = Qwen3TTSModel.from_pretrained(
-                    settings.MODEL_NAME,
-                    device_map=device,
-                    torch_dtype=dtype,  # Correct parameter name usually torch_dtype
-                )
+            # Check if model exists in local models directory
+            local_model_path = os.path.join(
+                settings.MODELS_DIR, model_name.replace("/", "--")
+            )
+            load_path = (
+                local_model_path if os.path.exists(local_model_path) else model_name
+            )
+
+            if os.path.exists(local_model_path):
+                logger.info(f"Loading model from local path: {local_model_path}")
+            else:
                 logger.info(
-                    f"Qwen3-TTS model '{settings.MODEL_NAME}' initialized on {device}."
+                    f"Model not found locally, using Hugging Face: {model_name}"
                 )
 
-                # Ensure directories exist
-                os.makedirs(settings.VOICES_DIR, exist_ok=True)
-                os.makedirs(settings.OUTPUT_DIR, exist_ok=True)
+            cls._models[model_name] = Qwen3TTSModel.from_pretrained(
+                load_path,
+                device_map=device,
+                torch_dtype=dtype,
+            )
+            logger.info(f"Qwen3-TTS model '{model_name}' initialized on {device}.")
 
-            except Exception as e:
-                logger.error(f"Failed to initialize Qwen3-TTS: {e}")
-                raise
+            # Ensure directories exist
+            os.makedirs(settings.VOICES_DIR, exist_ok=True)
+            os.makedirs(settings.OUTPUT_DIR, exist_ok=True)
+
+        except Exception as e:
+            logger.error(f"Failed to initialize Qwen3-TTS model '{model_name}': {e}")
+            raise
 
     @classmethod
-    def get_model(cls, device=None):
-        if cls._shared_model is None:
-            cls.initialize(device)
-        return cls._shared_model
+    def get_model(cls, mode="base", device=None):
+        settings = ProjectConfig.get_settings()
+
+        # Map mode to model name
+        if mode == "voice_design":
+            model_name = "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+        elif mode == "custom_voice":
+            model_name = "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
+        else:
+            model_name = "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+
+        if model_name not in cls._models:
+            cls.initialize(model_name, device)
+        return cls._models[model_name]
 
     def _get_default_reference(self) -> tuple[torch.Tensor, int] | tuple[None, None]:
         """Try to find a default reference audio in the voices directory."""
@@ -173,14 +200,11 @@ class QwenTextToSpeech:
         optimizer = NaturalOptimizer()
         text = optimizer.optimize(text)
 
-        # TODO: Segmentation disabled for testing
-        # segments = [
-        #     s.strip() for s in re.split(r"(?<=[\.\!\?\:\;])\s+", text) if s.strip()
-        # ]
+        # Splitting removed as requested
         segments = [text.strip()]
-        logger.info(f"📝 Using entire text as 1 segment (segmentation disabled)")
+        logger.info("📝 Using entire text (splitting disabled)")
 
-        model = self.get_model()
+        model = self.get_model(mode=params.mode)
         audio_segments = []
         current_sr = self._sr
 
@@ -225,9 +249,21 @@ class QwenTextToSpeech:
             )
 
             try:
+                if params.mode == "voice_design":
+                    wavs, sr = model.generate_voice_design(
+                        text=segment,
+                        language=session_language,
+                        instruct=params.instruct or "",
+                    )
+                elif params.mode == "custom_voice":
+                    wavs, sr = model.generate_custom_voice(
+                        text=segment,
+                        language=session_language,
+                        speaker=params.speaker or "Sonia",
+                        instruct=params.instruct,
+                    )
                 # IMPORTANT: ref_audio must be a tuple (audio_data_numpy, sample_rate)
-                # and NOT a string path.
-                if ref_audio_tuple:
+                elif ref_audio_tuple:
                     if params.ref_text:
                         wavs, sr = model.generate_voice_clone(
                             text=segment,
@@ -243,7 +279,7 @@ class QwenTextToSpeech:
                             x_vector_only_mode=True,
                         )
                 else:
-                    # Last resort fallback (unlikely to work without prompt/ref)
+                    # Last resort fallback
                     wavs, sr = model.generate_voice_clone(
                         text=segment,
                         language=session_language,

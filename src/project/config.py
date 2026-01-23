@@ -13,6 +13,8 @@ class ProjectSettings(BaseSettings):
 
     # TTS Settings
     MODEL_NAME: str = "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    DOWNLOAD_MODELS: str = "Qwen/Qwen3-TTS-12Hz-1.7B-Base,Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign,Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
+    MODELS_DIR: str = "models"
     VOICES_DIR: str = "voices"
     OUTPUT_DIR: str = "output"
     DEFAULT_LANGUAGE: str = "de"

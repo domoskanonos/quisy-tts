@@ -22,6 +22,9 @@ class GenerateRequest(BaseModel):
     language_id: str | None = "de"
     reference_audio: str | None = None
     ref_text: str | None = None
+    mode: str = "base"
+    instruct: str | None = None
+    speaker: str | None = None
 
 
 @app.on_event("startup")
@@ -46,6 +49,9 @@ async def generate_audio(request: GenerateRequest, background_tasks: BackgroundT
             language_id=request.language_id or settings.DEFAULT_LANGUAGE,
             reference_audio=request.reference_audio,
             ref_text=request.ref_text,
+            mode=request.mode,
+            instruct=request.instruct,
+            speaker=request.speaker,
         )
 
         result_path = tts_engine.generate_and_save(request.text, output_path, params)
