@@ -1,5 +1,6 @@
 """Qwen3-TTS engine implementation."""
 
+import hashlib
 from collections.abc import Generator
 from functools import lru_cache
 from pathlib import Path
@@ -32,6 +33,8 @@ class QwenTextToSpeech(TTSEngine):
     def __init__(self) -> None:
         """Initialize the Qwen Text-to-Speech engine."""
         self.settings = ProjectConfig.get_settings()
+        # Cache for voice clone prompts (keyed by ref_audio + ref_text hash)
+        self._voice_prompts: dict[str, object] = {}
 
     def generate_audio(
         self, text: str, params: TTSParams = None
@@ -74,12 +77,13 @@ class QwenTextToSpeech(TTSEngine):
                 )
             else:  # base / voice cloning
                 xvec = params.ref_text is None or params.ref_text == ""
+                voice_prompt = self._get_or_create_voice_prompt(
+                    model, ref_audio_data, params.ref_text, xvec
+                )
                 audio_list, sr = model.generate_voice_clone(
                     text,
                     language=params.resolved_language,
-                    ref_audio=ref_audio_data,
-                    ref_text=params.ref_text,
-                    x_vector_only_mode=xvec,
+                    voice_clone_prompt=voice_prompt,
                     **gen_kwargs,
                 )
 
@@ -173,3 +177,49 @@ class QwenTextToSpeech(TTSEngine):
 
         logger.warning(f"Reference audio not found: {ref_path}")
         return None
+
+    def _get_or_create_voice_prompt(
+        self,
+        model: object,
+        ref_audio: tuple | None,
+        ref_text: str | None,
+        x_vector_only: bool,
+    ) -> object:
+        """Get cached voice clone prompt or create a new one.
+
+        Uses Qwen3-TTS's create_voice_clone_prompt() to avoid recomputing
+        speaker embeddings on every generation call.
+
+        Args:
+            model: The Qwen3TTSModel instance.
+            ref_audio: Tuple of (audio_data, sample_rate) or None.
+            ref_text: Transcript of reference audio.
+            x_vector_only: Whether to use x-vector only mode.
+
+        Returns:
+            Cached or newly created voice clone prompt.
+        """
+        if ref_audio is None:
+            return None
+
+        # Create a cache key based on ref_audio identity and ref_text
+        audio_data, sr = ref_audio
+        audio_hash = hashlib.md5(audio_data.tobytes()[:4096]).hexdigest()[:8]
+        cache_key = f"{audio_hash}:{ref_text or ''}:{x_vector_only}"
+
+        if cache_key in self._voice_prompts:
+            logger.info(f"Using cached voice prompt: {cache_key[:16]}...")
+            return self._voice_prompts[cache_key]
+
+        logger.info(f"Creating new voice prompt: {cache_key[:16]}...")
+        try:
+            prompt = model.create_voice_clone_prompt(
+                ref_audio=ref_audio,
+                ref_text=ref_text,
+                x_vector_only_mode=x_vector_only,
+            )
+            self._voice_prompts[cache_key] = prompt
+            return prompt
+        except Exception as e:
+            logger.warning(f"Failed to create voice prompt, falling back: {e}")
+            return None
