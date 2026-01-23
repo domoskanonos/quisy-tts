@@ -1,0 +1,17 @@
+{
+    "recommendations": [
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "github.vscode-github-actions",
+        "ms-python.python",
+        "ms-python.debugpy",
+        "ms-python.vscode-pylance",
+        "ms-python.vscode-python-envs",
+        "charliermarsh.ruff",
+        "ms-vscode.vscode-json",
+        "yy0931.vscode-sqlite3-editor",
+        "tamasfe.even-better-toml",
+        "angular.ng-template",
+        "ms-vscode.powershell"
+    ]
+}

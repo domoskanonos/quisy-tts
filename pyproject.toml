@@ -1,0 +1,95 @@
+[project]
+name = "domoskanonos-python-starter"
+version = "0.4.3"
+description = "python project starter template"
+authors = [{ name = "Dominik Bruhn", email = "dominikbruhn@googlemail.com" }]
+license = { text = "MIT" }
+requires-python = ">=3.12"
+dependencies = [
+    "python-dotenv>=1.1.1",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=0.23.0",
+    "pydantic-settings>=2.12.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/project"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.13.1",
+    "pip>=23.0.1",
+    "pyinstaller>=6.0.0",
+    "pre-commit>=3.5.0",
+    "mypy>=1.19.1",
+    "python-semantic-release>=10.5.3",
+]
+
+[tool.ruff]
+# Ziel-Version
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+# Aktiviere Standard-Regeln (E, F) + Isort (I) + Common Bug-Finder (B)
+# ANN: Type Annotations
+# SIM: Code Simplification
+# ARG: Unused arguments
+# PTH: Use pathlib
+# D: Docstrings
+# ERA: Eradicate (commented out code)
+# PL: Pylint rules
+# TID: Tidy imports (absolute imports)
+select = ["E", "F", "I", "B", "UP", "N", "SIM", "ARG", "PTH", "ANN", "D", "ERA", "PL", "TID"]
+ignore = [
+    "D100", # Missing docstring in public module
+    "D104", # Missing docstring in public package
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+# Sortiert Importe in Gruppen (Standard, Third-Party, Local)
+known-first-party = ["project"]
+combine-as-imports = true
+force-single-line = false
+lines-after-imports = 2
+
+[tool.ruff.lint.flake8-tidy-imports]
+# Erzwinge absolute Importe
+ban-relative-imports = "all"
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/**/*.py" = ["D103"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+ignore_missing_imports = true
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+branches.main = { match = "main" }
+build_command = "python -m pip install uv && uv build"
