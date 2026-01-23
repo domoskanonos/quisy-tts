@@ -31,7 +31,7 @@ class QwenTextToSpeech:
         # 1. Log Generation
         logger.info(
             f"Starting audio generation | Mode: {params.mode} | "
-            f"Text Length: {len(text)} | Language: {params.language_id}"
+            f"Text Length: {len(text)} | Language: {params.language}"
         )
 
         # 2. Get Model

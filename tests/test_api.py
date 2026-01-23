@@ -1,17 +1,24 @@
-"""Comprehensive test suite for Cosmo TTS API."""
+"""Comprehensive test suite for Cosmo TTS API with restructured endpoints."""
 
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from starlette import status
 
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from project.schemas import LANGUAGE_MAP, GenerateRequest, TTSParams
+from project.schemas import (
+    LANGUAGE_MAP,
+    BaseGenerateRequest,
+    CustomVoiceRequest,
+    TTSParams,
+    VoiceDesignRequest,
+    resolve_language,
+)
 
 
 class TestLanguageMapping:
@@ -19,27 +26,23 @@ class TestLanguageMapping:
 
     def test_short_code_to_full_name(self) -> None:
         """Test that short codes are correctly resolved to full names."""
-        params = TTSParams(language_id="de")
-        assert params.resolved_language == "german"
+        assert resolve_language("de") == "german"
 
     def test_english_mapping(self) -> None:
         """Test English language mapping."""
-        params = TTSParams(language_id="en")
-        assert params.resolved_language == "english"
+        assert resolve_language("en") == "english"
 
     def test_full_name_passthrough(self) -> None:
         """Test that full names pass through unchanged."""
-        params = TTSParams(language_id="german")
-        assert params.resolved_language == "german"
+        assert resolve_language("german") == "german"
 
     def test_unknown_code_passthrough(self) -> None:
         """Test that unknown codes pass through unchanged."""
-        params = TTSParams(language_id="unknown")
-        assert params.resolved_language == "unknown"
+        assert resolve_language("unknown") == "unknown"
 
     def test_all_supported_languages(self) -> None:
         """Test all supported language mappings."""
-        expected_mappings = {
+        expected = {
             "de": "german",
             "en": "english",
             "fr": "french",
@@ -52,37 +55,67 @@ class TestLanguageMapping:
             "zh": "chinese",
             "auto": "auto",
         }
-        for code, full_name in expected_mappings.items():
-            params = TTSParams(language_id=code)
-            assert params.resolved_language == full_name, f"Failed for {code}"
+        for code, full_name in expected.items():
+            assert resolve_language(code) == full_name
 
 
-class TestGenerateRequest:
-    """Tests for the GenerateRequest model."""
+class TestBaseGenerateRequest:
+    """Tests for the BaseGenerateRequest schema."""
 
     def test_minimal_request(self) -> None:
         """Test creating a request with only required fields."""
-        request = GenerateRequest(text="Hello world")
+        request = BaseGenerateRequest(text="Hello world")
         assert request.text == "Hello world"
-        assert request.stream is False
-        assert request.mode == "base"
+        assert request.language == "german"
+        assert request.reference_audio is None
 
     def test_full_request(self) -> None:
         """Test creating a request with all fields."""
-        request = GenerateRequest(
+        request = BaseGenerateRequest(
             text="Test text",
-            language_id="de",
-            mode="voice_design",
-            instruct="a calm narrator",
-            model_size="0.6B",
-            stream=True,
+            language="english",
+            reference_audio="test.wav",
+            ref_text="Test transcript",
         )
         assert request.text == "Test text"
-        assert request.language_id == "de"
-        assert request.mode == "voice_design"
+        assert request.language == "english"
+        assert request.reference_audio == "test.wav"
+
+
+class TestVoiceDesignRequest:
+    """Tests for the VoiceDesignRequest schema."""
+
+    def test_minimal_request(self) -> None:
+        """Test creating a request with required fields."""
+        request = VoiceDesignRequest(text="Hello", instruct="a calm narrator")
+        assert request.text == "Hello"
         assert request.instruct == "a calm narrator"
-        assert request.model_size == "0.6B"
-        assert request.stream is True
+        assert request.language == "english"
+
+    def test_custom_language(self) -> None:
+        """Test with custom language."""
+        request = VoiceDesignRequest(
+            text="Hallo", instruct="ein ruhiger Erzähler", language="german"
+        )
+        assert request.language == "german"
+
+
+class TestCustomVoiceRequest:
+    """Tests for the CustomVoiceRequest schema."""
+
+    def test_minimal_request(self) -> None:
+        """Test creating a request with required fields."""
+        request = CustomVoiceRequest(text="Hello", speaker="eric")
+        assert request.text == "Hello"
+        assert request.speaker == "eric"
+        assert request.language == "german"
+
+    def test_with_instruct(self) -> None:
+        """Test with optional instruct field."""
+        request = CustomVoiceRequest(
+            text="Hello", speaker="eric", instruct="speak slowly"
+        )
+        assert request.instruct == "speak slowly"
 
 
 class TestTTSParams:
@@ -91,23 +124,14 @@ class TestTTSParams:
     def test_default_values(self) -> None:
         """Test default TTSParams values."""
         params = TTSParams()
-        assert params.language_id == "german"
+        assert params.language == "german"
         assert params.mode == "base"
-        assert params.speed == 1.0
-        assert params.reference_audio is None
+        assert params.model_size == "1.7B"
 
-    def test_custom_values(self) -> None:
-        """Test TTSParams with custom values."""
-        params = TTSParams(
-            language_id="en",
-            mode="custom_voice",
-            speaker="eric",
-            model_size="1.7B",
-        )
-        assert params.language_id == "en"
-        assert params.resolved_language == "english"
-        assert params.mode == "custom_voice"
-        assert params.speaker == "eric"
+    def test_resolved_language(self) -> None:
+        """Test language resolution."""
+        params = TTSParams(language="de")
+        assert params.resolved_language == "german"
 
 
 class TestAPIEndpoints:
@@ -123,49 +147,41 @@ class TestAPIEndpoints:
     def test_root_endpoint(self, client: TestClient) -> None:
         """Test the root endpoint returns status."""
         response = client.get("/")
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert "message" in data
-        assert "Cosmo TTS API is running" in data["message"]
+        assert "available_endpoints" in data
 
     def test_openapi_endpoint(self, client: TestClient) -> None:
         """Test the OpenAPI schema endpoint."""
         response = client.get("/openapi.json")
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert "openapi" in data
-        assert "paths" in data
-        assert "/generate" in data["paths"]
+        assert "/generate/base/0.6b" in data["paths"]
+        assert "/generate/base/1.7b" in data["paths"]
+        assert "/generate/voice-design/1.7b" in data["paths"]
+        assert "/generate/custom-voice/0.6b" in data["paths"]
+        assert "/generate/custom-voice/1.7b" in data["paths"]
 
     def test_docs_endpoint(self, client: TestClient) -> None:
         """Test the Swagger UI endpoint is accessible."""
         response = client.get("/docs")
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK
 
-    def test_generate_endpoint_validation(self, client: TestClient) -> None:
+    def test_base_endpoint_validation(self, client: TestClient) -> None:
         """Test that missing 'text' field returns validation error."""
-        response = client.post("/generate", json={})
-        assert response.status_code == 422  # Validation error
+        response = client.post("/generate/base/0.6b", json={})
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    @patch("project.main.tts_engine")
-    def test_generate_endpoint_with_mock(
-        self, mock_engine: MagicMock, client: TestClient
-    ) -> None:
-        """Test /generate endpoint with mocked TTS engine."""
-        # Setup mock
-        mock_engine.generate_and_save.return_value = None
+    def test_voice_design_endpoint_validation(self, client: TestClient) -> None:
+        """Test that missing required fields returns validation error."""
+        response = client.post("/generate/voice-design/1.7b", json={"text": "Hello"})
+        # Missing 'instruct' field
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-        response = client.post(
-            "/generate",
-            json={
-                "text": "Test audio generation",
-                "language_id": "de",
-                "mode": "base",
-            },
-        )
-        # Will return 500 because mock returns None (no file created)
-        # But this tests the request handling works
-        assert response.status_code in [200, 500]
+    def test_custom_voice_endpoint_validation(self, client: TestClient) -> None:
+        """Test that missing 'speaker' field returns validation error."""
+        response = client.post("/generate/custom-voice/0.6b", json={"text": "Hello"})
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 class TestLanguageMapConstant:
@@ -179,5 +195,5 @@ class TestLanguageMapConstant:
 
     def test_language_map_values_are_lowercase(self) -> None:
         """Test that all language names are lowercase."""
-        for code, name in LANGUAGE_MAP.items():
-            assert name.islower(), f"Language name '{name}' should be lowercase"
+        for name in LANGUAGE_MAP.values():
+            assert name.islower()

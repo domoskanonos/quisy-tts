@@ -1,3 +1,5 @@
+"""Request and response schemas for Cosmo TTS API."""
+
 from pydantic import BaseModel, Field
 
 
@@ -17,65 +19,110 @@ LANGUAGE_MAP: dict[str, str] = {
 }
 
 
-class TTSParams(BaseModel):
-    """Parameters for TTS generation."""
-
-    language_id: str = "german"
-    reference_audio: str | None = None
-    ref_text: str | None = None
-    speed: float = 1.0
-    mode: str = "base"  # "base", "voice_design", "custom_voice"
-    instruct: str | None = None
-    speaker: str | None = None
-    model_size: str | None = None  # Override default "1.7B" or "0.6B"
-
-    @property
-    def resolved_language(self) -> str:
-        """Returns the full language name, resolving short codes if needed."""
-        return LANGUAGE_MAP.get(self.language_id, self.language_id)
+def resolve_language(lang: str) -> str:
+    """Resolves a language code to the full name expected by Qwen TTS."""
+    return LANGUAGE_MAP.get(lang, lang)
 
 
-class GenerateRequest(BaseModel):
-    """API request model for audio generation."""
+# =============================================================================
+# Base Mode Schemas (Voice Cloning)
+# =============================================================================
+
+
+class BaseGenerateRequest(BaseModel):
+    """Request for base mode (voice cloning) generation."""
 
     text: str = Field(
         ...,
         description="The text to convert to speech.",
-        json_schema_extra={"example": "Hallo, das ist ein Test der Sprachausgabe."},
+        json_schema_extra={"example": "Hallo, das ist ein Test."},
     )
-    language_id: str | None = Field(
-        default=None,
-        description="Language code (e.g., 'de', 'en'). Defaults to server config.",
-        json_schema_extra={"example": "de"},
+    language: str = Field(
+        default="german",
+        description="Language: 'german', 'english', 'french', etc. or short codes 'de', 'en'.",
+        json_schema_extra={"example": "german"},
     )
     reference_audio: str | None = Field(
         default=None,
-        description="Filename of a reference voice in the voices/ directory.",
+        description="Filename of reference voice in voices/ directory. Uses default if not provided.",
     )
     ref_text: str | None = Field(
         default=None,
-        description="Transcript of the reference audio for better cloning.",
+        description="Transcript of reference audio for improved cloning quality.",
     )
-    mode: str | None = Field(
-        default="base",
-        description="Generation mode: 'base', 'voice_design', or 'custom_voice'.",
-        json_schema_extra={"example": "base"},
+
+
+# =============================================================================
+# Voice Design Mode Schemas
+# =============================================================================
+
+
+class VoiceDesignRequest(BaseModel):
+    """Request for voice design mode (1.7B only)."""
+
+    text: str = Field(
+        ...,
+        description="The text to convert to speech.",
+        json_schema_extra={"example": "Hello, this is a designed voice."},
+    )
+    language: str = Field(
+        default="english",
+        description="Language: 'german', 'english', 'french', etc.",
+        json_schema_extra={"example": "english"},
+    )
+    instruct: str = Field(
+        ...,
+        description="Natural language voice description.",
+        json_schema_extra={"example": "a calm, professional female narrator"},
+    )
+
+
+# =============================================================================
+# Custom Voice Mode Schemas
+# =============================================================================
+
+
+class CustomVoiceRequest(BaseModel):
+    """Request for custom voice mode with predefined speaker IDs."""
+
+    text: str = Field(
+        ...,
+        description="The text to convert to speech.",
+        json_schema_extra={"example": "Dies ist ein Test mit Eric."},
+    )
+    language: str = Field(
+        default="german",
+        description="Language: 'german', 'english', 'french', etc.",
+        json_schema_extra={"example": "german"},
+    )
+    speaker: str = Field(
+        ...,
+        description="Predefined speaker ID (e.g., 'eric', 'Chelsie').",
+        json_schema_extra={"example": "eric"},
     )
     instruct: str | None = Field(
         default=None,
-        description="For 'voice_design' mode: natural language voice description.",
-        json_schema_extra={"example": "a calm, professional narrator"},
+        description="Optional style instruction for the speaker.",
     )
-    speaker: str | None = Field(
-        default=None,
-        description="For 'custom_voice' mode: a predefined speaker ID.",
-    )
-    model_size: str | None = Field(
-        default=None,
-        description="Model variant: '1.7B' or '0.6B'. Defaults to server config.",
-        json_schema_extra={"example": "0.6B"},
-    )
-    stream: bool = Field(
-        default=False,
-        description="If true, returns raw PCM audio chunks. Not playable in Swagger.",
-    )
+
+
+# =============================================================================
+# Internal TTS Parameters (used by engine)
+# =============================================================================
+
+
+class TTSParams(BaseModel):
+    """Internal parameters for TTS generation."""
+
+    language: str = "german"
+    reference_audio: str | None = None
+    ref_text: str | None = None
+    mode: str = "base"
+    instruct: str | None = None
+    speaker: str | None = None
+    model_size: str = "1.7B"
+
+    @property
+    def resolved_language(self) -> str:
+        """Returns the full language name, resolving short codes if needed."""
+        return resolve_language(self.language)
