@@ -8,8 +8,14 @@ class ProjectSettings(BaseSettings):
 
     # Example settings with default values
     # These can be overridden by environment variables (e.g. PROJECT_NAME)
-    PROJECT_NAME: str = "python-starter"
+    PROJECT_NAME: str = "cosmo-tts"
     LOG_LEVEL: str = "INFO"
+
+    # TTS Settings
+    MODEL_NAME: str = "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    VOICES_DIR: str = "voices"
+    OUTPUT_DIR: str = "output"
+    DEFAULT_LANGUAGE: str = "de"
 
     # Configuration for Pydantic
     model_config = SettingsConfigDict(

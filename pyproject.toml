@@ -10,6 +10,11 @@ dependencies = [
     "pytest>=8.4.2",
     "pytest-asyncio>=0.23.0",
     "pydantic-settings>=2.12.0",
+    "sox>=1.0.5",
+    "qwen-tts>=0.0.5",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "python-multipart>=0.0.9",
 ]
 
 [build-system]
@@ -44,7 +49,22 @@ line-length = 88
 # ERA: Eradicate (commented out code)
 # PL: Pylint rules
 # TID: Tidy imports (absolute imports)
-select = ["E", "F", "I", "B", "UP", "N", "SIM", "ARG", "PTH", "ANN", "D", "ERA", "PL", "TID"]
+select = [
+    "E",
+    "F",
+    "I",
+    "B",
+    "UP",
+    "N",
+    "SIM",
+    "ARG",
+    "PTH",
+    "ANN",
+    "D",
+    "ERA",
+    "PL",
+    "TID",
+]
 ignore = [
     "D100", # Missing docstring in public module
     "D104", # Missing docstring in public package
