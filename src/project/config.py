@@ -16,7 +16,6 @@ class ProjectSettings(BaseSettings):
     PORT: int = 8000
 
     # TTS Settings
-    DEFAULT_MODEL_SIZE: str = "1.7B"  # "1.7B" or "0.6B"
     DOWNLOAD_MODELS: str = (
         "Qwen/Qwen3-TTS-12Hz-1.7B-Base,"
         "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign,"
