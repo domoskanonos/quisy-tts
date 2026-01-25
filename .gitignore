@@ -1,6 +1,7 @@
-models
+/models
+/output
 .venv
-output
+.env
 __pycache__
 .log
 .mypy_cache
