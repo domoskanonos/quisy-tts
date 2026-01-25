@@ -77,8 +77,11 @@ select = [
     "TID",
 ]
 ignore = [
-    "D100", # Missing docstring in public module
-    "D104", # Missing docstring in public package
+    "D100",   # Missing docstring in public module
+    "D104",   # Missing docstring in public package
+    "ANN401", # Dynamically typed expressions (typing.Any) are disallowed
+    "ERA001", # Found commented-out code
+    "B008",   # Do not perform function call `Depends` in argument defaults (FastAPI)
 ]
 
 [tool.ruff.lint.pydocstyle]
@@ -98,6 +101,10 @@ ban-relative-imports = "all"
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/**/*.py" = ["D103"]
+"scripts/**/*.py" = [
+    "D103",
+    "PLR0915",
+] # Scripts don't need docstrings, allow many statements
 
 [tool.mypy]
 python_version = "3.12"

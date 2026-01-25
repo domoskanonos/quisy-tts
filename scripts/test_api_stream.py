@@ -25,9 +25,11 @@ def test_stream() -> None:
     payload = {
         "text": (
             "Dies ist ein deutlich längerer Text, um das Streaming besser zu testen. "
-            "Wir wollen überprüfen, ob die Latenz stabil bleibt und die Audioqualität konstant ist. "
-            "Durch die längere Generierung können wir die Antwortzeiten und den Puffer "
-            "besser analysieren. Ich hoffe, das Ergebnis entspricht nun den Erwartungen."
+            "Wir wollen überprüfen, ob die Latenz stabil bleibt und die "
+            "Audioqualität konstant ist. "
+            "Durch die längere Generierung können wir die Antwortzeiten und den "
+            "Puffer besser analysieren. Ich hoffe, das Ergebnis entspricht nun den "
+            "Erwartungen."
         ),
         "language": "German",
     }
@@ -109,7 +111,9 @@ def test_stream() -> None:
                 if len(chunk_timestamps) > 1:
                     deltas = [
                         t2 - t1
-                        for t1, t2 in zip(chunk_timestamps[:-1], chunk_timestamps[1:])
+                        for t1, t2 in zip(
+                            chunk_timestamps[:-1], chunk_timestamps[1:], strict=True
+                        )
                     ]
                     avg_delta = sum(deltas) / len(deltas)
                 else:

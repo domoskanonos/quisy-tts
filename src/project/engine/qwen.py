@@ -118,7 +118,8 @@ class QwenTextToSpeech(TTSEngine):
 
             final_audio = torch.from_numpy(audio_list[0]).unsqueeze(0)
             logger.info(
-                f"Audio generation successful. Shape: {final_audio.shape}. Total time: {time.time() - total_start_time:.4f}s"
+                f"Audio generation successful. Shape: {final_audio.shape}. "
+                f"Total time: {time.time() - total_start_time:.4f}s"
             )
 
             return final_audio, sr

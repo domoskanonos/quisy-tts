@@ -3,3 +3,5 @@ models
 output
 __pycache__
 .log
+.mypy_cache
+.ruff_cache
