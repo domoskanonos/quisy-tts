@@ -22,9 +22,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     for route in app.routes:
         if hasattr(route, "methods"):
             methods = ", ".join(route.methods)
-            logger.info(f" -> {methods} {route.path}")
+            path = getattr(route, "path", str(route))
+            logger.info(f" -> {methods} {path}")
         else:
-            logger.info(f" -> {route.path}")
+            path = getattr(route, "path", str(route))
+            logger.info(f" -> {path}")
 
     # Ensure directories exist
     settings.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

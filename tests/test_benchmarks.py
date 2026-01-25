@@ -13,6 +13,7 @@ import sys
 import time
 import tracemalloc
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -87,7 +88,7 @@ LONG_TEXT = (
 
 
 def test_benchmark_engine_init(
-    benchmark: "pytest.benchmark.fixture.BenchmarkFixture",
+    benchmark: Any,
 ) -> None:
     """Benchmark TTS engine initialization time."""
     """Benchmark TTS engine initialization time."""
@@ -105,7 +106,7 @@ def test_benchmark_engine_init(
 
 
 def test_benchmark_generate_short_text(
-    benchmark: "pytest.benchmark.fixture.BenchmarkFixture",
+    benchmark: Any,
     tts_engine: QwenTextToSpeech,
     mock_model: MagicMock,
 ) -> None:
@@ -120,7 +121,7 @@ def test_benchmark_generate_short_text(
 
 
 def test_benchmark_generate_medium_text(
-    benchmark: "pytest.benchmark.fixture.BenchmarkFixture",
+    benchmark: Any,
     tts_engine: QwenTextToSpeech,
     mock_model: MagicMock,
 ) -> None:
@@ -134,7 +135,7 @@ def test_benchmark_generate_medium_text(
 
 
 def test_benchmark_generate_long_text(
-    benchmark: "pytest.benchmark.fixture.BenchmarkFixture",
+    benchmark: Any,
     tts_engine: QwenTextToSpeech,
     mock_model: MagicMock,
 ) -> None:
@@ -153,7 +154,7 @@ def test_benchmark_generate_long_text(
 
 
 def test_benchmark_voice_prompt_cache_hit(
-    benchmark: "pytest.benchmark.fixture.BenchmarkFixture",
+    benchmark: Any,
     tts_engine: QwenTextToSpeech,
     mock_model: MagicMock,
 ) -> None:
@@ -205,7 +206,7 @@ def test_memory_baseline() -> None:
 
 
 def test_benchmark_language_resolution(
-    benchmark: "pytest.benchmark.fixture.BenchmarkFixture",
+    benchmark: Any,
 ) -> None:
     """Benchmark language code resolution."""
     result = benchmark(resolve_language, "de")
@@ -213,7 +214,7 @@ def test_benchmark_language_resolution(
 
 
 def test_benchmark_ttsparams_creation(
-    benchmark: "pytest.benchmark.fixture.BenchmarkFixture",
+    benchmark: Any,
 ) -> None:
     """Benchmark TTSParams creation."""
 
