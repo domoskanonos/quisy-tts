@@ -56,7 +56,6 @@ This project requires **Sox** for high-quality audio normalization.
    Create a `.env` file (copied from the example in the docs or starting from scratch):
    ```bash
    LOG_LEVEL=INFO
-   DEFAULT_MODEL_SIZE=0.6B
    DEVICE=cuda
    HOST=0.0.0.0
    PORT=8000
@@ -72,6 +71,22 @@ This project requires **Sox** for high-quality audio normalization.
    uv run python src/project/main.py
    ```
 
+5. **Docker Usage**:
+   We provide a pre-built Docker image.
+
+   **Pull:**
+   ```bash
+   docker pull domoskanonos/cosmo-tts:latest
+   ```
+
+   **Run (GPU Recommended):**
+   ```bash
+   docker run -d --gpus all -p 8000:8000 --name cosmo-tts \
+     -v ${PWD}/models:/app/models \
+     -v ${PWD}/output:/app/output \
+     domoskanonos/cosmo-tts:latest
+   ```
+
 ---
 
 ## ⚙️ Configuration
@@ -85,7 +100,6 @@ All settings are managed via Pydantic and can be overridden by environment varia
 | `DEVICE` | Computation device (`cuda` or `cpu`) | `cuda` |
 | `HOST` | API listening host | `0.0.0.0` |
 | `PORT` | API listening port | `8000` |
-| `DEFAULT_MODEL_SIZE` | Default model variant (`1.7B` or `0.6B`) | `1.7B` |
 | `MODELS_DIR` | Directory to store model checkpoints | `models` |
 | `VOICES_DIR` | Directory for reference audio files | `voices` |
 | `OUTPUT_DIR` | Directory for generated audio files | `output` |
@@ -94,16 +108,24 @@ All settings are managed via Pydantic and can be overridden by environment varia
 
 ## 🔌 API Endpoints
 
-### `POST /generate`
-Generates audio from text. Supports both file transfer and streaming.
-- **Payload**: `GenerateRequest` (JSON)
-- **Streaming**: Set `"stream": true` to receive chunked raw PCM data (int16).
+### Base Mode (Voice Cloning)
+- `POST /generate/base/0.6b` / `1.7b`
+- `POST /generate/base/stream/0.6b` / `1.7b`
 
-### `WS /ws`
-Real-time WebSocket endpoint. Send JSON payloads and receive binary audio chunks.
+### Voice Design (Text-to-Speech with Instruction)
+- `POST /generate/voice-design/1.7b` (0.6B not supported)
+- `POST /generate/voice-design/stream/1.7b`
 
-### `GET /status`
-Check the health and configuration of the API.
+### Custom Voice (Predefined Speakers)
+- `POST /generate/custom-voice/0.6b` / `1.7b`
+- `POST /generate/custom-voice/stream/0.6b` / `1.7b`
+
+### WebSocket
+Real-time streaming endpoint:
+- `WS /ws/0.6b` or `/ws/1.7b`
+
+### Health
+- `GET /status`
 
 ---
 
