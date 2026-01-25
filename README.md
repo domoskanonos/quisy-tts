@@ -14,7 +14,7 @@ Cosmo TTS is a modern, high-performance Text-to-Speech API powered by **Qwen3-TT
   - **Base (Voice Cloning)**: Clone any voice with just a short reference audio.
   - **VoiceDesign**: Generate voices based on natural language instructions (e.g., "an excited reporter").
   - **CustomVoice**: High-quality generation using pre-defined speaker IDs.
-- **Streaming Support**: 
+- **Streaming Support**:
   - **HTTP Chunked**: Receive audio data as a stream for immediate playback.
   - **WebSocket**: Full-duplex real-time TTS generation.
 - **Optimized for GPU**: Native CUDA support with automatic fallback to CPU.
