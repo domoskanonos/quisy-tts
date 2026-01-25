@@ -10,16 +10,16 @@ from project.config import ProjectConfig
 from project.models.manager import ModelManager
 
 
-def test_device_validation():
+def test_device_validation() -> None:
     logger = ProjectConfig.get_logger()
     logger.info("=== Testing Device Validation ===")
 
     # Mock settings to force CUDA
-    with patch("project.models.manager.ProjectConfig") as MockConfig:
+    with patch("project.models.manager.ProjectConfig") as mock_config:
         mock_settings = MagicMock()
         mock_settings.DEVICE = "cuda"
-        MockConfig.get_settings.return_value = mock_settings
-        MockConfig.get_logger.return_value = logger
+        mock_config.get_settings.return_value = mock_settings
+        mock_config.get_logger.return_value = logger
 
         # Mock torch.cuda.is_available to return False
         with patch("torch.cuda.is_available", return_value=False):

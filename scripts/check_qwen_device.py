@@ -12,7 +12,7 @@ from project.config import ProjectConfig
 from project.models.manager import ModelManager
 
 
-def check_device():
+def check_device() -> None:
     settings = ProjectConfig.get_settings()
     print(f"Configured DEVICE: {settings.DEVICE}")
     print(f"CUDA Available: {torch.cuda.is_available()}")

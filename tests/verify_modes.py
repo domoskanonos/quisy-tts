@@ -22,7 +22,7 @@ def test_modes() -> None:
         # 1. Base Mode
         logger.info(f"--- Testing Base Mode ({size}) ---")
         output_base = settings.OUTPUT_DIR / f"test_base_{size}.wav"
-        params_base = TTSParams(mode="base", model_size=size, language_id="german")
+        params_base = TTSParams(mode="base", model_size=size, language="german")
         tts.generate_and_save(
             "This is a test of voice cloning.", str(output_base), params_base
         )
@@ -35,7 +35,7 @@ def test_modes() -> None:
                 mode="voice_design",
                 model_size=size,
                 instruct="Generate a friendly voice.",
-                language_id="german",
+                language="german",
             )
             tts.generate_and_save(
                 "Hello, this is a designed voice.", str(output_design), params_design
@@ -47,7 +47,7 @@ def test_modes() -> None:
         logger.info(f"--- Testing CustomVoice Mode ({size}) ---")
         output_custom = settings.OUTPUT_DIR / f"test_custom_{size}.wav"
         params_custom = TTSParams(
-            mode="custom_voice", model_size=size, speaker="eric", language_id="german"
+            mode="custom_voice", model_size=size, speaker="eric", language="german"
         )
         tts.generate_and_save(
             "Dies ist ein Test mit Eric.", str(output_custom), params_custom

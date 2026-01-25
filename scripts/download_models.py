@@ -14,7 +14,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
 from project.config import ProjectConfig
 
 
-def download_model(model_id: str, models_dir: Path):
+def download_model(model_id: str, models_dir: Path) -> None:
     """Downloads a single model from Hugging Face."""
     print(f"Starting download of {model_id}...")
     try:
@@ -27,7 +27,7 @@ def download_model(model_id: str, models_dir: Path):
         print(f"Failed to download {model_id}: {e}")
 
 
-def main():
+def main() -> None:
     """Main downloader loop."""
     settings = ProjectConfig.get_settings()
     models_to_download = [

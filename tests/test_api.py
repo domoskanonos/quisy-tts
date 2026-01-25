@@ -11,6 +11,7 @@ from starlette import status
 # Add src to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from project.api import app
 from project.core import CacheService, CleanupService, TTSEngine
 from project.engine import QwenTextToSpeech
 from project.schemas import (
@@ -120,8 +121,6 @@ class TestAPIEndpoints:
     @pytest.fixture
     def client(self) -> TestClient:
         """Create a test client for the API."""
-        from project.api import app
-
         return TestClient(app)
 
     def test_root_endpoint(self, client: TestClient) -> None:
@@ -188,8 +187,6 @@ class TestInfoEndpoints:
     @pytest.fixture
     def client(self) -> TestClient:
         """Create a test client for the API."""
-        from project.api import app
-
         return TestClient(app)
 
     def test_speakers_endpoint_returns_200(self, client: TestClient) -> None:
@@ -233,8 +230,6 @@ class TestStreamingEndpoints:
     @pytest.fixture
     def client(self) -> TestClient:
         """Create a test client for the API."""
-        from project.api import app
-
         return TestClient(app)
 
     def test_stream_base_06b_in_openapi(self, client: TestClient) -> None:
@@ -267,8 +262,6 @@ class TestWebsocketEndpoint:
     @pytest.fixture
     def client(self) -> TestClient:
         """Create a test client for the API."""
-        from project.api import app
-
         return TestClient(app)
 
     def test_websocket_in_openapi(self, client: TestClient) -> None:
@@ -284,8 +277,6 @@ class TestMethodRestrictions:
     @pytest.fixture
     def client(self) -> TestClient:
         """Create a test client for the API."""
-        from project.api import app
-
         return TestClient(app)
 
     def test_base_get_not_allowed(self, client: TestClient) -> None:

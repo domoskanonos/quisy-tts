@@ -6,6 +6,7 @@ import time
 from collections.abc import Generator
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import soundfile as sf
@@ -51,7 +52,7 @@ class QwenTextToSpeech(TTSEngine):
     }
 
     def generate_audio(
-        self, text: str, params: TTSParams = None
+        self, text: str, params: TTSParams | None = None
     ) -> tuple[torch.Tensor, int]:
         """Generates audio waveform for the given text and parameters."""
         if params is None:
@@ -127,7 +128,7 @@ class QwenTextToSpeech(TTSEngine):
             raise
 
     def generate_and_save(
-        self, text: str, output_path: str, params: TTSParams = None
+        self, text: str, output_path: str, params: TTSParams | None = None
     ) -> str:
         """Generates audio and saves it to a file with post-processing."""
         if params is None:
@@ -154,7 +155,7 @@ class QwenTextToSpeech(TTSEngine):
         return output_path
 
     def generate_audio_stream(
-        self, text: str, params: TTSParams = None, chunk_size: int = 4096
+        self, text: str, params: TTSParams | None = None, chunk_size: int = 4096
     ) -> Generator[bytes, None, None]:
         """Generates audio and yields it in chunks using sentence-level streaming.
 
@@ -235,7 +236,7 @@ class QwenTextToSpeech(TTSEngine):
 
     def _get_or_create_voice_prompt(
         self,
-        model: object,
+        model: Any,
         ref_audio: tuple | None,
         ref_text: str | None,
         x_vector_only: bool,

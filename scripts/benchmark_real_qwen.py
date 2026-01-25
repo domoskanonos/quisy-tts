@@ -10,7 +10,7 @@ from project.engine.qwen import QwenTextToSpeech
 from project.schemas import TTSParams
 
 
-def benchmark():
+def benchmark() -> None:
     print("Initializing Engine...")
     engine = QwenTextToSpeech()
 

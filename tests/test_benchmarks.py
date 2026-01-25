@@ -10,9 +10,12 @@ Run with: uv run pytest tests/test_benchmarks.py -v --benchmark-autosave
 
 import gc
 import sys
+import time
+import tracemalloc
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import numpy as np
 import pytest
 
 
@@ -20,7 +23,9 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from project.config import ProjectConfig
+from project.engine.qwen import QwenTextToSpeech
 from project.schemas import TTSParams
+from project.schemas.languages import resolve_language
 
 
 # =============================================================================
@@ -31,7 +36,7 @@ from project.schemas import TTSParams
 @pytest.fixture(scope="module")
 def mock_model() -> MagicMock:
     """Create a mock TTS model for benchmarking without actual inference."""
-    import numpy as np
+    """Create a mock TTS model for benchmarking without actual inference."""
 
     mock = MagicMock()
     # Simulate audio output (1 second at 24kHz)
@@ -52,10 +57,8 @@ def mock_model() -> MagicMock:
 
 
 @pytest.fixture(scope="module")
-def tts_engine() -> "QwenTextToSpeech":
+def tts_engine() -> QwenTextToSpeech:
     """Get TTS engine instance."""
-    from project.engine.qwen import QwenTextToSpeech
-
     return QwenTextToSpeech()
 
 
@@ -87,7 +90,7 @@ def test_benchmark_engine_init(
     benchmark: "pytest.benchmark.fixture.BenchmarkFixture",
 ) -> None:
     """Benchmark TTS engine initialization time."""
-    from project.engine.qwen import QwenTextToSpeech
+    """Benchmark TTS engine initialization time."""
 
     def init_engine() -> QwenTextToSpeech:
         return QwenTextToSpeech()
@@ -103,7 +106,7 @@ def test_benchmark_engine_init(
 
 def test_benchmark_generate_short_text(
     benchmark: "pytest.benchmark.fixture.BenchmarkFixture",
-    tts_engine: "QwenTextToSpeech",
+    tts_engine: QwenTextToSpeech,
     mock_model: MagicMock,
 ) -> None:
     """Benchmark audio generation for short text."""
@@ -113,12 +116,12 @@ def test_benchmark_generate_short_text(
         result = benchmark(tts_engine.generate_audio, SHORT_TEXT, params)
 
     assert result is not None
-    assert len(result) == 2  # (waveform, sample_rate)
+    assert len(result) == 2  # noqa: PLR2004 (waveform, sample_rate)
 
 
 def test_benchmark_generate_medium_text(
     benchmark: "pytest.benchmark.fixture.BenchmarkFixture",
-    tts_engine: "QwenTextToSpeech",
+    tts_engine: QwenTextToSpeech,
     mock_model: MagicMock,
 ) -> None:
     """Benchmark audio generation for medium text."""
@@ -132,7 +135,7 @@ def test_benchmark_generate_medium_text(
 
 def test_benchmark_generate_long_text(
     benchmark: "pytest.benchmark.fixture.BenchmarkFixture",
-    tts_engine: "QwenTextToSpeech",
+    tts_engine: QwenTextToSpeech,
     mock_model: MagicMock,
 ) -> None:
     """Benchmark audio generation for long text."""
@@ -151,12 +154,10 @@ def test_benchmark_generate_long_text(
 
 def test_benchmark_voice_prompt_cache_hit(
     benchmark: "pytest.benchmark.fixture.BenchmarkFixture",
-    tts_engine: "QwenTextToSpeech",
+    tts_engine: QwenTextToSpeech,
     mock_model: MagicMock,
 ) -> None:
     """Benchmark voice prompt cache hit performance."""
-    import numpy as np
-
     ref_audio = (np.zeros(24000, dtype=np.float32), 24000)
 
     # Prime the cache
@@ -177,13 +178,10 @@ def test_benchmark_voice_prompt_cache_hit(
 def test_memory_baseline() -> None:
     """Establish memory baseline before TTS operations."""
     gc.collect()
-    import tracemalloc
 
     tracemalloc.start()
 
     # Import engine
-    from project.engine.qwen import QwenTextToSpeech
-
     engine = QwenTextToSpeech()
 
     current, peak = tracemalloc.get_traced_memory()
@@ -192,7 +190,8 @@ def test_memory_baseline() -> None:
     # Log memory usage
     logger = ProjectConfig.get_logger()
     logger.info(
-        f"Memory after engine init: current={current / 1024:.2f}KB, peak={peak / 1024:.2f}KB"
+        f"Memory after engine init: "
+        f"current={current / 1024:.2f}KB, peak={peak / 1024:.2f}KB"
     )
 
     assert engine is not None
@@ -209,8 +208,6 @@ def test_benchmark_language_resolution(
     benchmark: "pytest.benchmark.fixture.BenchmarkFixture",
 ) -> None:
     """Benchmark language code resolution."""
-    from project.schemas.languages import resolve_language
-
     result = benchmark(resolve_language, "de")
     assert result == "German"
 
@@ -238,12 +235,10 @@ def test_benchmark_ttsparams_creation(
 
 
 def test_calculate_throughput(
-    tts_engine: "QwenTextToSpeech",
+    tts_engine: QwenTextToSpeech,
     mock_model: MagicMock,
 ) -> None:
     """Calculate characters per second throughput."""
-    import time
-
     params = TTSParams(mode="custom_voice", speaker="eric", language="German")
     text = MEDIUM_TEXT
 
@@ -260,4 +255,4 @@ def test_calculate_throughput(
     logger.info(f"Throughput: {chars_per_second:.2f} chars/sec (mocked)")
 
     # With mocked model, should be very fast
-    assert chars_per_second > 100
+    assert chars_per_second > 100  # noqa: PLR2004
