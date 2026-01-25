@@ -1,4 +1,5 @@
 import subprocess
+import time
 
 import soundfile as sf
 import torch
@@ -28,7 +29,9 @@ class SoxAudioProcessor:
                 "1",
             ]
             logger.info(f"Applying Sox post-processing: {' '.join(command)}")
+            start_time = time.time()
             subprocess.run(command, check=True, capture_output=True)
+            logger.debug(f"Sox processing took {time.time() - start_time:.4f}s")
             return True
         except subprocess.CalledProcessError as e:
             logger.error(f"Sox processing failed: {e.stderr.decode()}")

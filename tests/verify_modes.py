@@ -6,7 +6,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
 
 from project.config import ProjectConfig
-from project.qwen_tts_engine import QwenTextToSpeech, TTSParams
+from project.engine.qwen import QwenTextToSpeech
+from project.schemas import TTSParams
 
 
 def test_modes() -> None:

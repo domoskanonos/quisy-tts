@@ -1,6 +1,7 @@
 """Qwen3-TTS engine implementation."""
 
 import hashlib
+import time
 from collections.abc import Generator
 from functools import lru_cache
 from pathlib import Path
@@ -22,8 +23,10 @@ logger = ProjectConfig.get_logger()
 @lru_cache(maxsize=16)
 def _load_cached_audio(path: str) -> tuple:
     """Load audio file with caching to avoid repeated disk I/O."""
-    logger.info(f"Loading audio file into cache: {path}")
+    start_time = time.time()
+    logger.debug(f"Loading audio file into cache: {path}")
     data, sr = sf.read(path)
+    logger.debug(f"Loaded audio file in {time.time() - start_time:.4f}s")
     return (data, sr)
 
 
@@ -47,6 +50,7 @@ class QwenTextToSpeech(TTSEngine):
             f"Starting audio generation | Mode: {params.mode} | "
             f"Text Length: {len(text)} | Language: {params.language}"
         )
+        total_start_time = time.time()
 
         model = ModelManager.get_model(mode=params.mode, size=params.model_size)
         ref_audio_data = self._get_reference_audio(params)
@@ -59,6 +63,9 @@ class QwenTextToSpeech(TTSEngine):
                 "top_p": 0.9,
                 "max_new_tokens": 2048,  # Limit generation length
             }
+
+            gen_start_time = time.time()
+            logger.debug(f"Calling model generation method for mode: {params.mode}")
 
             if params.mode == "voice_design":
                 audio_list, sr = model.generate_voice_design(
@@ -87,11 +94,15 @@ class QwenTextToSpeech(TTSEngine):
                     **gen_kwargs,
                 )
 
+            logger.debug(f"Model generation took {time.time() - gen_start_time:.4f}s")
+
             if not audio_list:
                 raise ValueError("Model returned empty audio list")
 
             final_audio = torch.from_numpy(audio_list[0]).unsqueeze(0)
-            logger.info(f"Audio generation successful. Shape: {final_audio.shape}")
+            logger.info(
+                f"Audio generation successful. Shape: {final_audio.shape}. Total time: {time.time() - total_start_time:.4f}s"
+            )
 
             return final_audio, sr
 
@@ -212,6 +223,7 @@ class QwenTextToSpeech(TTSEngine):
             return self._voice_prompts[cache_key]
 
         logger.info(f"Creating new voice prompt: {cache_key[:16]}...")
+        start_time = time.time()
         try:
             prompt = model.create_voice_clone_prompt(
                 ref_audio=ref_audio,
@@ -219,6 +231,7 @@ class QwenTextToSpeech(TTSEngine):
                 x_vector_only_mode=x_vector_only,
             )
             self._voice_prompts[cache_key] = prompt
+            logger.debug(f"Voice prompt creation took: {time.time() - start_time:.4f}s")
             return prompt
         except Exception as e:
             logger.warning(f"Failed to create voice prompt, falling back: {e}")
