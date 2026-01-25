@@ -124,6 +124,7 @@ indent-style = "space"
 version_toml = ["pyproject.toml:project.version"]
 branches.main = { match = "main" }
 build_command = "python -m pip install uv && uv build"
+upload_to_pypi = false
 
 [[tool.uv.index]]
 name = "pytorch-cu121"

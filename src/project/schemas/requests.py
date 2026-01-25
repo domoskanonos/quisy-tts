@@ -17,7 +17,10 @@ class BaseGenerateRequest(BaseModel):
         ...,
         description="The text to convert to speech.",
         json_schema_extra={
-            "example": "Ich freu mich Sie kennen zu lernen. Gerne leihe ich ihnen meine Stimme."
+            "example": (
+                "Ich freu mich Sie kennen zu lernen. "
+                "Gerne leihe ich ihnen meine Stimme."
+            )
         },
     )
     language: str = Field(
@@ -52,7 +55,10 @@ class VoiceDesignRequest(BaseModel):
         ...,
         description="The text to convert to speech.",
         json_schema_extra={
-            "example": "Ich freu mich Sie kennen zu lernen. Gerne leihe ich ihnen meine Stimme."
+            "example": (
+                "Ich freu mich Sie kennen zu lernen. "
+                "Gerne leihe ich ihnen meine Stimme."
+            )
         },
     )
     language: str = Field(
@@ -64,7 +70,10 @@ class VoiceDesignRequest(BaseModel):
         ...,
         description="Natural language voice description.",
         json_schema_extra={
-            "example": "Eine tiefe, ruhige männliche Stimme, wie ein professioneller Podcaster."
+            "example": (
+                "Eine tiefe, ruhige männliche Stimme, "
+                "wie ein professioneller Podcaster."
+            )
         },
     )
 
@@ -81,7 +90,10 @@ class CustomVoiceRequest(BaseModel):
         ...,
         description="The text to convert to speech.",
         json_schema_extra={
-            "example": "Ich freu mich Sie kennen zu lernen. Gerne leihe ich ihnen meine Stimme."
+            "example": (
+                "Ich freu mich Sie kennen zu lernen. "
+                "Gerne leihe ich ihnen meine Stimme."
+            )
         },
     )
     language: str = Field(
@@ -98,6 +110,8 @@ class CustomVoiceRequest(BaseModel):
         default=None,
         description="Optional style instruction for the speaker (e.g. 'happy', 'sad').",
         json_schema_extra={
-            "example": "Sprich wie ein professioneller Podcaster mit tiefer, ruhiger Stimme."
+            "example": (
+                "Sprich wie ein professioneller Podcaster mit tiefer, ruhiger Stimme."
+            )
         },
     )

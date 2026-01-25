@@ -32,7 +32,7 @@ class TTSService:
         self.engine = engine
         self.cache = cache
 
-    async def generate_audio(
+    async def generate_audio(  # noqa: PLR0913
         self,
         text: str,
         language: str,
@@ -101,7 +101,7 @@ class TTSService:
 
         return Path(result_path)
 
-    def generate_stream(
+    def generate_stream(  # noqa: PLR0913
         self,
         text: str,
         language: str,

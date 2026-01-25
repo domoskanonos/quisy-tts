@@ -1,6 +1,7 @@
 """File-based cache service implementation."""
 
 import hashlib
+import shutil
 from pathlib import Path
 
 from project.config import ProjectConfig
@@ -41,7 +42,5 @@ class FileCacheService(CacheService):
         """Store audio in cache by copying to cache location."""
         cache_path = self.cache_dir / f"cache_{key}.wav"
         if path != cache_path and path.exists():
-            import shutil
-
             shutil.copy2(path, cache_path)
             logger.info(f"Cached audio with key: {key[:8]}...")
