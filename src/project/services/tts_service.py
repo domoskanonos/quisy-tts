@@ -7,7 +7,8 @@ from pathlib import Path
 
 from project.config import ProjectConfig
 from project.core import AudioGenerationError, CacheService, TTSEngine
-from project.schemas import TTSParams, resolve_language
+from project.schemas import TTSParams
+from project.schemas.languages import resolve_language
 
 
 logger = ProjectConfig.get_logger()

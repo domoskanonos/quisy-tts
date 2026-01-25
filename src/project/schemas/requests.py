@@ -1,41 +1,8 @@
-"""Request and response schemas for Cosmo TTS API."""
+"""Request schemas for Cosmo TTS API."""
 
 from pydantic import BaseModel, Field
 
 from project.config import ProjectSettings
-
-
-# Map short language codes to full names expected by Qwen TTS
-# Official Qwen3-TTS uses capitalized names: Chinese, English, German, etc.
-LANGUAGE_MAP: dict[str, str] = {
-    "de": "German",
-    "en": "English",
-    "fr": "French",
-    "es": "Spanish",
-    "it": "Italian",
-    "pt": "Portuguese",
-    "ru": "Russian",
-    "ja": "Japanese",
-    "ko": "Korean",
-    "zh": "Chinese",
-    "auto": "Auto",
-    # Also support lowercase full names
-    "german": "German",
-    "english": "English",
-    "french": "French",
-    "spanish": "Spanish",
-    "italian": "Italian",
-    "portuguese": "Portuguese",
-    "russian": "Russian",
-    "japanese": "Japanese",
-    "korean": "Korean",
-    "chinese": "Chinese",
-}
-
-
-def resolve_language(lang: str) -> str:
-    """Resolves a language code to the full name expected by Qwen TTS."""
-    return LANGUAGE_MAP.get(lang, lang)
 
 
 # =============================================================================
@@ -134,25 +101,3 @@ class CustomVoiceRequest(BaseModel):
             "example": "Sprich wie ein professioneller Podcaster mit tiefer, ruhiger Stimme."
         },
     )
-
-
-# =============================================================================
-# Internal TTS Parameters (used by engine)
-# =============================================================================
-
-
-class TTSParams(BaseModel):
-    """Internal parameters for TTS generation."""
-
-    language: str = "german"
-    reference_audio: str | None = None
-    ref_text: str | None = None
-    mode: str = "base"
-    instruct: str | None = None
-    speaker: str | None = None
-    model_size: str = "1.7B"
-
-    @property
-    def resolved_language(self) -> str:
-        """Returns the full language name, resolving short codes if needed."""
-        return resolve_language(self.language)

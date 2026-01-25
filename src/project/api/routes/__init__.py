@@ -1,6 +1,6 @@
-"""Routes package."""
+"""API Routes."""
 
-from project.api.routes import base, custom_voice, voice_design, websocket
+from project.api.routes import base, custom_voice, info, voice_design, websocket
 
 
-__all__ = ["base", "voice_design", "custom_voice", "websocket"]
+__all__ = ["base", "custom_voice", "info", "voice_design", "websocket"]
