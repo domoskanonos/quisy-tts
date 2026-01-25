@@ -1,6 +1,7 @@
 """Qwen3-TTS engine implementation."""
 
 import hashlib
+import re
 import time
 from collections.abc import Generator
 from functools import lru_cache
@@ -24,9 +25,11 @@ logger = ProjectConfig.get_logger()
 def _load_cached_audio(path: str) -> tuple:
     """Load audio file with caching to avoid repeated disk I/O."""
     start_time = time.time()
-    logger.debug(f"Loading audio file into cache: {path}")
+    if logger.isEnabledFor(10):
+        logger.debug("Loading audio file into cache: %s", path)
     data, sr = sf.read(path)
-    logger.debug(f"Loaded audio file in {time.time() - start_time:.4f}s")
+    if logger.isEnabledFor(10):
+        logger.debug("Loaded audio file in %.4fs", time.time() - start_time)
     return (data, sr)
 
 
@@ -38,6 +41,14 @@ class QwenTextToSpeech(TTSEngine):
         self.settings = ProjectConfig.get_settings()
         # Cache for voice clone prompts (keyed by ref_audio + ref_text hash)
         self._voice_prompts: dict[str, object] = {}
+
+    # Default generation parameters
+    DEFAULT_GEN_KWARGS = {
+        "do_sample": True,
+        "temperature": 0.7,
+        "top_p": 0.9,
+        "max_new_tokens": 2048,
+    }
 
     def generate_audio(
         self, text: str, params: TTSParams = None
@@ -57,15 +68,13 @@ class QwenTextToSpeech(TTSEngine):
 
         try:
             # Generation parameters for optimal speed/quality
-            gen_kwargs = {
-                "do_sample": True,
-                "temperature": 0.7,
-                "top_p": 0.9,
-                "max_new_tokens": 2048,  # Limit generation length
-            }
+            gen_kwargs = self.DEFAULT_GEN_KWARGS
 
             gen_start_time = time.time()
-            logger.debug(f"Calling model generation method for mode: {params.mode}")
+            if logger.isEnabledFor(10):  # DEBUG level
+                logger.debug(
+                    "Calling model generation method for mode: %s", params.mode
+                )
 
             if params.mode == "voice_design":
                 audio_list, sr = model.generate_voice_design(
@@ -84,17 +93,24 @@ class QwenTextToSpeech(TTSEngine):
                 )
             else:  # base / voice cloning
                 xvec = params.ref_text is None or params.ref_text == ""
+                t0 = time.time()
                 voice_prompt = self._get_or_create_voice_prompt(
                     model, ref_audio_data, params.ref_text, xvec
                 )
+                logger.info(f"Prompt creation time: {time.time() - t0:.4f}s")
+                t1 = time.time()
                 audio_list, sr = model.generate_voice_clone(
                     text,
                     language=params.resolved_language,
                     voice_clone_prompt=voice_prompt,
                     **gen_kwargs,
                 )
+                logger.info(f"Generation time: {time.time() - t1:.4f}s")
 
-            logger.debug(f"Model generation took {time.time() - gen_start_time:.4f}s")
+            if logger.isEnabledFor(10):
+                logger.debug(
+                    "Model generation took %.4fs", time.time() - gen_start_time
+                )
 
             if not audio_list:
                 raise ValueError("Model returned empty audio list")
@@ -140,16 +156,44 @@ class QwenTextToSpeech(TTSEngine):
     def generate_audio_stream(
         self, text: str, params: TTSParams = None, chunk_size: int = 4096
     ) -> Generator[bytes, None, None]:
-        """Generates audio and yields it in chunks."""
+        """Generates audio and yields it in chunks using sentence-level streaming.
+
+        Since Qwen3-TTS doesn't support native token streaming, we split the text
+        into sentences and generate/yield them sequentially.
+        """
         logger.info("Starting audio stream generation...")
-        waveform, sr = self.generate_audio(text, params)
 
-        audio_np = waveform.squeeze().cpu().numpy()
-        audio_int16 = (audio_np * 32767).astype(np.int16)
-        audio_bytes = audio_int16.tobytes()
+        # Split text into sentences to reduce TTFB
+        # Split by ., !, ?, ; and keep the delimiter
+        sentences = re.split(r"([.!?]+)", text)
 
-        for i in range(0, len(audio_bytes), chunk_size):
-            yield audio_bytes[i : i + chunk_size]
+        # Re-assemble sentences with their delimiters
+        # ["Hello", "!", " World", ".", ""] -> ["Hello!", " World."]
+        chunks = []
+        current_chunk = ""
+        for item in sentences:
+            current_chunk += item
+            if re.match(r"[.!?]+", item):
+                chunks.append(current_chunk.strip())
+                current_chunk = ""
+        if current_chunk.strip():
+            chunks.append(current_chunk.strip())
+
+        logger.info(f"Split text into {len(chunks)} chunks for streaming.")
+
+        for i, chunk in enumerate(chunks):
+            if not chunk:
+                continue
+
+            logger.debug(f"Generating chunk {i + 1}/{len(chunks)}: '{chunk[:20]}...'")
+            waveform, sr = self.generate_audio(chunk, params)
+
+            audio_np = waveform.squeeze().cpu().numpy()
+            audio_int16 = (audio_np * 32767).astype(np.int16)
+            audio_bytes = audio_int16.tobytes()
+
+            for k in range(0, len(audio_bytes), chunk_size):
+                yield audio_bytes[k : k + chunk_size]
 
     def _get_reference_audio(self, params: TTSParams) -> tuple | None:
         """Helper to load reference audio."""
@@ -165,8 +209,8 @@ class QwenTextToSpeech(TTSEngine):
                         )
                         return _load_cached_audio(str(ref_path))
                     logger.warning(
-                        f"Configured default reference audio not found: {default_ref}. "
-                        "Falling back to directory scan."
+                        "Configured default reference audio not found: "
+                        f"{default_ref}. Falling back to directory scan."
                     )
 
                 # Fallback: scan directory

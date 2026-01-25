@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 
 from project.api.routes import base, custom_voice, info, voice_design, websocket
 from project.config import ProjectConfig
+from project.models.manager import ModelManager
 
 
 logger = ProjectConfig.get_logger()
@@ -29,6 +30,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Ensure directories exist
     settings.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     settings.VOICES_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Pre-warm default model to reduce TTFB for first request
+    logger.info("Pre-warming default model (1.7B)...")
+    try:
+        ModelManager.get_model(mode="base", size=settings.DEFAULT_MODEL_SIZE)
+        logger.info("Model pre-warmed successfully.")
+    except Exception as e:
+        logger.warning(f"Failed to pre-warm model: {e}")
 
     yield
 
