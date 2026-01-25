@@ -133,3 +133,6 @@ explicit = true
 torch = { index = "pytorch-cu121" }
 torchaudio = { index = "pytorch-cu121" }
 flash-attn = { url = "https://huggingface.co/lldacing/flash-attention-windows-wheel/resolve/main/flash_attn-2.7.0.post2%2Bcu124torch2.5.0cxx11abiFALSE-cp312-cp312-win_amd64.whl", marker = "sys_platform == 'win32'" }
+
+[tool.uv.extra-build-dependencies]
+flash-attn = ["torch"]
