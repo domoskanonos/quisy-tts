@@ -39,7 +39,8 @@ class QwenTextToSpeech(TTSEngine):
         self.settings = ProjectConfig.get_settings()
 
     # Use model defaults (greedy decoding) for stable, deterministic output
-    DEFAULT_GEN_KWARGS: dict = {}
+    # max_new_tokens: 8192 prevents infinite generation on short texts
+    DEFAULT_GEN_KWARGS: dict = {"max_new_tokens": 8192}
 
     def generate_audio(
         self, text: str, params: TTSParams | None = None
