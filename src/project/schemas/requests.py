@@ -31,7 +31,7 @@ class BaseGenerateRequest(BaseModel):
     reference_audio: str | None = Field(
         default_factory=lambda: ProjectSettings().DEFAULT_REFERENCE_AUDIO,
         description="Filename of reference voice in voices/ directory.",
-        json_schema_extra={"example": "dominik_bruhn.wav"},
+        json_schema_extra={"example": "chatbot_male.wav"},
     )
     ref_text: str | None = Field(
         default=None,

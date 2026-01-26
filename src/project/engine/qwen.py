@@ -189,7 +189,7 @@ class QwenTextToSpeech(TTSEngine):
 
     def _get_reference_audio(self, params: TTSParams) -> tuple | None:
         """Helper to load reference audio."""
-        if not params.reference_audio or params.reference_audio == "string":
+        if not params.reference_audio:
             if params.mode == "base":
                 # Try configured default first
                 default_ref = self.settings.DEFAULT_REFERENCE_AUDIO
