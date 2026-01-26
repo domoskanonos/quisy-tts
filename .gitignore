@@ -6,3 +6,4 @@ __pycache__
 .log
 .mypy_cache
 .ruff_cache
+.pytest_cache

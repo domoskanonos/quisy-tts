@@ -38,13 +38,8 @@ class QwenTextToSpeech(TTSEngine):
         """Initialize the Qwen Text-to-Speech engine."""
         self.settings = ProjectConfig.get_settings()
 
-    # Default generation parameters
-    DEFAULT_GEN_KWARGS = {
-        "do_sample": True,
-        "temperature": 0.7,
-        "top_p": 0.9,
-        "max_new_tokens": 2048,
-    }
+    # Use model defaults (greedy decoding) for stable, deterministic output
+    DEFAULT_GEN_KWARGS: dict = {}
 
     def generate_audio(
         self, text: str, params: TTSParams | None = None
