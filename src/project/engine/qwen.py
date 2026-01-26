@@ -10,7 +10,7 @@ import numpy as np
 import soundfile as sf
 import torch
 
-from project.audio.processor import AudioUtils, SoxAudioProcessor
+from project.audio.processor import AudioUtils
 from project.config import ProjectConfig
 from project.core import TTSEngine
 from project.engine.backend_interface import TTSBackend
@@ -36,19 +36,28 @@ else:
     logger.info("vLLM package not found.")
 
 
+# Centralized generation config for consistency across backends
+# Source: https://github.com/QwenLM/Qwen3-TTS/blob/main/examples/test_model_12hz_base.py
+QWEN_GENERATION_CONFIG = {
+    "temperature": 0.9,
+    "top_p": 1.0,
+    "top_k": 50,
+    "repetition_penalty": 1.05,
+    "max_new_tokens": 2048,
+}
+
+
 class QwenTransformersBackend:
     """Standard Transformers-based backend (Windows compatible)."""
 
     def __init__(self, settings: Any) -> None:
         """Initialize the transformers backend."""
         self.settings = settings
-        # Use model defaults (greedy decoding) for stable, deterministic output
-        # max_new_tokens: 8192 prevents infinite generation on short texts
-        self.default_gen_kwargs: dict = {"max_new_tokens": 8192}
-
-        # Cache for voice clone prompts (keyed by ref_audio + ref_text hash)
-        # Note: We removed caching logic in previous steps, but keeping structure clean.
-        self._voice_prompts: dict[str, object] = {}
+        # Use centralized config
+        self.default_gen_kwargs: dict = {
+            **QWEN_GENERATION_CONFIG,
+            "do_sample": True,  # Required for transformers to use sampling params
+        }
 
     def generate_audio(self, text: str, params: TTSParams) -> tuple[torch.Tensor, int]:
         """Generate audio using standard transformers model."""
@@ -178,12 +187,14 @@ class QwenVLLMBackend:
             dtype="bfloat16",
         )
 
+        # Official Qwen3-TTS recommended sampling parameters
         self.sampling_params = SamplingParams(
-            temperature=0.7,
-            top_p=0.9,
-            max_tokens=8192,
+            temperature=QWEN_GENERATION_CONFIG["temperature"],
+            top_p=QWEN_GENERATION_CONFIG["top_p"],
+            top_k=QWEN_GENERATION_CONFIG["top_k"],
+            max_tokens=QWEN_GENERATION_CONFIG["max_new_tokens"],
+            repetition_penalty=QWEN_GENERATION_CONFIG["repetition_penalty"],
             detokenize=False,
-            repetition_penalty=1.1,  # Recommended for long text
         )
 
     def generate_audio(self, text: str, params: TTSParams) -> tuple[torch.Tensor, int]:
@@ -267,7 +278,7 @@ class QwenVLLMBackend:
             "task_type": [task_type],
             "text": [text],
             "language": [params.resolved_language],
-            "max_new_tokens": [8192],
+            "max_new_tokens": [QWEN_GENERATION_CONFIG["max_new_tokens"]],
         }
 
         if params.mode == "base":
@@ -364,7 +375,13 @@ class QwenTextToSpeech(TTSEngine):
     def generate_and_save(
         self, text: str, output_path: str, params: TTSParams | None = None
     ) -> str:
-        """Generates audio and saves it to a file with post-processing."""
+        """Generates audio and saves it to a file.
+
+        NOTE: We save the audio directly without post-processing to preserve
+        the original quality from Qwen3-TTS. The model output is already
+        optimized and any additional processing (normalization, EQ) may
+        introduce artifacts or degrade quality.
+        """
         if params is None:
             params = TTSParams()
 
@@ -372,16 +389,8 @@ class QwenTextToSpeech(TTSEngine):
 
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
-        temp_path = Path(output_path).with_suffix(".tmp.wav")
-        AudioUtils.save_waveform(waveform, sr, str(temp_path))
-
-        if SoxAudioProcessor.apply_effects(str(temp_path), output_path):
-            if temp_path.exists():
-                temp_path.unlink()
-        elif temp_path.exists():
-            if Path(output_path).exists():
-                Path(output_path).unlink()
-            temp_path.replace(output_path)
+        # Save directly without post-processing (per Qwen3-TTS best practice)
+        AudioUtils.save_waveform(waveform, sr, output_path)
 
         logger.info(f"Audio saved to {output_path}")
         return output_path
