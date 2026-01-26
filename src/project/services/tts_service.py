@@ -71,10 +71,7 @@ class TTSService:
             speaker=speaker,
         )
 
-        # Check cache
-        cache_key = self.cache.get_key(text, params)
-        if cached := self.cache.get(cache_key):
-            return cached
+        # Cache disabled to avoid stale voice issues
 
         # Generate
         filename = f"{uuid.uuid4()}.wav"
@@ -95,9 +92,6 @@ class TTSService:
 
         if not result_path or not Path(result_path).exists():
             raise AudioGenerationError("Generation returned no file")
-
-        # Cache the result
-        self.cache.set(cache_key, Path(result_path))
 
         return Path(result_path)
 

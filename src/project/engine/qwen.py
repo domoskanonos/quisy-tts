@@ -1,10 +1,8 @@
 """Qwen3-TTS engine implementation."""
 
-import hashlib
 import re
 import time
 from collections.abc import Generator
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -22,12 +20,11 @@ from project.schemas import TTSParams
 logger = ProjectConfig.get_logger()
 
 
-@lru_cache(maxsize=16)
-def _load_cached_audio(path: str) -> tuple:
-    """Load audio file with caching to avoid repeated disk I/O."""
+def _load_audio(path: str) -> tuple:
+    """Load audio file from disk (no caching)."""
     start_time = time.time()
     if logger.isEnabledFor(10):
-        logger.debug("Loading audio file into cache: %s", path)
+        logger.debug("Loading audio file: %s", path)
     data, sr = sf.read(path)
     if logger.isEnabledFor(10):
         logger.debug("Loaded audio file in %.4fs", time.time() - start_time)
@@ -40,8 +37,6 @@ class QwenTextToSpeech(TTSEngine):
     def __init__(self) -> None:
         """Initialize the Qwen Text-to-Speech engine."""
         self.settings = ProjectConfig.get_settings()
-        # Cache for voice clone prompts (keyed by ref_audio + ref_text hash)
-        self._voice_prompts: dict[str, object] = {}
 
     # Default generation parameters
     DEFAULT_GEN_KWARGS = {
@@ -95,7 +90,7 @@ class QwenTextToSpeech(TTSEngine):
             else:  # base / voice cloning
                 xvec = params.ref_text is None or params.ref_text == ""
                 t0 = time.time()
-                voice_prompt = self._get_or_create_voice_prompt(
+                voice_prompt = self._create_voice_prompt(
                     model, ref_audio_data, params.ref_text, xvec
                 )
                 logger.info(f"Prompt creation time: {time.time() - t0:.4f}s")
@@ -209,7 +204,7 @@ class QwenTextToSpeech(TTSEngine):
                         logger.info(
                             f"Using configured default reference audio: {default_ref}"
                         )
-                        return _load_cached_audio(str(ref_path))
+                        return _load_audio(str(ref_path))
                     logger.warning(
                         "Configured default reference audio not found: "
                         f"{default_ref}. Falling back to directory scan."
@@ -219,7 +214,7 @@ class QwenTextToSpeech(TTSEngine):
                 voices = list(self.settings.VOICES_DIR.glob("*.wav"))
                 if voices:
                     logger.info(f"Using fallback reference audio: {voices[0].name}")
-                    return _load_cached_audio(str(voices[0]))
+                    return _load_audio(str(voices[0]))
 
                 logger.error(
                     f"Base mode requires reference audio. "
@@ -230,22 +225,19 @@ class QwenTextToSpeech(TTSEngine):
         ref_path = self.settings.VOICES_DIR / params.reference_audio
         if ref_path.exists():
             logger.info(f"Using reference audio: {ref_path.name}")
-            return _load_cached_audio(str(ref_path))
+            return _load_audio(str(ref_path))
 
         logger.warning(f"Reference audio not found: {ref_path}")
         return None
 
-    def _get_or_create_voice_prompt(
+    def _create_voice_prompt(
         self,
         model: Any,
         ref_audio: tuple | None,
         ref_text: str | None,
         x_vector_only: bool,
     ) -> object:
-        """Get cached voice clone prompt or create a new one.
-
-        Uses Qwen3-TTS's create_voice_clone_prompt() to avoid recomputing
-        speaker embeddings on every generation call.
+        """Create a voice clone prompt (no caching to ensure fresh voice is always used).
 
         Args:
             model: The Qwen3TTSModel instance.
@@ -254,21 +246,12 @@ class QwenTextToSpeech(TTSEngine):
             x_vector_only: Whether to use x-vector only mode.
 
         Returns:
-            Cached or newly created voice clone prompt.
+            Newly created voice clone prompt.
         """
         if ref_audio is None:
             return None
 
-        # Create a cache key based on ref_audio identity and ref_text
-        audio_data, sr = ref_audio
-        audio_hash = hashlib.md5(audio_data.tobytes()[:4096]).hexdigest()[:8]
-        cache_key = f"{audio_hash}:{ref_text or ''}:{x_vector_only}"
-
-        if cache_key in self._voice_prompts:
-            logger.info(f"Using cached voice prompt: {cache_key[:16]}...")
-            return self._voice_prompts[cache_key]
-
-        logger.info(f"Creating new voice prompt: {cache_key[:16]}...")
+        logger.info("Creating voice prompt...")
         start_time = time.time()
         try:
             prompt = model.create_voice_clone_prompt(
@@ -276,7 +259,6 @@ class QwenTextToSpeech(TTSEngine):
                 ref_text=ref_text,
                 x_vector_only_mode=x_vector_only,
             )
-            self._voice_prompts[cache_key] = prompt
             logger.debug(f"Voice prompt creation took: {time.time() - start_time:.4f}s")
             return prompt
         except Exception as e:
