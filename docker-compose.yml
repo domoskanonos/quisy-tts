@@ -1,0 +1,21 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DEVICE=cuda
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./src:/app/src
+      - ./output:/app/output
+      # Mount cache directory to persist models
+      - ~/.cache/huggingface:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    command: uvicorn project.main:app --host 0.0.0.0 --port 8000 --reload

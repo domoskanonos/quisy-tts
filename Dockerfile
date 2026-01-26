@@ -1,32 +1,63 @@
-# Use a stable Python image
-FROM python:3.12-slim-bookworm
+# Stage 1: Builder (Large, uses devel image for compilation)
+FROM nvidia/cuda:12.1.0-devel-ubuntu22.04 AS builder
 
-# Install system dependencies
+# Set environment variables for build
+ENV PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    # Accelerate build
+    uv_link_mode=copy
+
+# Install minimal build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    sox \
-    libsox-fmt-all \
-    ffmpeg \
+    python3-pip \
+    python3-venv \
+    python3-dev \
+    git \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+RUN pip3 install --no-cache-dir uv
 
-# Set the working directory
 WORKDIR /app
 
-# Copy the project files
-COPY . .
-
-# Install dependencies using uv
-# --frozen ensures uv.lock is used without updates
-# --no-dev excludes development dependencies
-RUN uv sync --frozen --no-dev
-
-# Place executable on the PATH
+# Create virtual environment
+RUN python3 -m venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Expose the API port
+# Copy dependency definition
+COPY pyproject.toml .
+
+# Install dependencies into virtual environment
+# We install with --no-cache to save build space
+RUN uv pip install --no-cache-dir -e ".[gpu-linux]"
+
+# Stage 2: Runtime (Small, uses runtime image)
+FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04 AS runtime
+
+ENV PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    PATH="/app/.venv/bin:$PATH"
+
+WORKDIR /app
+
+# Install minimal runtime dependencies (python, audio libs)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    libsndfile1 \
+    sox \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy virtual environment from builder
+COPY --from=builder /app/.venv /app/.venv
+
+# Copy source code and config
+COPY src/ src/
+COPY .env.example .env
+
+# Expose API port
 EXPOSE 8000
 
-# Run the application
-CMD ["python", "src/project/main.py"]
+# Run commands
+CMD ["uvicorn", "project.main:app", "--host", "0.0.0.0", "--port", "8000"]
