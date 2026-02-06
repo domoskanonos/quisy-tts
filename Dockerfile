@@ -9,20 +9,24 @@ ENV PYTHONUNBUFFERED=1 \
 
 # Install minimal build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    python3.12 \
+    python3.12-venv \
+    python3.12-dev \
     python3-pip \
-    python3-venv \
-    python3-dev \
     git \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv
-RUN pip3 install --no-cache-dir uv
+# Install uv (using python3.12)
+RUN python3.12 -m pip install --no-cache-dir uv
 
 WORKDIR /app
 
-# Create virtual environment
-RUN python3 -m venv /app/.venv
+# Create virtual environment with Python 3.12
+RUN python3.12 -m venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy dependency definition
@@ -43,7 +47,11 @@ WORKDIR /app
 
 # Install minimal runtime dependencies (python, audio libs)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    python3.12 \
+    python3.12-venv \
     libsndfile1 \
     sox \
     ffmpeg \
