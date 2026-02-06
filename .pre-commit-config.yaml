@@ -9,8 +9,6 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
-      - id: end-of-file-fixer
-        exclude: verify_output.txt
       - id: check-yaml
       - id: check-added-large-files
   - repo: local
