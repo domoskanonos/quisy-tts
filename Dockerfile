@@ -10,18 +10,20 @@ ENV PYTHONUNBUFFERED=1 \
 # Install minimal build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     software-properties-common \
+    curl \
+    ca-certificates \
     && add-apt-repository ppa:deadsnakes/ppa \
     && apt-get update && apt-get install -y --no-install-recommends \
     python3.12 \
     python3.12-venv \
     python3.12-dev \
-    python3-pip \
     git \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv (using python3.12)
-RUN python3.12 -m pip install --no-cache-dir uv
+# Install uv via official installer script
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.cargo/bin:$PATH"
 
 WORKDIR /app
 
