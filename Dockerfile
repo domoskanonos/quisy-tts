@@ -36,7 +36,10 @@ COPY pyproject.toml .
 
 # Install dependencies into virtual environment
 # We install with --no-cache to save build space
-RUN uv pip install --no-cache-dir -e ".[gpu-linux]"
+# Use /app/tmp as TMPDIR to avoid running out of space in /tmp during large wheel extraction
+RUN mkdir -p /app/tmp && \
+    TMPDIR=/app/tmp uv pip install --no-cache-dir -e ".[gpu-linux]" && \
+    rm -rf /app/tmp
 
 # Stage 2: Runtime (Small, uses runtime image)
 FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04 AS runtime

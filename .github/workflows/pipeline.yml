@@ -34,6 +34,12 @@ jobs:
       - name: Run tests
         run: uv run pytest
 
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
+          sudo docker image prune --all --force
+          df -h
+
       - name: Build Docker image (Test)
         run: docker build -t python-starter:test .
 
@@ -88,6 +94,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.release.outputs.tag }}
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
+          sudo docker image prune --all --force
+          df -h
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
