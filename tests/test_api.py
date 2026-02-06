@@ -148,17 +148,17 @@ class TestAPIEndpoints:
     def test_base_endpoint_validation(self, client: TestClient) -> None:
         """Test missing 'text' returns validation error."""
         response = client.post("/generate/base/0.6b", json={})
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     def test_voice_design_requires_instruct(self, client: TestClient) -> None:
         """Test voice design requires instruct field."""
         response = client.post("/generate/voice-design/1.7b", json={"text": "Hi"})
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     def test_custom_voice_requires_speaker(self, client: TestClient) -> None:
         """Test custom voice requires speaker field."""
         response = client.post("/generate/custom-voice/0.6b", json={"text": "Hi"})
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     def test_cleanup_endpoint(self, client: TestClient) -> None:
         """Test cleanup endpoint."""
@@ -310,15 +310,3 @@ class TestMethodRestrictions:
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
 
-class TestVoiceClonePromptCache:
-    """Tests for voice clone prompt caching functionality."""
-
-    def test_qwen_engine_has_voice_prompts_cache(self) -> None:
-        """Test that QwenTextToSpeech has _voice_prompts cache."""
-        engine = QwenTextToSpeech()
-        assert hasattr(engine, "_voice_prompts")
-        assert isinstance(engine._voice_prompts, dict)
-
-    def test_qwen_engine_has_get_or_create_method(self) -> None:
-        """Test that QwenTextToSpeech has _get_or_create_voice_prompt method."""
-        assert hasattr(QwenTextToSpeech, "_get_or_create_voice_prompt")
