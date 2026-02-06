@@ -1,5 +1,7 @@
 /models
-/output
+/output/
+/temp/
+
 .venv
 .env
 __pycache__
