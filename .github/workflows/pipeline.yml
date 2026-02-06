@@ -19,6 +19,13 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Check uv installation
+        run: |
+          which uv || echo 'uv not found in PATH'
+          ls -l ~/.local/bin/uv || echo 'uv not in ~/.local/bin/'
+          uv --version || echo 'uv not executable'
+          echo $PATH
+
       - name: Set up Python
         run: uv python install
 
