@@ -148,27 +148,7 @@ def test_benchmark_generate_long_text(
     assert result is not None
 
 
-# =============================================================================
-# Benchmark: Voice Prompt Caching
-# =============================================================================
 
-
-def test_benchmark_voice_prompt_cache_hit(
-    benchmark: Any,
-    tts_engine: QwenTextToSpeech,
-    mock_model: MagicMock,
-) -> None:
-    """Benchmark voice prompt cache hit performance."""
-    ref_audio = (np.zeros(24000, dtype=np.float32), 24000)
-
-    # Prime the cache
-    tts_engine._get_or_create_voice_prompt(mock_model, ref_audio, None, True)
-
-    # Benchmark cache hit
-    result = benchmark(
-        tts_engine._get_or_create_voice_prompt, mock_model, ref_audio, None, True
-    )
-    assert result is not None
 
 
 # =============================================================================

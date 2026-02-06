@@ -191,8 +191,8 @@ class QwenVLLMBackend:
         self.sampling_params = SamplingParams(
             temperature=QWEN_GENERATION_CONFIG["temperature"],
             top_p=QWEN_GENERATION_CONFIG["top_p"],
-            top_k=QWEN_GENERATION_CONFIG["top_k"],
-            max_tokens=QWEN_GENERATION_CONFIG["max_new_tokens"],
+            top_k=int(QWEN_GENERATION_CONFIG["top_k"]),
+            max_tokens=int(QWEN_GENERATION_CONFIG["max_new_tokens"]),
             repetition_penalty=QWEN_GENERATION_CONFIG["repetition_penalty"],
             detokenize=False,
         )
@@ -343,11 +343,11 @@ class QwenTextToSpeech(TTSEngine):
         if VLLM_AVAILABLE:
             try:
                 logger.info("Initializing vLLM backend...")
-                self.backend: TTSBackend = QwenVLLMBackend(self.settings)
+                self.backend = QwenVLLMBackend(self.settings)
                 logger.info("vLLM backend initialized successfully.")
             except Exception as e:
                 logger.error(f"Failed to initialize vLLM backend: {e}. Falling back.")
-                self.backend: TTSBackend = QwenTransformersBackend(self.settings)
+                self.backend = QwenTransformersBackend(self.settings)
         else:
             logger.info("vLLM not detected - using Transformers backend")
 
