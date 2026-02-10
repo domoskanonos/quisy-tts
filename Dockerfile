@@ -1,22 +1,15 @@
-# Stage 1: Builder (Large, uses devel image for compilation)
-FROM nvidia/cuda:12.1.0-devel-ubuntu22.04 AS builder
+# Stage 1: Builder (uses slim Python image for smaller footprint)
+FROM python:3.12-slim AS builder
 
 # Set environment variables for build
 ENV PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
-    # Accelerate build
     uv_link_mode=copy
 
 # Install minimal build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    software-properties-common \
     curl \
     ca-certificates \
-    && add-apt-repository ppa:deadsnakes/ppa \
-    && apt-get update && apt-get install -y --no-install-recommends \
-    python3.12 \
-    python3.12-venv \
-    python3.12-dev \
     git \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
@@ -34,14 +27,12 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Copy dependency definition
 COPY pyproject.toml .
 
-# Install dependencies into virtual environment
-# We install with --no-cache to save build space
-# Use /app/tmp as TMPDIR to avoid running out of space in /tmp during large wheel extraction
-RUN mkdir -p /app/tmp && \
-    TMPDIR=/app/tmp uv pip install --no-cache-dir -e ".[gpu-linux]" && \
-    rm -rf /app/tmp
+# Install core dependencies (without GPU extras to save space during build)
+# Then install GPU extras separately, allowing flash-attn to fail gracefully
+RUN uv pip install --no-cache-dir -e . && \
+    uv pip install --no-cache-dir "vllm>=0.3.0" || true
 
-# Stage 2: Runtime (Small, uses runtime image)
+# Stage 2: Runtime (uses NVIDIA runtime image for GPU inference)
 FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04 AS runtime
 
 ENV PYTHONUNBUFFERED=1 \

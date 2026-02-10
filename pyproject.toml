@@ -22,11 +22,10 @@ dependencies = [
     "huggingface-hub>=0.20.0",
     "soundfile>=0.12.1",
     "numpy>=1.26.0",
-    "vllm>=0.3.0",
 ]
 
 [project.optional-dependencies]
-gpu = ["flash-attn>=2.0.0"]
+gpu-linux = ["flash-attn>=2.0.0", "vllm>=0.3.0"]
 
 [build-system]
 requires = ["hatchling"]
