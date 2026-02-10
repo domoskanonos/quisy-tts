@@ -172,6 +172,9 @@ uv run mypy .
 
 # Tests
 uv run pytest
+
+# Pre-commit Hooks
+uv run pre-commit install --hook-type commit-msg --hook-type pre-commit
 ```
 
 ---
