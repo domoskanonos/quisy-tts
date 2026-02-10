@@ -113,7 +113,7 @@ def test_benchmark_generate_short_text(
     """Benchmark audio generation for short text."""
     params = TTSParams(mode="custom_voice", speaker="eric", language="German")
 
-    with patch("project.engine.qwen.ModelManager.get_model", return_value=mock_model):
+    with patch("engine.qwen.ModelManager.get_model", return_value=mock_model):
         result = benchmark(tts_engine.generate_audio, SHORT_TEXT, params)
 
     assert result is not None
@@ -128,7 +128,7 @@ def test_benchmark_generate_medium_text(
     """Benchmark audio generation for medium text."""
     params = TTSParams(mode="custom_voice", speaker="eric", language="German")
 
-    with patch("project.engine.qwen.ModelManager.get_model", return_value=mock_model):
+    with patch("engine.qwen.ModelManager.get_model", return_value=mock_model):
         result = benchmark(tts_engine.generate_audio, MEDIUM_TEXT, params)
 
     assert result is not None
@@ -142,7 +142,7 @@ def test_benchmark_generate_long_text(
     """Benchmark audio generation for long text."""
     params = TTSParams(mode="custom_voice", speaker="eric", language="German")
 
-    with patch("project.engine.qwen.ModelManager.get_model", return_value=mock_model):
+    with patch("engine.qwen.ModelManager.get_model", return_value=mock_model):
         result = benchmark(tts_engine.generate_audio, LONG_TEXT, params)
 
     assert result is not None
@@ -167,10 +167,7 @@ def test_memory_baseline() -> None:
 
     # Log memory usage
     logger = ProjectConfig.get_logger()
-    logger.info(
-        f"Memory after engine init: "
-        f"current={current / 1024:.2f}KB, peak={peak / 1024:.2f}KB"
-    )
+    logger.info(f"Memory after engine init: current={current / 1024:.2f}KB, peak={peak / 1024:.2f}KB")
 
     assert engine is not None
     # Engine init should use less than 10MB
@@ -220,7 +217,7 @@ def test_calculate_throughput(
     params = TTSParams(mode="custom_voice", speaker="eric", language="German")
     text = MEDIUM_TEXT
 
-    with patch("project.engine.qwen.ModelManager.get_model", return_value=mock_model):
+    with patch("engine.qwen.ModelManager.get_model", return_value=mock_model):
         start = time.perf_counter()
         for _ in range(10):
             tts_engine.generate_audio(text, params)

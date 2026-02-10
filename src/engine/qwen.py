@@ -21,10 +21,11 @@ from schemas import TTSParams
 # Optional vLLM import
 try:
     import vllm  # noqa: F401
+    from vllm import Omni, SamplingParams  # type: ignore[attr-defined]  # noqa: F401
 
     VLLM_AVAILABLE = True
     # We don't log here yet as logger is not initialized
-except ImportError:
+except (ImportError, AttributeError):
     VLLM_AVAILABLE = False
 
 
@@ -83,9 +84,7 @@ class QwenTransformersBackend:
             )
         else:  # base / voice cloning
             xvec = params.ref_text is None or params.ref_text == ""
-            voice_prompt = self._create_voice_prompt(
-                model, ref_audio_data, params.ref_text, xvec
-            )
+            voice_prompt = self._create_voice_prompt(model, ref_audio_data, params.ref_text, xvec)
             audio_list, sr = model.generate_voice_clone(
                 text,
                 language=params.resolved_language,
@@ -351,30 +350,22 @@ class QwenTextToSpeech(TTSEngine):
         else:
             logger.info("vLLM not detected - using Transformers backend")
 
-    def generate_audio(
-        self, text: str, params: TTSParams | None = None
-    ) -> tuple[torch.Tensor, int]:
+    def generate_audio(self, text: str, params: TTSParams | None = None) -> tuple[torch.Tensor, int]:
         """Generates audio waveform via backend."""
         if params is None:
             params = TTSParams()
 
         logger.info(
-            f"Starting audio generation | Mode: {params.mode} | "
-            f"Text Length: {len(text)} | Language: {params.language}"
+            f"Starting audio generation | Mode: {params.mode} | Text Length: {len(text)} | Language: {params.language}"
         )
         total_start_time = time.time()
 
         final_audio, sr = self.backend.generate_audio(text, params)
 
-        logger.info(
-            f"Audio generation successful. "
-            f"Total time: {time.time() - total_start_time:.4f}s"
-        )
+        logger.info(f"Audio generation successful. Total time: {time.time() - total_start_time:.4f}s")
         return final_audio, sr
 
-    def generate_and_save(
-        self, text: str, output_path: str, params: TTSParams | None = None
-    ) -> str:
+    def generate_and_save(self, text: str, output_path: str, params: TTSParams | None = None) -> str:
         """Generates audio and saves it to a file.
 
         NOTE: We save the audio directly without post-processing to preserve

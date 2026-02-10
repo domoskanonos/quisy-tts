@@ -15,7 +15,7 @@ def test_device_validation() -> None:
     logger.info("=== Testing Device Validation ===")
 
     # Mock settings to force CUDA
-    with patch("project.models.manager.ProjectConfig") as mock_config:
+    with patch("models.manager.ProjectConfig") as mock_config:
         mock_settings = MagicMock()
         mock_settings.DEVICE = "cuda"
         mock_config.get_settings.return_value = mock_settings
@@ -23,9 +23,7 @@ def test_device_validation() -> None:
 
         # Mock torch.cuda.is_available to return False
         with patch("torch.cuda.is_available", return_value=False):
-            logger.info(
-                "Attempting to load model with DEVICE='cuda' and no available GPU..."
-            )
+            logger.info("Attempting to load model with DEVICE='cuda' and no available GPU...")
             try:
                 ModelManager.get_model()
             except RuntimeError as e:
@@ -35,9 +33,7 @@ def test_device_validation() -> None:
                 else:
                     logger.error("FAILURE: Incorrect error message.")
             except Exception as e:
-                logger.error(
-                    f"FAILURE: Caught unexpected exception: {type(e).__name__}: {e}"
-                )
+                logger.error(f"FAILURE: Caught unexpected exception: {type(e).__name__}: {e}")
             else:
                 logger.error("FAILURE: No exception raised.")
 
