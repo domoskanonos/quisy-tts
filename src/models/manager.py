@@ -36,9 +36,7 @@ class ModelManager:
 
         # Safety check for 0.6B VoiceDesign (not available)
         if size == "0.6B" and mode == "voice_design":
-            logger.warning(
-                "0.6B model does not support VoiceDesign. Falling back to 1.7B."
-            )
+            logger.warning("0.6B model does not support VoiceDesign. Falling back to 1.7B.")
             size = "1.7B"
 
         model_id = cls.get_model_id(mode, size)
@@ -60,9 +58,7 @@ class ModelManager:
 
         if device == "cuda":
             dtype = (
-                torch.bfloat16
-                if torch.cuda.get_device_capability(0)[0] >= cls.MIN_BF16_CAPABILITY
-                else torch.float16
+                torch.bfloat16 if torch.cuda.get_device_capability(0)[0] >= cls.MIN_BF16_CAPABILITY else torch.float16
             )
         else:
             dtype = torch.float32
@@ -76,9 +72,7 @@ class ModelManager:
         if local_path.exists():
             logger.info(f"Using local model checkpoint at {local_path}")
         else:
-            logger.info(
-                f"Model not found locally, downloading from Hugging Face: {model_id}"
-            )
+            logger.info(f"Model not found locally, downloading from Hugging Face: {model_id}")
 
         # Try to use Flash Attention 2 for faster inference
         try:
@@ -90,9 +84,7 @@ class ModelManager:
             )
             logger.info(f"Successfully loaded {model_id} with Flash Attention 2")
         except Exception as e:
-            logger.warning(
-                f"Flash Attention 2 not available: {e}. Using default attention."
-            )
+            logger.warning(f"Flash Attention 2 not available: {e}. Using default attention.")
             model = Qwen3TTSModel.from_pretrained(
                 load_path,
                 device_map=device,

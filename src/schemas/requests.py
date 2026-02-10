@@ -16,12 +16,7 @@ class BaseGenerateRequest(BaseModel):
     text: str = Field(
         ...,
         description="The text to convert to speech.",
-        json_schema_extra={
-            "example": (
-                "Ich freu mich Sie kennen zu lernen. "
-                "Gerne leihe ich ihnen meine Stimme."
-            )
-        },
+        json_schema_extra={"example": ("Ich freu mich Sie kennen zu lernen. Gerne leihe ich ihnen meine Stimme.")},
     )
     language: str = Field(
         default="German",
@@ -54,12 +49,7 @@ class VoiceDesignRequest(BaseModel):
     text: str = Field(
         ...,
         description="The text to convert to speech.",
-        json_schema_extra={
-            "example": (
-                "Ich freu mich Sie kennen zu lernen. "
-                "Gerne leihe ich ihnen meine Stimme."
-            )
-        },
+        json_schema_extra={"example": ("Ich freu mich Sie kennen zu lernen. Gerne leihe ich ihnen meine Stimme.")},
     )
     language: str = Field(
         default="German",
@@ -69,12 +59,7 @@ class VoiceDesignRequest(BaseModel):
     instruct: str = Field(
         ...,
         description="Natural language voice description.",
-        json_schema_extra={
-            "example": (
-                "Eine tiefe, ruhige männliche Stimme, "
-                "wie ein professioneller Podcaster."
-            )
-        },
+        json_schema_extra={"example": ("Eine tiefe, ruhige männliche Stimme, wie ein professioneller Podcaster.")},
     )
 
 
@@ -89,12 +74,7 @@ class CustomVoiceRequest(BaseModel):
     text: str = Field(
         ...,
         description="The text to convert to speech.",
-        json_schema_extra={
-            "example": (
-                "Ich freu mich Sie kennen zu lernen. "
-                "Gerne leihe ich ihnen meine Stimme."
-            )
-        },
+        json_schema_extra={"example": ("Ich freu mich Sie kennen zu lernen. Gerne leihe ich ihnen meine Stimme.")},
     )
     language: str = Field(
         default="German",
@@ -109,9 +89,5 @@ class CustomVoiceRequest(BaseModel):
     instruct: str | None = Field(
         default=None,
         description="Optional style instruction for the speaker (e.g. 'happy', 'sad').",
-        json_schema_extra={
-            "example": (
-                "Sprich wie ein professioneller Podcaster mit tiefer, ruhiger Stimme."
-            )
-        },
+        json_schema_extra={"example": ("Sprich wie ein professioneller Podcaster mit tiefer, ruhiger Stimme.")},
     )

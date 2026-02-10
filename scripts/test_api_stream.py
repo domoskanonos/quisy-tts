@@ -102,19 +102,12 @@ def test_stream() -> None:
                 print(f"WAV audio saved to {wav_path}")
 
                 # Metrics
-                audio_duration = total_audio_bytes / (
-                    sample_rate * num_channels * sample_width
-                )
+                audio_duration = total_audio_bytes / (sample_rate * num_channels * sample_width)
                 rtf = total_time / audio_duration if audio_duration > 0 else 0
 
                 # Calculate avg chunk time (inter-chunk arrival time)
                 if len(chunk_timestamps) > 1:
-                    deltas = [
-                        t2 - t1
-                        for t1, t2 in zip(
-                            chunk_timestamps[:-1], chunk_timestamps[1:], strict=True
-                        )
-                    ]
+                    deltas = [t2 - t1 for t1, t2 in zip(chunk_timestamps[:-1], chunk_timestamps[1:], strict=True)]
                     avg_delta = sum(deltas) / len(deltas)
                 else:
                     avg_delta = 0
@@ -123,9 +116,7 @@ def test_stream() -> None:
                 print(f"TTFB:            {ttfb * 1000:.2f} ms")
                 print(f"Total Time:      {total_time:.2f} s")
                 print(f"Audio Duration:  {audio_duration:.2f} s")
-                print(
-                    f"RTF:             {rtf:.2f} (lower is better, < 1.0 is real-time)"
-                )
+                print(f"RTF:             {rtf:.2f} (lower is better, < 1.0 is real-time)")
                 print(f"Avg Chunk Delta: {avg_delta * 1000:.2f} ms")
                 print("===========================")
 

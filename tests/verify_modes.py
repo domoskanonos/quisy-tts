@@ -23,9 +23,7 @@ def test_modes() -> None:
         logger.info(f"--- Testing Base Mode ({size}) ---")
         output_base = settings.OUTPUT_DIR / f"test_base_{size}.wav"
         params_base = TTSParams(mode="base", model_size=size, language="german")
-        tts.generate_and_save(
-            "This is a test of voice cloning.", str(output_base), params_base
-        )
+        tts.generate_and_save("This is a test of voice cloning.", str(output_base), params_base)
 
         # 2. VoiceDesign Mode
         if size != "0.6B":
@@ -37,21 +35,15 @@ def test_modes() -> None:
                 instruct="Generate a friendly voice.",
                 language="german",
             )
-            tts.generate_and_save(
-                "Hello, this is a designed voice.", str(output_design), params_design
-            )
+            tts.generate_and_save("Hello, this is a designed voice.", str(output_design), params_design)
         else:
             logger.info(f"--- Skipping VoiceDesign Mode ({size}) - Not Supported ---")
 
         # 3. CustomVoice Mode
         logger.info(f"--- Testing CustomVoice Mode ({size}) ---")
         output_custom = settings.OUTPUT_DIR / f"test_custom_{size}.wav"
-        params_custom = TTSParams(
-            mode="custom_voice", model_size=size, speaker="eric", language="german"
-        )
-        tts.generate_and_save(
-            "Dies ist ein Test mit Eric.", str(output_custom), params_custom
-        )
+        params_custom = TTSParams(mode="custom_voice", model_size=size, speaker="eric", language="german")
+        tts.generate_and_save("Dies ist ein Test mit Eric.", str(output_custom), params_custom)
 
     logger.info("Verification complete. Check the output directory.")
 

@@ -55,18 +55,14 @@ app = FastAPI(
 
 
 @app.exception_handler(ValueError)
-async def validation_exception_handler(
-    _request: object, exc: ValueError
-) -> JSONResponse:
+async def validation_exception_handler(_request: object, exc: ValueError) -> JSONResponse:
     """Handle validation errors."""
     logger.warning(f"Validation error: {exc}")
     return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
 @app.exception_handler(RuntimeError)
-async def runtime_exception_handler(
-    _request: object, exc: RuntimeError
-) -> JSONResponse:
+async def runtime_exception_handler(_request: object, exc: RuntimeError) -> JSONResponse:
     """Handle runtime errors (e.g., model loading failures)."""
     logger.error(f"Runtime error: {exc}")
     return JSONResponse(status_code=503, content={"detail": "TTS engine unavailable"})

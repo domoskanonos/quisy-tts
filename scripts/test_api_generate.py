@@ -38,10 +38,7 @@ def test_generate(
     response = requests.post(ENDPOINT, json=payload)
 
     if response.status_code == HTTP_OK:
-        filename = (
-            response.headers.get("Content-Disposition", "").split("filename=")[-1]
-            or "output.wav"
-        )
+        filename = response.headers.get("Content-Disposition", "").split("filename=")[-1] or "output.wav"
         # Ensure output directory exists
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 

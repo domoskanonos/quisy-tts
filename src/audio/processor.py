@@ -37,9 +37,7 @@ class SoxAudioProcessor:
             logger.error(f"Sox processing failed: {e.stderr.decode()}")
             return False
         except FileNotFoundError:
-            logger.error(
-                "Sox binary not found. Please ensure 'sox' is installed and in PATH."
-            )
+            logger.error("Sox binary not found. Please ensure 'sox' is installed and in PATH.")
             return False
         except Exception as e:
             logger.error(f"Error during Sox processing: {e}")

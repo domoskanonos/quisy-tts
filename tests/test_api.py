@@ -308,5 +308,3 @@ class TestMethodRestrictions:
         """Test POST method not allowed on languages endpoint."""
         response = client.post("/languages")
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
-
-

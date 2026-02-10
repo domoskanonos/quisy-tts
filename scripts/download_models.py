@@ -19,9 +19,7 @@ def download_model(model_id: str, models_dir: Path) -> None:
     print(f"Starting download of {model_id}...")
     try:
         local_dir = models_dir / model_id.replace("/", "--")
-        snapshot_download(
-            repo_id=model_id, local_dir=str(local_dir), local_dir_use_symlinks=False
-        )
+        snapshot_download(repo_id=model_id, local_dir=str(local_dir), local_dir_use_symlinks=False)
         print(f"Successfully downloaded {model_id} to {local_dir}")
     except Exception as e:
         print(f"Failed to download {model_id}: {e}")
@@ -30,11 +28,7 @@ def download_model(model_id: str, models_dir: Path) -> None:
 def main() -> None:
     """Main downloader loop."""
     settings = ProjectConfig.get_settings()
-    models_to_download = [
-        m.strip()
-        for m in settings.DOWNLOAD_MODELS.replace("\n", "").split(",")
-        if m.strip()
-    ]
+    models_to_download = [m.strip() for m in settings.DOWNLOAD_MODELS.replace("\n", "").split(",") if m.strip()]
     models_dir = settings.MODELS_DIR.resolve()
     models_dir.mkdir(parents=True, exist_ok=True)
 

@@ -21,8 +21,7 @@ OUTPUT_DIR = settings.OUTPUT_DIR
 async def test_ws() -> None:
     """Tests WebSocket real-time TTS."""
     payload = {
-        "text": "Dies ist ein Echtzeit-Test über Web-Sockets. "
-        "Die Daten fließen direkt.",
+        "text": "Dies ist ein Echtzeit-Test über Web-Sockets. Die Daten fließen direkt.",
         "language_id": "de",
         "model_size": "0.6B",
     }

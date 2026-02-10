@@ -40,9 +40,7 @@ async def trigger_cleanup(
     cleanup: CleanupService = Depends(get_cleanup_service),
 ) -> dict[str, str]:
     """Trigger cleanup of old audio files."""
-    background_tasks.add_task(
-        cleanup.cleanup_old_files, settings.OUTPUT_DIR, max_age_hours
-    )
+    background_tasks.add_task(cleanup.cleanup_old_files, settings.OUTPUT_DIR, max_age_hours)
     return {"status": "Cleanup scheduled"}
 
 

@@ -24,9 +24,7 @@ settings = ProjectConfig.get_settings()
 
 def main() -> None:
     """Start the FastAPI server."""
-    logger.info(
-        f"Starting {settings.PROJECT_NAME} on http://{settings.HOST}:{settings.PORT}"
-    )
+    logger.info(f"Starting {settings.PROJECT_NAME} on http://{settings.HOST}:{settings.PORT}")
     uvicorn.run(app, host=settings.HOST, port=settings.PORT)
 
 

@@ -43,9 +43,7 @@ class TTSEngine(ABC):
         ...
 
     @abstractmethod
-    def generate_audio_stream(
-        self, text: str, params: Any, chunk_size: int = 4096
-    ) -> Generator[bytes, None, None]:
+    def generate_audio_stream(self, text: str, params: Any, chunk_size: int = 4096) -> Generator[bytes, None, None]:
         """Generate audio and yield as byte chunks for streaming.
 
         Args:
