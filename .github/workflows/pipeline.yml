@@ -126,7 +126,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/cosmo-tts:latest
-            ${{ secrets.DOCKER_USERNAME }}/cosmo-tts:${{ needs.release.outputs.version }}
+            ${{ secrets.DOCKER_USERNAME }}/quisy-tts:latest
+            ${{ secrets.DOCKER_USERNAME }}/quisy-tts:${{ needs.release.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

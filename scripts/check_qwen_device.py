@@ -8,8 +8,8 @@ import torch
 # Add src to path
 sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
 
-from project.config import ProjectConfig
-from project.models.manager import ModelManager
+from config import ProjectConfig
+from models.manager import ModelManager
 
 
 def check_device() -> None:

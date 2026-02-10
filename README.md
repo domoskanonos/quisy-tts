@@ -1,9 +1,9 @@
-# Cosmo TTS 🚀
+# Quisy TTS 🚀
 
-[![Pipeline](https://github.com/domoskanonos/cosmo-tts/actions/workflows/pipeline.yml/badge.svg)](https://github.com/domoskanonos/cosmo-tts/actions/workflows/pipeline.yml)
+[![Pipeline](https://github.com/domoskanonos/quisy-tts/actions/workflows/pipeline.yml/badge.svg)](https://github.com/domoskanonos/quisy-tts/actions/workflows/pipeline.yml)
 [![Python Version](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 
-Cosmo TTS is a modern, high-performance Text-to-Speech API powered by **Qwen3-TTS**. It supports advanced features like voice cloning, instructed voice design, and real-time streaming via WebSockets and HTTP.
+Quisy TTS is a modern, high-performance Text-to-Speech API powered by **Qwen3-TTS**. It supports advanced features like voice cloning, instructed voice design, and real-time streaming via WebSockets and HTTP.
 
 ---
 
@@ -47,8 +47,8 @@ This project requires **Sox** for high-quality audio normalization.
 
 1. **Clone & Setup**:
    ```bash
-   git clone https://github.com/domoskanonos/cosmo-tts.git
-   cd cosmo-tts
+   git clone https://github.com/domoskanonos/quisy-tts.git
+   cd quisy-tts
    uv sync
    ```
 
@@ -68,7 +68,7 @@ This project requires **Sox** for high-quality audio normalization.
 
 4. **Run the API**:
    ```bash
-   uv run python src/project/main.py
+   uv run python src/main.py
    ```
 
 5. **Docker Usage**:
@@ -76,15 +76,15 @@ This project requires **Sox** for high-quality audio normalization.
 
    **Pull:**
    ```bash
-   docker pull domoskanonos/cosmo-tts:latest
+   docker pull domoskanonos/quisy-tts:latest
    ```
 
    **Run (GPU Recommended):**
    ```bash
-   docker run -d --gpus all -p 8000:8000 --name cosmo-tts \
+   docker run -d --gpus all -p 8000:8000 --name quisy-tts \
      -v ${PWD}/models:/app/models \
      -v ${PWD}/output:/app/output \
-     domoskanonos/cosmo-tts:latest
+     domoskanonos/quisy-tts:latest
    ```
 
 ---
@@ -95,7 +95,7 @@ All settings are managed via Pydantic and can be overridden by environment varia
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `PROJECT_NAME` | Name of the service | `cosmo-tts` |
+| `PROJECT_NAME` | Name of the service | `quisy-tts` |
 | `LOG_LEVEL` | Logging verbosity | `INFO` |
 | `DEVICE` | Computation device (`cuda` or `cpu`) | `cuda` |
 | `HOST` | API listening host | `0.0.0.0` |

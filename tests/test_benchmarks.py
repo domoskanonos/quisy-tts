@@ -23,10 +23,10 @@ import pytest
 # Add src to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from project.config import ProjectConfig
-from project.engine.qwen import QwenTextToSpeech
-from project.schemas import TTSParams
-from project.schemas.languages import resolve_language
+from config import ProjectConfig
+from engine.qwen import QwenTextToSpeech
+from schemas import TTSParams
+from schemas.languages import resolve_language
 
 
 # =============================================================================

@@ -5,9 +5,9 @@ from pathlib import Path
 # Add src to path
 sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
 
-from project.config import ProjectConfig
-from project.engine.qwen import QwenTextToSpeech
-from project.schemas import TTSParams
+from config import ProjectConfig
+from engine.qwen import QwenTextToSpeech
+from schemas import TTSParams
 
 
 def test_modes() -> None:

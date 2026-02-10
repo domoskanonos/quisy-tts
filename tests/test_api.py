@@ -11,17 +11,17 @@ from starlette import status
 # Add src to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from project.api import app
-from project.core import CacheService, CleanupService, TTSEngine
-from project.engine import QwenTextToSpeech
-from project.schemas import (
+from api import app
+from core import CacheService, CleanupService, TTSEngine
+from engine import QwenTextToSpeech
+from schemas import (
     LANGUAGE_MAP,
     BaseGenerateRequest,
     CustomVoiceRequest,
     VoiceDesignRequest,
     resolve_language,
 )
-from project.services import FileCacheService, FileCleanupService
+from services import FileCacheService, FileCleanupService
 
 
 class TestLanguageMapping:

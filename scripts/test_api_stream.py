@@ -9,7 +9,7 @@ import requests
 # Add src to path to import config
 sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
 
-from project.config import ProjectConfig
+from config import ProjectConfig
 
 
 settings = ProjectConfig.get_settings()

@@ -1,6 +1,6 @@
-# Cosmo TTS
+# Quisy TTS
 
-Cosmo TTS is a modern, high-performance Text-to-Speech API powered by **Qwen3-TTS**, supporting advanced features like voice cloning, instructed voice design, and real-time streaming.
+Quisy TTS is a modern, high-performance Text-to-Speech API powered by **Qwen3-TTS**, supporting advanced features like voice cloning, instructed voice design, and real-time streaming.
 
 ## Quick Start
 
@@ -10,8 +10,8 @@ Cosmo TTS is a modern, high-performance Text-to-Speech API powered by **Qwen3-TT
 docker run -d \
   -p 8000:8000 \
   --gpus all \
-  --name cosmo-tts \
-  domoskanonos/cosmo-tts:latest
+  --name quisy-tts \
+  domoskanonos/quisy-tts:latest
 ```
 
 ### With Volume Persistence (Recommended)
@@ -22,10 +22,10 @@ Keep your models and outputs persistent:
 docker run -d \
   --gpus all \
   -p 8000:8000 \
-  -v cosmo_models:/app/models \
-  -v cosmo_output:/app/output \
-  --name cosmo-tts \
-  domoskanonos/cosmo-tts:latest
+  -v quisy_models:/app/models \
+  -v quisy_output:/app/output \
+  --name quisy-tts \
+  domoskanonos/quisy-tts:latest
 ```
 
 ## Docker Compose
@@ -33,7 +33,7 @@ docker run -d \
 ```yaml
 services:
   tts:
-    image: domoskanonos/cosmo-tts:latest
+    image: domoskanonos/quisy-tts:latest
     ports:
       - "8000:8000"
     environment:

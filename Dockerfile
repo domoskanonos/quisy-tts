@@ -73,4 +73,4 @@ COPY .env.example .env
 EXPOSE 8000
 
 # Run commands
-CMD ["uvicorn", "project.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

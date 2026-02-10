@@ -11,7 +11,7 @@ os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 # Add src to path to import config
 sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
 
-from project.config import ProjectConfig
+from config import ProjectConfig
 
 
 def download_model(model_id: str, models_dir: Path) -> None:
