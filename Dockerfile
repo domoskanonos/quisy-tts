@@ -1,22 +1,26 @@
-# Stage 1: Builder (uses slim Python image for smaller footprint)
-FROM python:3.12-slim AS builder
+# Stage 1: Builder
+FROM ubuntu:22.04 AS builder
 
 # Set environment variables for build
 ENV PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
-    uv_link_mode=copy
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
 
-# Install minimal build dependencies
+# Install minimal build dependencies and Python 3.12
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     git \
+    gnupg \
     build-essential \
+    software-properties-common \
+    && add-apt-repository -y ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    python3.12 \
+    python3.12-venv \
+    python3.12-dev \
     && rm -rf /var/lib/apt/lists/*
-
-# Install uv via official installer script
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.local/bin:$PATH"
 
 WORKDIR /app
 
@@ -31,8 +35,7 @@ COPY pyproject.toml .
 # Copy source code for installation
 COPY src/ src/
 
-# Install core dependencies (without GPU extras to save space during build)
-# Then install GPU extras separately, allowing flash-attn to fail gracefully
+# Install core dependencies using the venv's pip
 RUN /app/.venv/bin/pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cu121 . && \
     /app/.venv/bin/pip install --no-cache-dir "vllm>=0.3.0" || true
 
