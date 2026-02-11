@@ -1,12 +1,23 @@
 # CHANGELOG
 
 
+## v0.4.0 (2026-02-11)
+
+### Bug Fixes
+
+- Merge branch 'main' of github.com:domoskanonos/cosmo-tts
+  ([`6ebed7d`](https://github.com/domoskanonos/quisy-tts/commit/6ebed7df1d7c3d8061dd8e5a8b74291078c29ef6))
+
+
 ## v0.3.0 (2026-02-11)
 
 ### Features
 
 - Add readme to dockerhub
   ([`60a6c2a`](https://github.com/domoskanonos/quisy-tts/commit/60a6c2a84a53cfd03283f69371ce60fbc10b3f26))
+
+- Modified reamde path
+  ([`69544d2`](https://github.com/domoskanonos/quisy-tts/commit/69544d232b11997116bb8de55415c20f63fced9d))
 
 
 ## v0.2.0 (2026-02-11)
