@@ -5,7 +5,7 @@
 
 ### Bug Fixes
 
-- Merge branch 'main' of github.com:domoskanonos/cosmo-tts
+- Merge branch 'main' of github.com:domoskanonos/quisy-tts
   ([`6ebed7d`](https://github.com/domoskanonos/quisy-tts/commit/6ebed7df1d7c3d8061dd8e5a8b74291078c29ef6))
 
 
@@ -29,7 +29,7 @@
 
 ### Features
 
-- Merge branch 'main' of github.com:domoskanonos/cosmo-tts
+- Merge branch 'main' of github.com:domoskanonos/quisy-tts
   ([`db91223`](https://github.com/domoskanonos/quisy-tts/commit/db91223ba9933af8d6585b247f514b9d9eb71181))
 
 

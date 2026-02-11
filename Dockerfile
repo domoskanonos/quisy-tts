@@ -22,22 +22,27 @@ WORKDIR /app
 
 # Create virtual environment with Python 3.12
 RUN python3.12 -m venv /app/.venv
-ENV PATH="/app/.venv/bin:$PATH"
+ENV PATH="/app/.venv/bin:$PATH" \
+    VIRTUAL_ENV="/app/.venv"
 
 # Copy dependency definition
 COPY pyproject.toml .
 
+# Copy source code for installation
+COPY src/ src/
+
 # Install core dependencies (without GPU extras to save space during build)
 # Then install GPU extras separately, allowing flash-attn to fail gracefully
-RUN uv pip install --no-cache-dir -e . && \
-    uv pip install --no-cache-dir "vllm>=0.3.0" || true
+RUN /app/.venv/bin/pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cu121 . && \
+    /app/.venv/bin/pip install --no-cache-dir "vllm>=0.3.0" || true
 
 # Stage 2: Runtime (uses NVIDIA runtime image for GPU inference)
 FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04 AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
-    PATH="/app/.venv/bin:$PATH"
+    PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH="/app/src"
 
 WORKDIR /app
 
