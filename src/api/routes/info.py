@@ -7,13 +7,27 @@ from fastapi import APIRouter, BackgroundTasks, Depends
 from api.dependencies import get_cleanup_service
 from config import ProjectConfig
 from core import CleanupService
-from models.manager import ModelManager
-
+from schemas.languages import LANGUAGE_MAP
 
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
 
 router = APIRouter(tags=["Info"])
+
+# Known Qwen3-TTS CustomVoice speakers (from official documentation)
+SUPPORTED_SPEAKERS = [
+    "Chelsie",
+    "Aidan",
+    "Serena",
+    "Ethan",
+    "Vivian",
+    "Lucas",
+    "Aria",
+    "Oliver",
+    "Isabel",
+    "Caleb",
+    "eric",
+]
 
 
 @router.get("/")
@@ -23,6 +37,7 @@ def read_root() -> dict[str, Any]:
         "message": "Cosmo TTS API is running",
         "version": "3.0.0",
         "architecture": "Clean Architecture (Hexagonal)",
+        "backend": "vLLM",
         "available_endpoints": [
             "/generate/base/0.6b",
             "/generate/base/1.7b",
@@ -47,22 +62,11 @@ async def trigger_cleanup(
 @router.get("/speakers")
 def get_speakers() -> dict[str, Any]:
     """Returns the list of supported speakers for CustomVoice mode."""
-    try:
-        model = ModelManager.get_model(mode="custom_voice", size="1.7B")
-        speakers = model.get_supported_speakers()
-        return {"speakers": speakers}
-    except Exception as e:
-        logger.error(f"Failed to get speakers: {e}")
-        return {"speakers": [], "error": str(e)}
+    return {"speakers": SUPPORTED_SPEAKERS}
 
 
 @router.get("/languages")
 def get_languages() -> dict[str, Any]:
     """Returns the list of supported languages."""
-    try:
-        model = ModelManager.get_model(mode="custom_voice", size="1.7B")
-        languages = model.get_supported_languages()
-        return {"languages": languages}
-    except Exception as e:
-        logger.error(f"Failed to get languages: {e}")
-        return {"languages": [], "error": str(e)}
+    languages = sorted(set(LANGUAGE_MAP.values()))
+    return {"languages": languages}

@@ -11,7 +11,6 @@ class ProjectSettings(BaseSettings):
     # These can be overridden by environment variables (e.g. PROJECT_NAME)
     PROJECT_NAME: str = "quisy-tts"
     LOG_LEVEL: str = "INFO"
-    DEVICE: str = "cuda"  # "cuda" or "cpu"
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 

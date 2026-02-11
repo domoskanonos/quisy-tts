@@ -9,14 +9,50 @@ from fastapi.responses import JSONResponse
 from api.routes import base, custom_voice, info, voice_design, websocket
 from config import ProjectConfig
 
-
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
+
+
+def _validate_startup_requirements() -> None:
+    """Validate that all required dependencies are available. Raises RuntimeError if not."""
+    import subprocess
+
+    import torch
+
+    # 1. Check vLLM
+    try:
+        import vllm  # noqa: F401
+
+        logger.info(f"✓ vLLM {vllm.__version__} is available.")
+    except ImportError as e:
+        raise RuntimeError("vLLM is required but not installed. Install it with: pip install 'vllm>=0.3.0'") from e
+
+    # 2. Check sox binary
+    try:
+        result = subprocess.run(["sox", "--version"], capture_output=True, text=True, check=False)
+        sox_version = result.stdout.strip() or result.stderr.strip()
+        logger.info(f"✓ sox is available: {sox_version}")
+    except FileNotFoundError as e:
+        raise RuntimeError("sox is required but not found in PATH. Install it with: apt-get install sox") from e
+
+    # 3. Check CUDA GPU
+    if not torch.cuda.is_available():
+        raise RuntimeError(
+            "CUDA GPU is required but not available. "
+            "Ensure NVIDIA drivers and CUDA toolkit are installed, "
+            "and run the container with --gpus all."
+        )
+
+    gpu_name = torch.cuda.get_device_name(0)
+    logger.info(f"✓ CUDA GPU available: {gpu_name}")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Manages the application lifecycle."""
+    # Validate mandatory requirements before anything else
+    _validate_startup_requirements()
+
     # Startup
     logger.info("Registered Routes:")
     for route in app.routes:

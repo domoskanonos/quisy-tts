@@ -11,7 +11,6 @@ dependencies = [
     "pytest-asyncio>=0.23.0",
     "pydantic-settings>=2.12.0",
     "sox>=1.0.5",
-    "qwen-tts>=0.0.5",
     "fastapi>=0.115.0",
     "uvicorn>=0.30.0",
     "python-multipart>=0.0.9",
@@ -22,10 +21,9 @@ dependencies = [
     "huggingface-hub>=0.20.0",
     "soundfile>=0.12.1",
     "numpy>=1.26.0",
+    "vllm>=0.7.0",
+    "flash-attn>=2.0.0",
 ]
-
-[project.optional-dependencies]
-gpu-linux = ["flash-attn>=2.0.0", "vllm>=0.3.0"]
 
 [build-system]
 requires = ["hatchling"]
@@ -94,3 +92,4 @@ torchaudio = { index = "pytorch-cu121" }
 # Flash Attention requires torch to be present during build
 [tool.uv.extra-build-dependencies]
 flash-attn = ["torch"]
+vllm = ["torch"]

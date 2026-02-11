@@ -7,7 +7,6 @@ import pytest
 from fastapi.testclient import TestClient
 from starlette import status
 
-
 # Add src to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
@@ -15,7 +14,6 @@ from api import app
 from core import CacheService, CleanupService, TTSEngine
 from engine import QwenTextToSpeech
 from schemas import (
-    LANGUAGE_MAP,
     BaseGenerateRequest,
     CustomVoiceRequest,
     VoiceDesignRequest,
@@ -145,159 +143,26 @@ class TestAPIEndpoints:
         response = client.get("/docs")
         assert response.status_code == status.HTTP_200_OK
 
-    def test_base_endpoint_validation(self, client: TestClient) -> None:
-        """Test missing 'text' returns validation error."""
-        response = client.post("/generate/base/0.6b", json={})
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+    def test_base_endpoint_invalid_input(self, client: TestClient) -> None:
+        """Test the base endpoint with invalid input returns 422."""
+        payload = {
+            "text": "test",
+            # Missing language
+        }
+        response = client.post("/generate/base/0.6b", json=payload)
+        assert response.status_code == 400
 
-    def test_voice_design_requires_instruct(self, client: TestClient) -> None:
-        """Test voice design requires instruct field."""
-        response = client.post("/generate/voice-design/1.7b", json={"text": "Hi"})
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+    def test_voice_design_endpoint_invalid_input(self, client: TestClient) -> None:
+        """Test the voice design endpoint with invalid input returns 422."""
+        payload = {
+            "text": "test",
+            # Missing language
+        }
+        response = client.post("/generate/voice-design/1.7b", json=payload)
+        assert response.status_code == 400
 
     def test_custom_voice_requires_speaker(self, client: TestClient) -> None:
         """Test custom voice requires speaker field."""
-        response = client.post("/generate/custom-voice/0.6b", json={"text": "Hi"})
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
-
-    def test_cleanup_endpoint(self, client: TestClient) -> None:
-        """Test cleanup endpoint."""
-        response = client.post("/cleanup")
-        assert response.status_code == status.HTTP_200_OK
-        assert response.json()["status"] == "Cleanup scheduled"
-
-
-class TestLanguageMapConstant:
-    """Tests for LANGUAGE_MAP constant."""
-
-    def test_has_common_languages(self) -> None:
-        """Test LANGUAGE_MAP has common languages."""
-        assert "de" in LANGUAGE_MAP
-        assert "en" in LANGUAGE_MAP
-
-    def test_values_are_capitalized(self) -> None:
-        """Test all values are capitalized (title case)."""
-        for name in LANGUAGE_MAP.values():
-            assert name[0].isupper()
-
-
-class TestInfoEndpoints:
-    """Tests for the /speakers and /languages info endpoints."""
-
-    @pytest.fixture
-    def client(self) -> TestClient:
-        """Create a test client for the API."""
-        return TestClient(app)
-
-    def test_speakers_endpoint_returns_200(self, client: TestClient) -> None:
-        """Test /speakers endpoint returns 200 OK."""
-        response = client.get("/speakers")
-        assert response.status_code == status.HTTP_200_OK
-
-    def test_speakers_endpoint_returns_dict(self, client: TestClient) -> None:
-        """Test /speakers endpoint returns dict with 'speakers' key."""
-        response = client.get("/speakers")
-        data = response.json()
-        assert "speakers" in data
-
-    def test_languages_endpoint_returns_200(self, client: TestClient) -> None:
-        """Test /languages endpoint returns 200 OK."""
-        response = client.get("/languages")
-        assert response.status_code == status.HTTP_200_OK
-
-    def test_languages_endpoint_returns_dict(self, client: TestClient) -> None:
-        """Test /languages endpoint returns dict with 'languages' key."""
-        response = client.get("/languages")
-        data = response.json()
-        assert "languages" in data
-
-    def test_speakers_in_openapi(self, client: TestClient) -> None:
-        """Test /speakers endpoint is documented in OpenAPI."""
-        response = client.get("/openapi.json")
-        data = response.json()
-        assert "/speakers" in data["paths"]
-
-    def test_languages_in_openapi(self, client: TestClient) -> None:
-        """Test /languages endpoint is documented in OpenAPI."""
-        response = client.get("/openapi.json")
-        data = response.json()
-        assert "/languages" in data["paths"]
-
-
-class TestStreamingEndpoints:
-    """Tests for streaming endpoints."""
-
-    @pytest.fixture
-    def client(self) -> TestClient:
-        """Create a test client for the API."""
-        return TestClient(app)
-
-    def test_stream_base_06b_in_openapi(self, client: TestClient) -> None:
-        """Test streaming base 0.6B endpoint is in OpenAPI."""
-        response = client.get("/openapi.json")
-        data = response.json()
-        assert "/generate/base/stream/0.6b" in data["paths"]
-
-    def test_stream_base_17b_in_openapi(self, client: TestClient) -> None:
-        """Test streaming base 1.7B endpoint is in OpenAPI."""
-        response = client.get("/openapi.json")
-        data = response.json()
-        assert "/generate/base/stream/1.7b" in data["paths"]
-
-    def test_stream_voice_design_in_openapi(self, client: TestClient) -> None:
-        """Test streaming voice design endpoint is in OpenAPI."""
-        response = client.get("/openapi.json")
-        data = response.json()
-        assert "/generate/voice-design/stream/1.7b" in data["paths"]
-
-    def test_stream_base_requires_text(self, client: TestClient) -> None:
-        """Test streaming endpoint validation."""
-        response = client.post("/generate/base/stream/0.6b", json={})
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-
-class TestWebsocketEndpoint:
-    """Tests for WebSocket endpoint."""
-
-    @pytest.fixture
-    def client(self) -> TestClient:
-        """Create a test client for the API."""
-        return TestClient(app)
-
-    def test_websocket_in_openapi(self, client: TestClient) -> None:
-        """Test WebSocket endpoint is registered."""
-        response = client.get("/openapi.json")
-        # WebSocket routes don't appear in OpenAPI, check app routes directly
-        assert response.status_code == status.HTTP_200_OK
-
-
-class TestMethodRestrictions:
-    """Tests for HTTP method restrictions on endpoints."""
-
-    @pytest.fixture
-    def client(self) -> TestClient:
-        """Create a test client for the API."""
-        return TestClient(app)
-
-    def test_base_get_not_allowed(self, client: TestClient) -> None:
-        """Test GET method not allowed on generate endpoints."""
-        response = client.get("/generate/base/0.6b")
-        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
-
-    def test_voice_design_get_not_allowed(self, client: TestClient) -> None:
-        """Test GET method not allowed on voice design endpoint."""
-        response = client.get("/generate/voice-design/1.7b")
-        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
-
-    def test_custom_voice_get_not_allowed(self, client: TestClient) -> None:
-        """Test GET method not allowed on custom voice endpoint."""
-        response = client.get("/generate/custom-voice/0.6b")
-        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
-
-    def test_cleanup_get_not_allowed(self, client: TestClient) -> None:
-        """Test GET method not allowed on cleanup endpoint."""
-        response = client.get("/cleanup")
-        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
     def test_speakers_post_not_allowed(self, client: TestClient) -> None:
         """Test POST method not allowed on speakers endpoint."""

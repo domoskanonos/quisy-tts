@@ -4,7 +4,6 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DEVICE=cuda
       - PYTHONUNBUFFERED=1
     volumes:
       - ./src:/app/src

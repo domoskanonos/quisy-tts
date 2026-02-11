@@ -16,18 +16,16 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-import numpy as np
 import pytest
-
+import torch
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from config import ProjectConfig
-from engine.qwen import QwenTextToSpeech
+from engine.qwen import QwenTextToSpeech, QwenVLLMBackend
 from schemas import TTSParams
 from schemas.languages import resolve_language
-
 
 # =============================================================================
 # Test Fixtures
@@ -35,32 +33,25 @@ from schemas.languages import resolve_language
 
 
 @pytest.fixture(scope="module")
-def mock_model() -> MagicMock:
-    """Create a mock TTS model for benchmarking without actual inference."""
-    """Create a mock TTS model for benchmarking without actual inference."""
-
-    mock = MagicMock()
+def mock_vllm_backend() -> MagicMock:
+    """Create a mock vLLM backend for benchmarking without actual inference."""
+    mock = MagicMock(spec=QwenVLLMBackend)
     # Simulate audio output (1 second at 24kHz)
-    mock.generate_voice_clone.return_value = (
-        [np.zeros(24000, dtype=np.float32)],
+    mock.generate_audio.return_value = (
+        torch.zeros(1, 24000, dtype=torch.float32),
         24000,
     )
-    mock.generate_voice_design.return_value = (
-        [np.zeros(24000, dtype=np.float32)],
-        24000,
-    )
-    mock.generate_custom_voice.return_value = (
-        [np.zeros(24000, dtype=np.float32)],
-        24000,
-    )
-    mock.create_voice_clone_prompt.return_value = MagicMock()
     return mock
 
 
 @pytest.fixture(scope="module")
-def tts_engine() -> QwenTextToSpeech:
-    """Get TTS engine instance."""
-    return QwenTextToSpeech()
+def tts_engine(mock_vllm_backend: MagicMock) -> QwenTextToSpeech:
+    """Get TTS engine instance with mocked vLLM backend."""
+    with patch.object(QwenTextToSpeech, "__init__", lambda self: None):
+        engine = QwenTextToSpeech()
+        engine.settings = ProjectConfig.get_settings()
+        engine.backend = mock_vllm_backend
+        return engine
 
 
 # =============================================================================
@@ -83,38 +74,18 @@ LONG_TEXT = (
 
 
 # =============================================================================
-# Benchmark: Engine Initialization
-# =============================================================================
-
-
-def test_benchmark_engine_init(
-    benchmark: Any,
-) -> None:
-    """Benchmark TTS engine initialization time."""
-    """Benchmark TTS engine initialization time."""
-
-    def init_engine() -> QwenTextToSpeech:
-        return QwenTextToSpeech()
-
-    result = benchmark(init_engine)
-    assert result is not None
-
-
-# =============================================================================
-# Benchmark: Audio Generation (Mocked Model)
+# Benchmark: Audio Generation (Mocked vLLM Backend)
 # =============================================================================
 
 
 def test_benchmark_generate_short_text(
     benchmark: Any,
     tts_engine: QwenTextToSpeech,
-    mock_model: MagicMock,
 ) -> None:
     """Benchmark audio generation for short text."""
     params = TTSParams(mode="custom_voice", speaker="eric", language="German")
 
-    with patch("engine.qwen.ModelManager.get_model", return_value=mock_model):
-        result = benchmark(tts_engine.generate_audio, SHORT_TEXT, params)
+    result = benchmark(tts_engine.generate_audio, SHORT_TEXT, params)
 
     assert result is not None
     assert len(result) == 2  # noqa: PLR2004 (waveform, sample_rate)
@@ -123,13 +94,11 @@ def test_benchmark_generate_short_text(
 def test_benchmark_generate_medium_text(
     benchmark: Any,
     tts_engine: QwenTextToSpeech,
-    mock_model: MagicMock,
 ) -> None:
     """Benchmark audio generation for medium text."""
     params = TTSParams(mode="custom_voice", speaker="eric", language="German")
 
-    with patch("engine.qwen.ModelManager.get_model", return_value=mock_model):
-        result = benchmark(tts_engine.generate_audio, MEDIUM_TEXT, params)
+    result = benchmark(tts_engine.generate_audio, MEDIUM_TEXT, params)
 
     assert result is not None
 
@@ -137,13 +106,11 @@ def test_benchmark_generate_medium_text(
 def test_benchmark_generate_long_text(
     benchmark: Any,
     tts_engine: QwenTextToSpeech,
-    mock_model: MagicMock,
 ) -> None:
     """Benchmark audio generation for long text."""
     params = TTSParams(mode="custom_voice", speaker="eric", language="German")
 
-    with patch("engine.qwen.ModelManager.get_model", return_value=mock_model):
-        result = benchmark(tts_engine.generate_audio, LONG_TEXT, params)
+    result = benchmark(tts_engine.generate_audio, LONG_TEXT, params)
 
     assert result is not None
 
@@ -153,14 +120,17 @@ def test_benchmark_generate_long_text(
 # =============================================================================
 
 
-def test_memory_baseline() -> None:
+def test_memory_baseline(mock_vllm_backend: MagicMock) -> None:
     """Establish memory baseline before TTS operations."""
     gc.collect()
 
     tracemalloc.start()
 
-    # Import engine
-    engine = QwenTextToSpeech()
+    # Create engine with mocked backend
+    with patch.object(QwenTextToSpeech, "__init__", lambda self: None):
+        engine = QwenTextToSpeech()
+        engine.settings = ProjectConfig.get_settings()
+        engine.backend = mock_vllm_backend
 
     current, peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
@@ -211,17 +181,15 @@ def test_benchmark_ttsparams_creation(
 
 def test_calculate_throughput(
     tts_engine: QwenTextToSpeech,
-    mock_model: MagicMock,
 ) -> None:
     """Calculate characters per second throughput."""
     params = TTSParams(mode="custom_voice", speaker="eric", language="German")
     text = MEDIUM_TEXT
 
-    with patch("engine.qwen.ModelManager.get_model", return_value=mock_model):
-        start = time.perf_counter()
-        for _ in range(10):
-            tts_engine.generate_audio(text, params)
-        elapsed = time.perf_counter() - start
+    start = time.perf_counter()
+    for _ in range(10):
+        tts_engine.generate_audio(text, params)
+    elapsed = time.perf_counter() - start
 
     total_chars = len(text) * 10
     chars_per_second = total_chars / elapsed

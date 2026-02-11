@@ -35,9 +35,15 @@ COPY pyproject.toml .
 # Copy source code for installation
 COPY src/ src/
 
-# Install core dependencies using the venv's pip
-RUN /app/.venv/bin/pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cu121 . && \
-    /app/.venv/bin/pip install --no-cache-dir "vllm>=0.3.0" || true
+# Install PyTorch with CUDA 12.1 support FIRST to ensure GPU version is used
+RUN /app/.venv/bin/pip install --no-cache-dir \
+    torch torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# Install vLLM-Omni and flash-attn (mandatory for GPU inference)
+RUN /app/.venv/bin/pip install --no-cache-dir "vllm-omni>=0.7.0" "flash-attn>=2.0.0"
+
+# Install remaining project dependencies (torch/vllm already satisfied from above)
+RUN /app/.venv/bin/pip install --no-cache-dir .
 
 # Stage 2: Runtime (uses NVIDIA runtime image for GPU inference)
 FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04 AS runtime
