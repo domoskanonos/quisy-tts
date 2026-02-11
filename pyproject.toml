@@ -1,6 +1,6 @@
 [project]
 name = "domoskanonos-python-starter"
-version = "0.2.0"
+version = "0.3.0"
 description = "python project starter template"
 authors = [{ name = "Dominik Bruhn", email = "dominikbruhn@googlemail.com" }]
 license = { text = "MIT" }

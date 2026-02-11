@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.3.0 (2026-02-11)
+
+### Features
+
+- Add readme to dockerhub
+  ([`60a6c2a`](https://github.com/domoskanonos/quisy-tts/commit/60a6c2a84a53cfd03283f69371ce60fbc10b3f26))
+
+
 ## v0.2.0 (2026-02-11)
 
 ### Bug Fixes
