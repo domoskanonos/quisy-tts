@@ -1,11 +1,22 @@
 # CHANGELOG
 
 
+## v0.4.1 (2026-02-11)
+
+### Bug Fixes
+
+- Corrected docker build
+  ([`1edcda9`](https://github.com/domoskanonos/quisy-tts/commit/1edcda923122e49288b1277691e802a4620eefb6))
+
+- Modified
+  ([`838e358`](https://github.com/domoskanonos/quisy-tts/commit/838e358bcf03f0369c08be746e25beac65f021dd))
+
+
 ## v0.4.0 (2026-02-11)
 
 ### Bug Fixes
 
-- Merge branch 'main' of github.com:domoskanonos/quisy-tts
+- Merge branch 'main' of github.com:domoskanonos/cosmo-tts
   ([`6ebed7d`](https://github.com/domoskanonos/quisy-tts/commit/6ebed7df1d7c3d8061dd8e5a8b74291078c29ef6))
 
 
@@ -29,7 +40,7 @@
 
 ### Features
 
-- Merge branch 'main' of github.com:domoskanonos/quisy-tts
+- Merge branch 'main' of github.com:domoskanonos/cosmo-tts
   ([`db91223`](https://github.com/domoskanonos/quisy-tts/commit/db91223ba9933af8d6585b247f514b9d9eb71181))
 
 
