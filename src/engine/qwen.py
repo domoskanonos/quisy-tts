@@ -17,7 +17,6 @@ from engine.backend_interface import TTSBackend
 from models.manager import ModelManager
 from schemas import TTSParams
 
-
 # Optional vLLM import
 try:
     import vllm  # noqa: F401
@@ -174,7 +173,7 @@ class QwenVLLMBackend:
             raise RuntimeError("vLLM not available. Install 'vllm' package.")
 
         # We need to defer imports to avoid runtime errors on Windows
-        from vllm import Omni, SamplingParams  # type: ignore # noqa: PLC0415
+        from vllm import Omni, SamplingParams  # type: ignore[attr-defined]
 
         # Initialize model (lazy loading mostly handled by vLLM)
         # Note: vLLM loads model on first use or explicit init
