@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v0.2.0 (2026-02-11)
+
+### Bug Fixes
+
+- Corrected Dockerhub NAME
+  ([`d87d30b`](https://github.com/domoskanonos/quisy-tts/commit/d87d30ba3552a52d8e98587b16cdc0c11d7bb44c))
+
+### Features
+
+- Merge branch 'main' of github.com:domoskanonos/cosmo-tts
+  ([`db91223`](https://github.com/domoskanonos/quisy-tts/commit/db91223ba9933af8d6585b247f514b9d9eb71181))
+
+
 ## v0.1.0 (2026-02-11)
 
 ### Bug Fixes
@@ -28,6 +41,9 @@
 - Add `ModelManager` for Qwen3-TTS model loading and caching, remove default model size from `.env`,
   and refine `.gitignore` for the models directory.
   ([`34db1ac`](https://github.com/domoskanonos/quisy-tts/commit/34db1acae99752bbb9cfc6011c58913b70b5d646))
+
+- Add docker readme
+  ([`adf958e`](https://github.com/domoskanonos/quisy-tts/commit/adf958e7b1f996aa9f398601d52e4bfdea9cb83b))
 
 - Add Qwen3-TTS engine implementation with both Transformers and vLLM backends.
   ([`a4e0e63`](https://github.com/domoskanonos/quisy-tts/commit/a4e0e637a9b6acb1a765895f69f3a0708e9637c1))
