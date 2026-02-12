@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.4.5 (2026-02-12)
+
+### Bug Fixes
+
+- Audio error
+  ([`1a4adde`](https://github.com/domoskanonos/quisy-tts/commit/1a4adde19d7c8bff3be1c6187c0866ba513f12e0))
+
+
 ## v0.4.4 (2026-02-12)
 
 ### Bug Fixes
