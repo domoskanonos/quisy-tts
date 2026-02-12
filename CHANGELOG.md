@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.4.3 (2026-02-12)
+
+### Bug Fixes
+
+- Merge branch 'main' of github.com:domoskanonos/quisy-tts
+  ([`c31d729`](https://github.com/domoskanonos/quisy-tts/commit/c31d729911c02abcbae33cf8c04537849640b0cf))
+
+
 ## v0.4.2 (2026-02-12)
 
 ### Bug Fixes
@@ -10,6 +18,9 @@
 
 - Modified
   ([`98b0f36`](https://github.com/domoskanonos/quisy-tts/commit/98b0f368ed82ac3ec4e8facd7cd3b73ed639d03e))
+
+- Uv now avaliable
+  ([`0236c60`](https://github.com/domoskanonos/quisy-tts/commit/0236c602c009b76ab695d0062fb4f5463dce1770))
 
 
 ## v0.4.1 (2026-02-11)
