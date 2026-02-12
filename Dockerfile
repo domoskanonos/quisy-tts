@@ -1,11 +1,14 @@
 # Stage 1: Builder
-FROM ubuntu:22.04 AS builder
+FROM nvidia/cuda:12.1.0-devel-ubuntu22.04 AS builder
 
 # Set environment variables for build
 ENV PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
+    LC_ALL=C.UTF-8 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_PYTHON=python3.12
 
 # Install minimal build dependencies and Python 3.12
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -22,28 +25,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.12-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
 WORKDIR /app
 
-# Create virtual environment with Python 3.12
-RUN python3.12 -m venv /app/.venv
-ENV PATH="/app/.venv/bin:$PATH" \
-    VIRTUAL_ENV="/app/.venv"
-
 # Copy dependency definition
-COPY pyproject.toml .
+COPY pyproject.toml uv.lock ./
 
-# Copy source code for installation
+# Install dependencies (including GPU extras)
+RUN uv sync --frozen --extra gpu --no-install-project
+
+# Copy source code
 COPY src/ src/
+COPY README.md .
 
-# Install PyTorch with CUDA 12.1 support FIRST to ensure GPU version is used
-RUN /app/.venv/bin/pip install --no-cache-dir \
-    torch torchaudio --index-url https://download.pytorch.org/whl/cu121
-
-# Install vLLM-Omni and flash-attn (mandatory for GPU inference)
-RUN /app/.venv/bin/pip install --no-cache-dir "vllm-omni>=0.7.0" "flash-attn>=2.0.0"
-
-# Install remaining project dependencies (torch/vllm already satisfied from above)
-RUN /app/.venv/bin/pip install --no-cache-dir .
+# Install project
+RUN uv sync --frozen --extra gpu
 
 # Stage 2: Runtime (uses NVIDIA runtime image for GPU inference)
 FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04 AS runtime
