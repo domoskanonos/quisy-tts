@@ -4,7 +4,6 @@ from pydantic import BaseModel, Field
 
 from config import ProjectSettings
 
-
 # =============================================================================
 # Base Mode Schemas (Voice Cloning)
 # =============================================================================
@@ -16,7 +15,7 @@ class BaseGenerateRequest(BaseModel):
     text: str = Field(
         ...,
         description="The text to convert to speech.",
-        json_schema_extra={"example": ("Ich freu mich Sie kennen zu lernen. Gerne leihe ich ihnen meine Stimme.")},
+        json_schema_extra={"example": "Hallo, ich bin eine künstliche Stimme."},
     )
     language: str = Field(
         default="German",

@@ -5,10 +5,14 @@ from fastapi.responses import FileResponse, StreamingResponse
 
 from api.dependencies import get_cleanup_service, get_tts_service
 from config import ProjectConfig
-from core import AudioGenerationError, CleanupService
+from core import (
+    AudioGenerationError,
+    CleanupService,
+    InvalidLanguageError,
+    ReferenceAudioNotFoundError,
+)
 from schemas import CustomVoiceRequest
 from services import TTSService
-
 
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
@@ -65,6 +69,9 @@ async def _generate(
             headers={"Content-Disposition": f"attachment; filename={result_path.name}"},
         )
 
+    except (ReferenceAudioNotFoundError, InvalidLanguageError) as e:
+        logger.warning(f"Invalid custom voice request: {e}")
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except AudioGenerationError as e:
         logger.error(f"Custom voice generation error: {e}")
         raise HTTPException(status_code=500, detail=str(e)) from e

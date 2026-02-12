@@ -131,9 +131,15 @@ class QwenVLLMBackend:
 
         if params.mode == "base":
             ref_audio_path = self._resolve_ref_audio(params)
-            if ref_audio_path:
-                additional_info["ref_audio"] = [ref_audio_path]
-                additional_info["ref_text"] = [params.ref_text or ""]
+            if not ref_audio_path:
+                from core.exceptions import ReferenceAudioNotFoundError
+
+                raise ReferenceAudioNotFoundError(
+                    "No reference audio found for voice cloning. "
+                    "Please provide `reference_audio` or ensure a default voice exists in `voices/`."
+                )
+            additional_info["ref_audio"] = [ref_audio_path]
+            additional_info["ref_text"] = [params.ref_text or ""]
 
         if params.instruct:
             additional_info["instruct"] = [params.instruct]

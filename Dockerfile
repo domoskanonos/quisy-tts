@@ -39,6 +39,7 @@ RUN uv sync --frozen --extra gpu --no-install-project
 
 # Copy source code
 COPY src/ src/
+COPY voices/ voices/
 COPY README.md .
 
 # Install project
@@ -71,6 +72,7 @@ COPY --from=builder /app/.venv /app/.venv
 
 # Copy source code and config
 COPY src/ src/
+COPY voices/ voices/
 COPY .env.example .env
 
 # Expose API port
