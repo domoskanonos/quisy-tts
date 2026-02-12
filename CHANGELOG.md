@@ -1,6 +1,17 @@
 # CHANGELOG
 
 
+## v0.4.2 (2026-02-12)
+
+### Bug Fixes
+
+- Fix build
+  ([`2ac8081`](https://github.com/domoskanonos/quisy-tts/commit/2ac8081889f9e7a522084e5ab768af961e03deae))
+
+- Modified
+  ([`98b0f36`](https://github.com/domoskanonos/quisy-tts/commit/98b0f368ed82ac3ec4e8facd7cd3b73ed639d03e))
+
+
 ## v0.4.1 (2026-02-11)
 
 ### Bug Fixes
