@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.4.6 (2026-02-12)
+
+### Bug Fixes
+
+- Dockerfile verschlanken
+  ([`6e25174`](https://github.com/domoskanonos/quisy-tts/commit/6e25174da22803f4a64357793d8fbf637435e821))
+
+
 ## v0.4.5 (2026-02-12)
 
 ### Bug Fixes
