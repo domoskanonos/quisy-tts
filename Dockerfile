@@ -35,7 +35,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
 # Install dependencies (including GPU extras)
-RUN uv sync --frozen --extra gpu --no-install-project
+RUN uv sync --frozen --no-dev --extra gpu --no-install-project
 
 # Copy source code
 COPY src/ src/
@@ -43,7 +43,7 @@ COPY voices/ voices/
 COPY README.md .
 
 # Install project
-RUN uv sync --frozen --extra gpu
+RUN uv sync --frozen --no-dev --extra gpu
 
 # Stage 2: Runtime (uses NVIDIA runtime image for GPU inference)
 FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04 AS runtime
