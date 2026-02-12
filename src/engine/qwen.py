@@ -10,7 +10,7 @@ import torch
 from vllm import LLM, SamplingParams
 
 from audio.processor import AudioUtils
-from config import ProjectConfig
+from config import ProjectConfig, ProjectSettings
 from core import TTSEngine
 from schemas import TTSParams
 
@@ -31,7 +31,7 @@ QWEN_GENERATION_CONFIG = {
 class QwenVLLMBackend:
     """High-performance vLLM-based backend for Qwen3-TTS."""
 
-    def __init__(self, settings: object) -> None:
+    def __init__(self, settings: ProjectSettings) -> None:
         """Initialize the vLLM backend."""
         self.settings = settings
 
@@ -58,7 +58,7 @@ class QwenVLLMBackend:
         inputs = self._prepare_inputs(text, params)
 
         # vLLM generate returns a list of RequestOutput
-        outputs = self.llm.generate([inputs], self.sampling_params)
+        outputs = self.llm.generate([inputs], self.sampling_params)  # type: ignore
 
         final_audio: torch.Tensor | None = None
         sr: int = 24000  # default fallback

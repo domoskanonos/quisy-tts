@@ -137,27 +137,6 @@ FastAPI automatically generates interactive documentation for the API:
 - **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc) - Clean, searchable documentation.
 - **OpenAPI JSON**: [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
 
----
-
-## 🧪 Testing
-
-We provide dedicated scripts to test all generation modes:
-
-```bash
-# Test API Generation (Standard)
-uv run python scripts/test_api_generate.py
-
-# Test HTTP Streaming
-uv run python scripts/test_api_stream.py
-
-# Test WebSocket Streaming
-uv run python scripts/test_api_ws.py
-
-# Verify all model modes
-uv run python tests/verify_modes.py
-```
-
----
 
 ## 🛠 Development
 

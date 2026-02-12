@@ -1,7 +1,7 @@
 [project]
-name = "domoskanonos-python-starter"
+name = "quisy-tts"
 version = "0.4.1"
-description = "python project starter template"
+description = "Quisy TTS is a modern, high-performance Text-to-Speech API powered by Qwen3-TTS."
 authors = [{ name = "Dominik Bruhn", email = "dominikbruhn@googlemail.com" }]
 license = { text = "MIT" }
 requires-python = ">=3.12"
@@ -22,7 +22,7 @@ dependencies = [
     "soundfile>=0.12.1",
     "numpy>=1.26.0",
     "vllm>=0.7.0",
-    "flash-attn>=2.0.0",
+    "flash-attn>=2.0.0; sys_platform != 'win32'",
 ]
 
 [build-system]
@@ -42,6 +42,7 @@ dev = [
     "pytest-benchmark>=4.0.0",
     "memory-profiler>=0.61.0",
     "types-requests>=2.31.0",
+    "ruff>=0.3.0",
 ]
 
 

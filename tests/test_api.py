@@ -146,11 +146,12 @@ class TestAPIEndpoints:
     def test_base_endpoint_invalid_input(self, client: TestClient) -> None:
         """Test the base endpoint with invalid input returns 422."""
         payload = {
-            "text": "test",
-            # Missing language
+            # "text": "test",
+            # Missing text which is required
+            "language": "German",
         }
         response = client.post("/generate/base/0.6b", json=payload)
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_voice_design_endpoint_invalid_input(self, client: TestClient) -> None:
         """Test the voice design endpoint with invalid input returns 422."""
@@ -159,7 +160,7 @@ class TestAPIEndpoints:
             # Missing language
         }
         response = client.post("/generate/voice-design/1.7b", json=payload)
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_custom_voice_requires_speaker(self, client: TestClient) -> None:
         """Test custom voice requires speaker field."""
