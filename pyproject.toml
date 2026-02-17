@@ -16,15 +16,14 @@ dependencies = [
     "python-multipart>=0.0.9",
     "torch>=2.0.0",
     "torchaudio>=2.0.0",
+    "vllm>=0.7.0",
+    "flash-attn>=2.0.0; sys_platform != 'win32'",
     "websockets>=13.0",
     "requests>=2.31.0",
     "huggingface-hub>=0.20.0",
     "soundfile>=0.12.1",
     "numpy>=1.26.0",
 ]
-
-[project.optional-dependencies]
-gpu = ["vllm>=0.7.0", "flash-attn>=2.0.0; sys_platform != 'win32'"]
 
 [build-system]
 requires = ["hatchling"]

@@ -7,7 +7,6 @@ from core import CacheService, CleanupService, TTSEngine
 from engine import QwenTextToSpeech
 from services import FileCacheService, FileCleanupService, TTSService
 
-
 settings = ProjectConfig.get_settings()
 
 

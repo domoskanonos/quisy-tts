@@ -30,7 +30,7 @@ def _get_service() -> VoiceService:
 
 @router.get("/", response_model=VoiceListResponse)
 def list_voices() -> dict[str, Any]:
-    """List all registered custom voices."""
+    """List all registered voices (defaults + custom)."""
     service = _get_service()
     voices = service.list_voices()
     return {"voices": voices, "total": len(voices)}
@@ -56,7 +56,11 @@ def get_voice(voice_id: str) -> dict:
 def create_voice(data: VoiceCreate) -> dict:
     """Create a new voice (metadata only, upload audio separately)."""
     service = _get_service()
-    voice = service.create_voice(name=data.name, example_text=data.example_text)
+    voice = service.create_voice(
+        name=data.name,
+        example_text=data.example_text,
+        instruct=data.instruct,
+    )
     return voice
 
 
@@ -71,6 +75,7 @@ def update_voice(voice_id: str, data: VoiceUpdate) -> dict:
         voice_id=voice_id,
         name=data.name,
         example_text=data.example_text,
+        instruct=data.instruct,
     )
     if voice is None:
         raise HTTPException(status_code=404, detail=f"Voice {voice_id} not found")
@@ -84,6 +89,14 @@ def update_voice(voice_id: str, data: VoiceUpdate) -> dict:
 def delete_voice(voice_id: str) -> None:
     """Delete a voice and its associated audio file."""
     service = _get_service()
+
+    # Check if it's a default voice
+    voice = service.get_voice(voice_id)
+    if voice is None:
+        raise HTTPException(status_code=404, detail=f"Voice {voice_id} not found")
+    if voice.get("is_default"):
+        raise HTTPException(status_code=403, detail="Default voices cannot be deleted")
+
     deleted = service.delete_voice(voice_id)
     if not deleted:
         raise HTTPException(status_code=404, detail=f"Voice {voice_id} not found")

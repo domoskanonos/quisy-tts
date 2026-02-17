@@ -42,9 +42,11 @@ export class VoicesComponent implements OnInit {
     showEditDialog = signal(false);
     newVoiceName = '';
     newVoiceText = '';
+    newVoiceInstruct = '';
     editVoice: Voice | null = null;
     editName = '';
     editText = '';
+    editInstruct = '';
     selectedAudioFile: File | null = null;
     isUploading = signal(false);
 
@@ -93,6 +95,7 @@ export class VoicesComponent implements OnInit {
     openCreateDialog(): void {
         this.newVoiceName = '';
         this.newVoiceText = '';
+        this.newVoiceInstruct = '';
         this.selectedAudioFile = null;
         this.showCreateDialog.set(true);
     }
@@ -110,6 +113,7 @@ export class VoicesComponent implements OnInit {
         this.ttsApi.createVoice({
             name: this.newVoiceName,
             example_text: this.newVoiceText,
+            instruct: this.newVoiceInstruct.trim() || null,
         }).subscribe({
             next: voice => {
                 if (this.selectedAudioFile) {
@@ -162,6 +166,7 @@ export class VoicesComponent implements OnInit {
         this.editVoice = voice;
         this.editName = voice.name;
         this.editText = voice.example_text;
+        this.editInstruct = voice.instruct || '';
         this.selectedAudioFile = null;
         this.showEditDialog.set(true);
     }
@@ -172,6 +177,7 @@ export class VoicesComponent implements OnInit {
         this.ttsApi.updateVoice(this.editVoice.id, {
             name: this.editName,
             example_text: this.editText,
+            instruct: this.editInstruct.trim() || null,
         }).subscribe({
             next: () => {
                 if (this.selectedAudioFile) {

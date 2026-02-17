@@ -1,102 +1,169 @@
-"""Voice management service – CRUD operations with JSON-based persistence."""
+"""Voice management service – CRUD operations with SQLite persistence."""
 
-import json
+import sqlite3
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
 from config import ProjectConfig
+from services.default_voices import DEFAULT_VOICES
 
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
 
+_CREATE_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS voices (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    example_text TEXT NOT NULL,
+    instruct TEXT,
+    audio_filename TEXT,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+)
+"""
+
 
 class VoiceService:
-    """Service for managing custom voices with JSON file persistence."""
+    """Service for managing voices with SQLite persistence."""
 
     def __init__(self, voices_dir: Path | None = None) -> None:
         self._voices_dir = voices_dir or settings.VOICES_DIR
-        self._registry_path = self._voices_dir / "registry.json"
         self._voices_dir.mkdir(parents=True, exist_ok=True)
-        self._registry = self._load_registry()
+        self._db_path = self._voices_dir / "voices.db"
+        self._init_db()
 
-    # ─── Persistence ─────────────────────────────────────────────
+    # ─── Database Setup ──────────────────────────────────────────
 
-    def _load_registry(self) -> dict[str, dict]:
-        """Load voice registry from JSON file."""
-        if self._registry_path.exists():
-            try:
-                data = json.loads(self._registry_path.read_text(encoding="utf-8"))
-                if isinstance(data, dict):
-                    return data
-            except (json.JSONDecodeError, OSError) as e:
-                logger.warning(f"Failed to load voice registry: {e}")
-        return {}
+    def _get_conn(self) -> sqlite3.Connection:
+        """Create a new connection with row_factory."""
+        conn = sqlite3.connect(str(self._db_path))
+        conn.row_factory = sqlite3.Row
+        return conn
 
-    def _save_registry(self) -> None:
-        """Persist voice registry to JSON file."""
-        self._registry_path.write_text(
-            json.dumps(self._registry, indent=2, default=str),
-            encoding="utf-8",
-        )
+    def _init_db(self) -> None:
+        """Create table and seed default voices if empty."""
+        with self._get_conn() as conn:
+            conn.execute(_CREATE_TABLE_SQL)
+
+            # Check if default voices already exist
+            count = conn.execute("SELECT COUNT(*) FROM voices WHERE is_default = 1").fetchone()[0]
+
+            if count == 0:
+                self._seed_defaults(conn)
+                logger.info(f"Seeded {len(DEFAULT_VOICES)} default voices into SQLite.")
+
+    def _seed_defaults(self, conn: sqlite3.Connection) -> None:
+        """Insert all default voices."""
+        now = datetime.now(UTC).isoformat()
+        for i, voice in enumerate(DEFAULT_VOICES):
+            voice_id = f"default_{i + 1:03d}"
+            conn.execute(
+                """INSERT INTO voices (id, name, example_text, instruct, audio_filename, is_default, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, NULL, 1, ?, ?)""",
+                (voice_id, voice["name"], voice["example_text"], voice["instruct"], now, now),
+            )
+
+    # ─── Helper ──────────────────────────────────────────────────
+
+    @staticmethod
+    def _row_to_dict(row: sqlite3.Row) -> dict:
+        """Convert a sqlite3.Row to a plain dict."""
+        return {
+            "id": row["id"],
+            "name": row["name"],
+            "example_text": row["example_text"],
+            "instruct": row["instruct"],
+            "audio_filename": row["audio_filename"],
+            "is_default": bool(row["is_default"]),
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+        }
 
     # ─── CRUD Operations ─────────────────────────────────────────
 
     def list_voices(self) -> list[dict]:
-        """Return all registered voices, sorted by creation date."""
-        voices = list(self._registry.values())
-        voices.sort(key=lambda v: v.get("created_at", ""), reverse=True)
-        return voices
+        """Return all voices, defaults first then by creation date."""
+        with self._get_conn() as conn:
+            rows = conn.execute("SELECT * FROM voices ORDER BY is_default DESC, name ASC").fetchall()
+        return [self._row_to_dict(r) for r in rows]
 
     def get_voice(self, voice_id: str) -> dict | None:
         """Return a single voice by ID, or None if not found."""
-        return self._registry.get(voice_id)
+        with self._get_conn() as conn:
+            row = conn.execute("SELECT * FROM voices WHERE id = ?", (voice_id,)).fetchone()
+        return self._row_to_dict(row) if row else None
 
-    def create_voice(self, name: str, example_text: str) -> dict:
-        """Create a new voice entry (without audio yet)."""
+    def create_voice(
+        self,
+        name: str,
+        example_text: str,
+        instruct: str | None = None,
+    ) -> dict:
+        """Create a new user voice."""
         voice_id = uuid.uuid4().hex[:12]
         now = datetime.now(UTC).isoformat()
 
-        voice = {
-            "id": voice_id,
-            "name": name,
-            "example_text": example_text,
-            "audio_filename": None,
-            "created_at": now,
-            "updated_at": now,
-        }
+        with self._get_conn() as conn:
+            conn.execute(
+                """INSERT INTO voices (id, name, example_text, instruct, audio_filename, is_default, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, NULL, 0, ?, ?)""",
+                (voice_id, name, example_text, instruct, now, now),
+            )
 
-        self._registry[voice_id] = voice
-        self._save_registry()
         logger.info(f"Voice created: {voice_id} ({name})")
-        return voice
+        return self.get_voice(voice_id)  # type: ignore[return-value]
 
     def update_voice(
         self,
         voice_id: str,
         name: str | None = None,
         example_text: str | None = None,
+        instruct: str | None = None,
     ) -> dict | None:
         """Update voice metadata. Returns updated voice or None if not found."""
-        voice = self._registry.get(voice_id)
+        voice = self.get_voice(voice_id)
         if voice is None:
             return None
 
-        if name is not None:
-            voice["name"] = name
-        if example_text is not None:
-            voice["example_text"] = example_text
-        voice["updated_at"] = datetime.now(UTC).isoformat()
+        now = datetime.now(UTC).isoformat()
+        updates: list[str] = []
+        params: list[str | None] = []
 
-        self._save_registry()
+        if name is not None:
+            updates.append("name = ?")
+            params.append(name)
+        if example_text is not None:
+            updates.append("example_text = ?")
+            params.append(example_text)
+        if instruct is not None:
+            updates.append("instruct = ?")
+            params.append(instruct)
+
+        if not updates:
+            return voice
+
+        updates.append("updated_at = ?")
+        params.append(now)
+        params.append(voice_id)
+
+        sql = f"UPDATE voices SET {', '.join(updates)} WHERE id = ?"  # noqa: S608
+
+        with self._get_conn() as conn:
+            conn.execute(sql, params)
+
         logger.info(f"Voice updated: {voice_id}")
-        return voice
+        return self.get_voice(voice_id)
 
     def delete_voice(self, voice_id: str) -> bool:
         """Delete a voice and its audio file. Returns True if deleted."""
-        voice = self._registry.pop(voice_id, None)
+        voice = self.get_voice(voice_id)
         if voice is None:
             return False
+
+        if voice.get("is_default"):
+            return False  # Default voices cannot be deleted
 
         # Remove audio file if exists
         audio_filename = voice.get("audio_filename")
@@ -106,13 +173,15 @@ class VoiceService:
                 audio_path.unlink()
                 logger.info(f"Audio file deleted: {audio_path}")
 
-        self._save_registry()
+        with self._get_conn() as conn:
+            conn.execute("DELETE FROM voices WHERE id = ?", (voice_id,))
+
         logger.info(f"Voice deleted: {voice_id}")
         return True
 
     def set_audio(self, voice_id: str, audio_data: bytes, original_filename: str) -> dict | None:
         """Save or replace the audio file for a voice."""
-        voice = self._registry.get(voice_id)
+        voice = self.get_voice(voice_id)
         if voice is None:
             return None
 
@@ -130,16 +199,19 @@ class VoiceService:
 
         audio_path.write_bytes(audio_data)
 
-        voice["audio_filename"] = audio_filename
-        voice["updated_at"] = datetime.now(UTC).isoformat()
-        self._save_registry()
+        now = datetime.now(UTC).isoformat()
+        with self._get_conn() as conn:
+            conn.execute(
+                "UPDATE voices SET audio_filename = ?, updated_at = ? WHERE id = ?",
+                (audio_filename, now, voice_id),
+            )
 
         logger.info(f"Audio saved for voice {voice_id}: {audio_filename}")
-        return voice
+        return self.get_voice(voice_id)
 
     def get_audio_path(self, voice_id: str) -> Path | None:
         """Return the full path to the audio file for a voice, or None."""
-        voice = self._registry.get(voice_id)
+        voice = self.get_voice(voice_id)
         if voice is None or voice.get("audio_filename") is None:
             return None
 

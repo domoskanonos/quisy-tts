@@ -2552,10 +2552,11 @@ wheels = [
 
 [[package]]
 name = "quisy-tts"
-version = "0.4.5"
+version = "0.4.6"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
+    { name = "flash-attn", marker = "sys_platform != 'win32'" },
     { name = "huggingface-hub" },
     { name = "numpy" },
     { name = "pydantic-settings" },
@@ -2569,13 +2570,8 @@ dependencies = [
     { name = "torch" },
     { name = "torchaudio" },
     { name = "uvicorn" },
-    { name = "websockets" },
-]
-
-[package.optional-dependencies]
-gpu = [
-    { name = "flash-attn", marker = "sys_platform != 'win32'" },
     { name = "vllm" },
+    { name = "websockets" },
 ]
 
 [package.dev-dependencies]
@@ -2595,7 +2591,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115.0" },
-    { name = "flash-attn", marker = "sys_platform != 'win32' and extra == 'gpu'", specifier = ">=2.0.0" },
+    { name = "flash-attn", marker = "sys_platform != 'win32'", specifier = ">=2.0.0" },
     { name = "huggingface-hub", specifier = ">=0.20.0" },
     { name = "numpy", specifier = ">=1.26.0" },
     { name = "pydantic-settings", specifier = ">=2.12.0" },
@@ -2609,10 +2605,9 @@ requires-dist = [
     { name = "torch", specifier = ">=2.0.0", index = "https://download.pytorch.org/whl/cu121" },
     { name = "torchaudio", specifier = ">=2.0.0", index = "https://download.pytorch.org/whl/cu121" },
     { name = "uvicorn", specifier = ">=0.30.0" },
-    { name = "vllm", marker = "extra == 'gpu'", specifier = ">=0.7.0" },
+    { name = "vllm", specifier = ">=0.7.0" },
     { name = "websockets", specifier = ">=13.0" },
 ]
-provides-extras = ["gpu"]
 
 [package.metadata.requires-dev]
 dev = [

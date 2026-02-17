@@ -36,7 +36,7 @@ export class SynthesisComponent implements OnInit {
 
     // Form state
     text = '';
-    language = 'German';
+    language = 'Deutsch';
     modelSize: ModelSize = '1.7b';
     currentMode: TtsMode = 'custom_voice';
 
@@ -63,9 +63,32 @@ export class SynthesisComponent implements OnInit {
 
     // State
     isGenerating = signal(false);
+    backendOnline = signal<boolean | null>(null);
     history = signal<GenerationHistoryItem[]>([]);
 
     ngOnInit(): void {
+        this.checkBackend();
+    }
+
+    private checkBackend(): void {
+        this.ttsApi.getStatus().subscribe({
+            next: () => {
+                this.backendOnline.set(true);
+                this.loadData();
+            },
+            error: () => {
+                this.backendOnline.set(false);
+                // Use fallback data so the UI is still usable
+                this.languages.set(['German', 'English', 'French', 'Spanish']);
+                this.speakers.set([
+                    'Chelsie', 'Aidan', 'Serena', 'Ethan', 'Vivian',
+                    'Lucas', 'Aria', 'Oliver', 'Isabel', 'Caleb', 'eric',
+                ]);
+            },
+        });
+    }
+
+    private loadData(): void {
         this.ttsApi.getLanguages().subscribe({
             next: res => this.languages.set(res.languages),
             error: () => this.languages.set(['German', 'English', 'French', 'Spanish']),
@@ -78,6 +101,11 @@ export class SynthesisComponent implements OnInit {
                     'Lucas', 'Aria', 'Oliver', 'Isabel', 'Caleb', 'eric',
                 ]),
         });
+    }
+
+    retryConnection(): void {
+        this.backendOnline.set(null);
+        this.checkBackend();
     }
 
     onTabChange(index: number): void {

@@ -10,6 +10,23 @@
         <p class="subtitle">Erstelle natürliche Sprachausgaben mit KI-Stimmen</p>
     </div>
 
+    <!-- Backend Offline Banner -->
+    @if (backendOnline() === false) {
+    <div class="backend-offline-banner fade-in">
+        <div class="banner-content">
+            <i class="pi pi-exclamation-triangle"></i>
+            <div class="banner-text">
+                <strong>Backend nicht erreichbar</strong>
+                <span>Der TTS-Server antwortet nicht. Bitte stelle sicher, dass das Backend läuft.</span>
+            </div>
+            <button class="retry-btn" (click)="retryConnection()">
+                <i class="pi pi-refresh"></i>
+                Erneut versuchen
+            </button>
+        </div>
+    </div>
+    }
+
     <!-- Main Card -->
     <div class="synthesis-card glass-card">
 
@@ -127,7 +144,8 @@
 
         <!-- Generate Button -->
         <div class="generate-section">
-            <button class="btn-gradient generate-btn" (click)="generate()" [disabled]="isGenerating() || !text.trim()">
+            <button class="btn-gradient generate-btn" (click)="generate()"
+                [disabled]="isGenerating() || !text.trim() || backendOnline() === false">
                 @if (isGenerating()) {
                 <i class="pi pi-spinner animate-spin"></i>
                 <span>Generiere...</span>

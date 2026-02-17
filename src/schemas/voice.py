@@ -22,6 +22,12 @@ class VoiceCreate(BaseModel):
         description="Example sentence for this voice.",
         json_schema_extra={"example": "Hallo, ich bin eine künstliche Stimme."},
     )
+    instruct: str | None = Field(
+        default=None,
+        max_length=500,
+        description="Instruct text describing the voice style for Qwen TTS.",
+        json_schema_extra={"example": "A calm, professional male voice with a warm tone."},
+    )
 
 
 class VoiceUpdate(BaseModel):
@@ -39,6 +45,11 @@ class VoiceUpdate(BaseModel):
         max_length=500,
         description="New example sentence.",
     )
+    instruct: str | None = Field(
+        default=None,
+        max_length=500,
+        description="New instruct text for voice style.",
+    )
 
 
 class VoiceResponse(BaseModel):
@@ -47,7 +58,9 @@ class VoiceResponse(BaseModel):
     id: str
     name: str
     example_text: str
+    instruct: str | None = None
     audio_filename: str | None = None
+    is_default: bool = False
     created_at: datetime
     updated_at: datetime
 

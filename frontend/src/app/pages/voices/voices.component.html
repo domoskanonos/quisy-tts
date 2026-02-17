@@ -23,7 +23,7 @@
     <div class="section">
         <h2 class="section-title">
             <i class="pi pi-star"></i>
-            Eigene Stimmen
+            Stimmen
             <span class="count-badge">{{ voices().length }}</span>
         </h2>
         <div class="voices-grid">
@@ -33,8 +33,16 @@
                     {{ getInitials(voice.name) }}
                 </div>
                 <div class="voice-info">
-                    <h3 class="voice-name">{{ voice.name }}</h3>
+                    <h3 class="voice-name">
+                        {{ voice.name }}
+                        @if (voice.is_default) {
+                        <span class="default-tag">Standard</span>
+                        }
+                    </h3>
                     <p class="voice-desc">{{ voice.example_text }}</p>
+                    @if (voice.instruct) {
+                    <p class="voice-instruct"><i class="pi pi-comment"></i> {{ voice.instruct }}</p>
+                    }
                     @if (voice.audio_filename) {
                     <span class="audio-badge">
                         <i class="pi pi-volume-up"></i> Audio vorhanden
@@ -56,10 +64,12 @@
                         (click)="openEditDialog(voice); $event.stopPropagation()">
                         <i class="pi pi-pencil"></i>
                     </button>
+                    @if (!voice.is_default) {
                     <button class="action-btn delete" title="Löschen"
                         (click)="confirmDelete(voice); $event.stopPropagation()">
                         <i class="pi pi-trash"></i>
                     </button>
+                    }
                 </div>
             </div>
             }
@@ -118,6 +128,12 @@
             </div>
 
             <div class="dialog-field">
+                <label class="dialog-label">Instruct (Voice Style)</label>
+                <textarea pTextarea [(ngModel)]="newVoiceInstruct" rows="2"
+                    placeholder="A warm, friendly female voice with a calm tone..." class="dialog-input"></textarea>
+            </div>
+
+            <div class="dialog-field">
                 <label class="dialog-label">Audio-Datei (WAV)</label>
                 <div class="file-upload">
                     <input type="file" accept="audio/*" (change)="onFileSelected($event)" id="audioFileCreate"
@@ -158,6 +174,12 @@
             <div class="dialog-field">
                 <label class="dialog-label">Beispielsatz</label>
                 <textarea pTextarea [(ngModel)]="editText" rows="3" class="dialog-input"></textarea>
+            </div>
+
+            <div class="dialog-field">
+                <label class="dialog-label">Instruct (Voice Style)</label>
+                <textarea pTextarea [(ngModel)]="editInstruct" rows="2"
+                    placeholder="A warm, friendly female voice with a calm tone..." class="dialog-input"></textarea>
             </div>
 
             <div class="dialog-field">

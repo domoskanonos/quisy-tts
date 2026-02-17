@@ -3,6 +3,67 @@
     margin: 0 auto;
 }
 
+// ─── Backend Offline Banner ─────────────────────────────────
+.backend-offline-banner {
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--danger);
+
+    .banner-content {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+
+        >i {
+            font-size: 22px;
+            color: var(--danger);
+            flex-shrink: 0;
+        }
+    }
+
+    .banner-text {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        strong {
+            color: #fca5a5;
+            font-size: 15px;
+        }
+
+        span {
+            color: var(--text-color-secondary);
+            font-size: 13px;
+        }
+    }
+
+    .retry-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: var(--radius-sm);
+        color: #fca5a5;
+        font-family: var(--font-family);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        white-space: nowrap;
+
+        &:hover {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+    }
+}
+
 // ─── Page Header ────────────────────────────────────────────
 .page-header {
     margin-bottom: 32px;
