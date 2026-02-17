@@ -38,6 +38,8 @@
                         @if (voice.is_default) {
                         <span class="default-tag">Standard</span>
                         }
+                        <span class="lang-tag" [title]="getLanguageLabel(voice.language)">{{
+                            getLanguageFlag(voice.language) }}</span>
                     </h3>
                     <p class="voice-desc">{{ voice.example_text }}</p>
                     @if (voice.instruct) {
@@ -85,33 +87,7 @@
     </div>
     }
 
-    <!-- Built-in Speakers Section -->
-    <div class="section">
-        <h2 class="section-title">
-            <i class="pi pi-box"></i>
-            Eingebaute Stimmen
-            <span class="count-badge">{{ builtInSpeakers().length }}</span>
-        </h2>
-        <div class="voices-grid">
-            @for (speaker of builtInSpeakers(); track speaker) {
-            <div class="voice-card glass-card" (click)="trySpeaker(speaker)">
-                <div class="voice-avatar" [style.background]="getColor(speaker)">
-                    {{ getInitials(speaker) }}
-                </div>
-                <div class="voice-info">
-                    <h3 class="voice-name">{{ speaker }}</h3>
-                    <p class="voice-desc">{{ getDescription(speaker) }}</p>
-                </div>
-                <div class="voice-actions">
-                    <button class="try-btn btn-gradient" (click)="trySpeaker(speaker); $event.stopPropagation()">
-                        <i class="pi pi-play"></i>
-                        <span>Testen</span>
-                    </button>
-                </div>
-            </div>
-            }
-        </div>
-    </div>
+
 
     @if (isLoading()) {
     <div class="empty-state">
@@ -139,6 +115,15 @@
                 <label class="dialog-label">Instruct (Voice Style)</label>
                 <textarea pTextarea [(ngModel)]="newVoiceInstruct" rows="2"
                     placeholder="A warm, friendly female voice with a calm tone..." class="dialog-input"></textarea>
+            </div>
+
+            <div class="dialog-field">
+                <label class="dialog-label">Sprache</label>
+                <select [(ngModel)]="newVoiceLanguage" class="dialog-input">
+                    @for (lang of languageOptions; track lang.value) {
+                    <option [value]="lang.value">{{ lang.flag }} {{ lang.label }}</option>
+                    }
+                </select>
             </div>
 
             <div class="dialog-field">
@@ -188,6 +173,15 @@
                 <label class="dialog-label">Instruct (Voice Style)</label>
                 <textarea pTextarea [(ngModel)]="editInstruct" rows="2"
                     placeholder="A warm, friendly female voice with a calm tone..." class="dialog-input"></textarea>
+            </div>
+
+            <div class="dialog-field">
+                <label class="dialog-label">Sprache</label>
+                <select [(ngModel)]="editLanguage" class="dialog-input">
+                    @for (lang of languageOptions; track lang.value) {
+                    <option [value]="lang.value">{{ lang.flag }} {{ lang.label }}</option>
+                    }
+                </select>
             </div>
 
             <div class="dialog-field">

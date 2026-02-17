@@ -5,7 +5,7 @@ from functools import lru_cache
 from config import ProjectConfig
 from core import CacheService, CleanupService, TTSEngine
 from engine import QwenTextToSpeech
-from services import FileCacheService, FileCleanupService, TTSService
+from services import FileCacheService, FileCleanupService, TTSService, VoiceService
 
 settings = ProjectConfig.get_settings()
 
@@ -35,3 +35,9 @@ def get_tts_service() -> TTSService:
         engine=get_tts_engine(),
         cache=get_cache_service(),
     )
+
+
+@lru_cache
+def get_voice_service() -> VoiceService:
+    """Returns the voice service instance (singleton)."""
+    return VoiceService()

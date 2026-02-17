@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+SUPPORTED_LANGUAGES = ["german", "english", "french", "spanish", "italian", "portuguese", "russian", "japanese", "korean", "chinese"]
+
 
 class VoiceCreate(BaseModel):
     """Request schema for creating a new voice."""
@@ -28,6 +30,11 @@ class VoiceCreate(BaseModel):
         description="Instruct text describing the voice style for Qwen TTS.",
         json_schema_extra={"example": "A calm, professional male voice with a warm tone."},
     )
+    language: str = Field(
+        default="german",
+        description="Language of the voice (e.g. german, english).",
+        json_schema_extra={"example": "german"},
+    )
 
 
 class VoiceUpdate(BaseModel):
@@ -50,6 +57,10 @@ class VoiceUpdate(BaseModel):
         max_length=500,
         description="New instruct text for voice style.",
     )
+    language: str | None = Field(
+        default=None,
+        description="New language for the voice.",
+    )
 
 
 class VoiceResponse(BaseModel):
@@ -59,6 +70,7 @@ class VoiceResponse(BaseModel):
     name: str
     example_text: str
     instruct: str | None = None
+    language: str = "german"
     audio_filename: str | None = None
     is_default: bool = False
     created_at: datetime

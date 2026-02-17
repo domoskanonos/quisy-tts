@@ -63,6 +63,7 @@ export interface Voice {
   name: string;
   example_text: string;
   instruct: string | null;
+  language: string;
   audio_filename: string | null;
   is_default: boolean;
   created_at: string;
@@ -78,10 +79,12 @@ export interface VoiceCreateRequest {
   name: string;
   example_text: string;
   instruct?: string | null;
+  language?: string;
 }
 
 export interface VoiceUpdateRequest {
   name?: string;
   example_text?: string;
   instruct?: string | null;
+  language?: string;
 }

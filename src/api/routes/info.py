@@ -4,30 +4,18 @@ from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends
 
-from api.dependencies import get_cleanup_service
+from api.dependencies import get_cleanup_service, get_voice_service
 from config import ProjectConfig
 from core import CleanupService
 from schemas.languages import LANGUAGE_MAP
+from services import VoiceService
 
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
 
 router = APIRouter(tags=["Info"])
 
-# Known Qwen3-TTS CustomVoice speakers (from official documentation)
-SUPPORTED_SPEAKERS = [
-    "Chelsie",
-    "Aidan",
-    "Serena",
-    "Ethan",
-    "Vivian",
-    "Lucas",
-    "Aria",
-    "Oliver",
-    "Isabel",
-    "Caleb",
-    "eric",
-]
+
 
 
 @router.get("/")
@@ -60,9 +48,17 @@ async def trigger_cleanup(
 
 
 @router.get("/speakers")
-def get_speakers() -> dict[str, Any]:
-    """Returns the list of supported speakers for CustomVoice mode."""
-    return {"speakers": SUPPORTED_SPEAKERS}
+def get_speakers(
+    voice_service: VoiceService = Depends(get_voice_service),
+) -> dict[str, Any]:
+    """Returns the list of supported speakers (from DB) for CustomVoice mode."""
+    # Return names of all voices in DB that have an audio file or are default
+    # Actually, we just return all names, and let the backend handle resolution.
+    # Default voices always work (they have instructs or audio).
+    # Custom voices need audio for cloning.
+    voices = voice_service.list_voices()
+    speaker_names = [v["name"] for v in voices]
+    return {"speakers": speaker_names}
 
 
 @router.get("/languages")

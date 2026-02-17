@@ -120,6 +120,11 @@
     font-size: 16px;
     font-weight: 600;
     color: var(--text-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
 }
 
 .voice-desc {
@@ -158,8 +163,13 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    vertical-align: middle;
-    margin-left: 6px;
+}
+
+.lang-tag {
+    font-size: 16px;
+    line-height: 1;
+    cursor: help;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .audio-badge {

@@ -34,7 +34,6 @@ export class VoicesComponent implements OnInit {
     private readonly confirmService = inject(ConfirmationService);
 
     voices = signal<Voice[]>([]);
-    builtInSpeakers = signal<string[]>([]);
     isLoading = signal(true);
 
     // Dialog state
@@ -43,38 +42,33 @@ export class VoicesComponent implements OnInit {
     newVoiceName = '';
     newVoiceText = '';
     newVoiceInstruct = '';
+    newVoiceLanguage = 'german';
     editVoice: Voice | null = null;
     editName = '';
     editText = '';
     editInstruct = '';
+    editLanguage = 'german';
     selectedAudioFile: File | null = null;
     isUploading = signal(false);
     generatingVoiceId = signal<string | null>(null);
 
-    readonly speakerDescriptions: Record<string, string> = {
-        Chelsie: 'Warm, freundliche weibliche Stimme',
-        Aidan: 'Klare, professionelle männliche Stimme',
-        Serena: 'Ruhige, elegante weibliche Stimme',
-        Ethan: 'Dynamische, energische männliche Stimme',
-        Vivian: 'Ausdrucksstarke, lebendige weibliche Stimme',
-        Lucas: 'Tiefe, vertrauenswürdige männliche Stimme',
-        Aria: 'Sanfte, melodische weibliche Stimme',
-        Oliver: 'Natürliche, warme männliche Stimme',
-        Isabel: 'Elegante, kultivierte weibliche Stimme',
-        Caleb: 'Jugendliche, frische männliche Stimme',
-        eric: 'Casual, entspannte männliche Stimme',
-    };
+    readonly languageOptions = [
+        { value: 'german', label: 'Deutsch', flag: '🇩🇪' },
+        { value: 'english', label: 'English', flag: '🇬🇧' },
+        { value: 'french', label: 'Français', flag: '🇫🇷' },
+        { value: 'spanish', label: 'Español', flag: '🇪🇸' },
+        { value: 'italian', label: 'Italiano', flag: '🇮🇹' },
+        { value: 'portuguese', label: 'Português', flag: '🇵🇹' },
+        { value: 'russian', label: 'Русский', flag: '🇷🇺' },
+        { value: 'japanese', label: '日本語', flag: '🇯🇵' },
+        { value: 'korean', label: '한국어', flag: '🇰🇷' },
+        { value: 'chinese', label: '中文', flag: '🇨🇳' },
+    ];
+
+
 
     ngOnInit(): void {
         this.loadVoices();
-        this.ttsApi.getSpeakers().subscribe({
-            next: res => this.builtInSpeakers.set(res.speakers),
-            error: () =>
-                this.builtInSpeakers.set([
-                    'Chelsie', 'Aidan', 'Serena', 'Ethan', 'Vivian',
-                    'Lucas', 'Aria', 'Oliver', 'Isabel', 'Caleb', 'eric',
-                ]),
-        });
     }
 
     loadVoices(): void {
@@ -97,6 +91,7 @@ export class VoicesComponent implements OnInit {
         this.newVoiceName = '';
         this.newVoiceText = '';
         this.newVoiceInstruct = '';
+        this.newVoiceLanguage = 'german';
         this.selectedAudioFile = null;
         this.showCreateDialog.set(true);
     }
@@ -115,6 +110,7 @@ export class VoicesComponent implements OnInit {
             name: this.newVoiceName,
             example_text: this.newVoiceText,
             instruct: this.newVoiceInstruct.trim() || null,
+            language: this.newVoiceLanguage,
         }).subscribe({
             next: voice => {
                 if (this.selectedAudioFile) {
@@ -168,6 +164,7 @@ export class VoicesComponent implements OnInit {
         this.editName = voice.name;
         this.editText = voice.example_text;
         this.editInstruct = voice.instruct || '';
+        this.editLanguage = voice.language || 'german';
         this.selectedAudioFile = null;
         this.showEditDialog.set(true);
     }
@@ -179,6 +176,7 @@ export class VoicesComponent implements OnInit {
             name: this.editName,
             example_text: this.editText,
             instruct: this.editInstruct.trim() || null,
+            language: this.editLanguage,
         }).subscribe({
             next: () => {
                 if (this.selectedAudioFile) {
@@ -266,7 +264,7 @@ export class VoicesComponent implements OnInit {
 
         this.ttsApi.generateVoiceDesign({
             text: voice.example_text,
-            language: 'Deutsch',
+            language: voice.language || 'german',
             instruct: voice.instruct,
         }).subscribe({
             next: (blob: Blob) => {
@@ -311,9 +309,7 @@ export class VoicesComponent implements OnInit {
 
     // ─── Helpers ────────────────────────────────────────────────
 
-    trySpeaker(speaker: string): void {
-        this.router.navigate(['/synthesis'], { queryParams: { speaker } });
-    }
+
 
     getInitials(name: string): string {
         return name.charAt(0).toUpperCase();
@@ -330,7 +326,15 @@ export class VoicesComponent implements OnInit {
         return colors[Math.abs(hash) % colors.length];
     }
 
-    getDescription(name: string): string {
-        return this.speakerDescriptions[name] || 'KI-generierte Stimme';
+
+
+    getLanguageFlag(lang: string): string {
+        const found = this.languageOptions.find(l => l.value === lang);
+        return found ? found.flag : '🌐';
+    }
+
+    getLanguageLabel(lang: string): string {
+        const found = this.languageOptions.find(l => l.value === lang);
+        return found ? found.label : lang;
     }
 }

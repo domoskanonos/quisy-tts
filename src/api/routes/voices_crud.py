@@ -60,6 +60,7 @@ def create_voice(data: VoiceCreate) -> dict:
         name=data.name,
         example_text=data.example_text,
         instruct=data.instruct,
+        language=data.language,
     )
     return voice
 
@@ -76,6 +77,7 @@ def update_voice(voice_id: str, data: VoiceUpdate) -> dict:
         name=data.name,
         example_text=data.example_text,
         instruct=data.instruct,
+        language=data.language,
     )
     if voice is None:
         raise HTTPException(status_code=404, detail=f"Voice {voice_id} not found")

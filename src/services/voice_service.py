@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS voices (
     name TEXT NOT NULL,
     example_text TEXT NOT NULL,
     instruct TEXT,
+    language TEXT NOT NULL DEFAULT 'german',
     audio_filename TEXT,
     is_default INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
@@ -43,9 +44,10 @@ class VoiceService:
         return conn
 
     def _init_db(self) -> None:
-        """Create table and seed default voices if empty."""
+        """Create table, run migrations, and seed default voices if empty."""
         with self._get_conn() as conn:
             conn.execute(_CREATE_TABLE_SQL)
+            self._migrate(conn)
 
             # Check if default voices already exist
             count = conn.execute("SELECT COUNT(*) FROM voices WHERE is_default = 1").fetchone()[0]
@@ -54,15 +56,24 @@ class VoiceService:
                 self._seed_defaults(conn)
                 logger.info(f"Seeded {len(DEFAULT_VOICES)} default voices into SQLite.")
 
+    def _migrate(self, conn: sqlite3.Connection) -> None:
+        """Run schema migrations for existing databases."""
+        # Check if 'language' column exists
+        columns = {row[1] for row in conn.execute("PRAGMA table_info(voices)").fetchall()}
+        if "language" not in columns:
+            logger.info("Migrating voices table: adding 'language' column...")
+            conn.execute("ALTER TABLE voices ADD COLUMN language TEXT NOT NULL DEFAULT 'german'")
+            conn.commit()
+
     def _seed_defaults(self, conn: sqlite3.Connection) -> None:
         """Insert all default voices."""
         now = datetime.now(UTC).isoformat()
         for i, voice in enumerate(DEFAULT_VOICES):
             voice_id = f"default_{i + 1:03d}"
             conn.execute(
-                """INSERT INTO voices (id, name, example_text, instruct, audio_filename, is_default, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, NULL, 1, ?, ?)""",
-                (voice_id, voice["name"], voice["example_text"], voice["instruct"], now, now),
+                """INSERT INTO voices (id, name, example_text, instruct, language, audio_filename, is_default, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, NULL, 1, ?, ?)""",
+                (voice_id, voice["name"], voice["example_text"], voice["instruct"], voice.get("language", "german"), now, now),
             )
 
     # ─── Helper ──────────────────────────────────────────────────
@@ -75,6 +86,7 @@ class VoiceService:
             "name": row["name"],
             "example_text": row["example_text"],
             "instruct": row["instruct"],
+            "language": row["language"],
             "audio_filename": row["audio_filename"],
             "is_default": bool(row["is_default"]),
             "created_at": row["created_at"],
@@ -95,11 +107,18 @@ class VoiceService:
             row = conn.execute("SELECT * FROM voices WHERE id = ?", (voice_id,)).fetchone()
         return self._row_to_dict(row) if row else None
 
+    def get_voice_by_name(self, name: str) -> dict | None:
+        """Return a single voice by name, or None if not found."""
+        with self._get_conn() as conn:
+            row = conn.execute("SELECT * FROM voices WHERE name = ?", (name,)).fetchone()
+        return self._row_to_dict(row) if row else None
+
     def create_voice(
         self,
         name: str,
         example_text: str,
         instruct: str | None = None,
+        language: str = "german",
     ) -> dict:
         """Create a new user voice."""
         voice_id = uuid.uuid4().hex[:12]
@@ -107,9 +126,9 @@ class VoiceService:
 
         with self._get_conn() as conn:
             conn.execute(
-                """INSERT INTO voices (id, name, example_text, instruct, audio_filename, is_default, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, NULL, 0, ?, ?)""",
-                (voice_id, name, example_text, instruct, now, now),
+                """INSERT INTO voices (id, name, example_text, instruct, language, audio_filename, is_default, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, NULL, 0, ?, ?)""",
+                (voice_id, name, example_text, instruct, language, now, now),
             )
 
         logger.info(f"Voice created: {voice_id} ({name})")
@@ -121,6 +140,7 @@ class VoiceService:
         name: str | None = None,
         example_text: str | None = None,
         instruct: str | None = None,
+        language: str | None = None,
     ) -> dict | None:
         """Update voice metadata. Returns updated voice or None if not found."""
         voice = self.get_voice(voice_id)
@@ -140,6 +160,9 @@ class VoiceService:
         if instruct is not None:
             updates.append("instruct = ?")
             params.append(instruct)
+        if language is not None:
+            updates.append("language = ?")
+            params.append(language)
 
         if not updates:
             return voice
