@@ -8,34 +8,27 @@ import pytest
 
 def pytest_configure(config):
     """Configure pytest environment."""
-    # 1. Mock vLLM before any imports
-    # We need to mock the entire vllm package structure that is used
-    vllm_mock = MagicMock()
-    vllm_mock.__version__ = "0.7.3"
+    # 1. Mock qwen-tts before any imports
+    qwen_tts_mock = MagicMock()
 
-    # Mock LLM class
-    class MockLLM:
-        def __init__(self, *args, **kwargs):
-            pass
+    # Mock Qwen3TTSModel class
+    class MockQwen3TTSModel:
+        @classmethod
+        def from_pretrained(cls, *args, **kwargs):
+            mock_model = MagicMock()
+            import numpy as np
 
-        def generate(self, *args, **kwargs):
-            # Return a structure that matches what QwenVLLMBackend expects
-            # It expects a list of RequestOutput objects
-            mock_output = MagicMock()
-            # output.multimodal_output["audio"]
-            mock_output.multimodal_output = {
-                "audio": __import__("torch").zeros(1, 24000),
-                "sr": MagicMock(item=lambda: 24000),
-            }
-            return [mock_output]
+            # Mock generate methods to return (list of numpy arrays, sample_rate)
+            mock_audio = np.zeros(24000, dtype=np.float32)
+            mock_model.generate_voice_clone.return_value = ([mock_audio], 24000)
+            mock_model.generate_voice_design.return_value = ([mock_audio], 24000)
+            mock_model.generate_custom_voice.return_value = ([mock_audio], 24000)
+            return mock_model
 
-    vllm_mock.LLM = MockLLM
-    vllm_mock.SamplingParams = MagicMock()
+    qwen_tts_mock.Qwen3TTSModel = MockQwen3TTSModel
 
     # Apply the mock to sys.modules
-    sys.modules["vllm"] = vllm_mock
-    sys.modules["vllm.engine"] = MagicMock()
-    sys.modules["vllm.engine.arg_utils"] = MagicMock()
+    sys.modules["qwen_tts"] = qwen_tts_mock
 
 
 @pytest.fixture(autouse=True)

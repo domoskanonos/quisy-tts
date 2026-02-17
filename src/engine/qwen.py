@@ -1,4 +1,4 @@
-"""Qwen3-TTS engine implementation using vLLM backend."""
+"""Qwen3-TTS engine implementation using the official qwen-tts package."""
 
 import re
 import time
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from vllm import LLM, SamplingParams
+from qwen_tts import Qwen3TTSModel
 
 from audio.processor import AudioUtils
 from config import ProjectConfig, ProjectSettings
@@ -28,64 +28,71 @@ QWEN_GENERATION_CONFIG = {
 }
 
 
-class QwenVLLMBackend:
-    """High-performance vLLM-based backend for Qwen3-TTS."""
+class QwenTTSBackend:
+    """Backend for Qwen3-TTS using the official qwen-tts package."""
 
     def __init__(self, settings: ProjectSettings) -> None:
-        """Initialize the vLLM backend."""
+        """Initialize the qwen-tts backend."""
         self.settings = settings
 
         # Initialize model
         self.model_name = "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
-        self.llm = LLM(
-            model=self.model_name,
-            gpu_memory_utilization=0.9,
-            dtype="bfloat16",
+        logger.info(f"Loading Qwen3-TTS model: {self.model_name}")
+        self.model = Qwen3TTSModel.from_pretrained(
+            self.model_name,
+            device_map="cuda:0",
+            dtype=torch.bfloat16,
         )
-
-        # Official Qwen3-TTS recommended sampling parameters
-        self.sampling_params = SamplingParams(
-            temperature=QWEN_GENERATION_CONFIG["temperature"],
-            top_p=QWEN_GENERATION_CONFIG["top_p"],
-            top_k=int(QWEN_GENERATION_CONFIG["top_k"]),
-            max_tokens=int(QWEN_GENERATION_CONFIG["max_new_tokens"]),
-            repetition_penalty=QWEN_GENERATION_CONFIG["repetition_penalty"],
-            detokenize=False,
-        )
+        logger.info("Qwen3-TTS model loaded successfully.")
 
     def generate_audio(self, text: str, params: TTSParams) -> tuple[torch.Tensor, int]:
-        """Generate audio using vLLM engine."""
-        inputs = self._prepare_inputs(text, params)
+        """Generate audio using qwen-tts."""
+        gen_kwargs = {
+            "max_new_tokens": QWEN_GENERATION_CONFIG["max_new_tokens"],
+            "temperature": QWEN_GENERATION_CONFIG["temperature"],
+            "top_p": QWEN_GENERATION_CONFIG["top_p"],
+            "top_k": QWEN_GENERATION_CONFIG["top_k"],
+            "repetition_penalty": QWEN_GENERATION_CONFIG["repetition_penalty"],
+        }
 
-        # vLLM generate returns a list of RequestOutput
-        outputs = self.llm.generate([inputs], self.sampling_params)  # type: ignore
+        if params.mode == "voice_design":
+            wavs, sr = self.model.generate_voice_design(
+                text=text,
+                language=params.resolved_language,
+                instruct=params.instruct or "",
+                **gen_kwargs,
+            )
+        elif params.mode == "custom_voice":
+            wavs, sr = self.model.generate_custom_voice(
+                text=text,
+                language=params.resolved_language,
+                speaker=params.speaker or "Vivian",
+                instruct=params.instruct or "",
+                **gen_kwargs,
+            )
+        else:
+            # Base mode = voice clone
+            ref_audio_path = self._resolve_ref_audio(params)
+            if not ref_audio_path:
+                from core.exceptions import ReferenceAudioNotFoundError
 
-        final_audio: torch.Tensor | None = None
-        sr: int = 24000  # default fallback
+                raise ReferenceAudioNotFoundError(
+                    "No reference audio found for voice cloning. "
+                    "Please provide `reference_audio` or ensure a default voice exists in `voices/`."
+                )
+            wavs, sr = self.model.generate_voice_clone(
+                text=text,
+                language=params.resolved_language,
+                ref_audio=ref_audio_path,
+                ref_text=params.ref_text or "",
+                **gen_kwargs,
+            )
 
-        for output in outputs:
-            # Qwen3-TTS integration in vLLM standardizes output format
-            # Trying to inspect available fields on the output object
-            if hasattr(output, "multimodal_output") and output.multimodal_output:
-                if "audio" in output.multimodal_output:
-                    audio_tensor = output.multimodal_output["audio"]
-                    sr = output.multimodal_output["sr"].item()
-                    final_audio = audio_tensor.float().detach().cpu()
+        # wavs is a list of numpy arrays, take the first one
+        audio_np = wavs[0]
+        audio_tensor = torch.from_numpy(audio_np).float().unsqueeze(0)  # [1, T]
 
-        if final_audio is None:
-            # Fallback if standard multimodal output isn't populated as expected
-            # This might require adjustment based on exact vLLM version behavior
-            logger.warning("No audio found in multimodal_output, checking text/token output")
-            pass
-
-        if final_audio is None:
-            raise ValueError("vLLM generation produced no audio output")
-
-        # Ensure 2D [1, T] shape
-        if final_audio.ndim == 1:
-            final_audio = final_audio.unsqueeze(0)
-
-        return final_audio, sr
+        return audio_tensor, sr
 
     def generate_audio_stream(
         self, text: str, params: TTSParams, chunk_size: int = 4096
@@ -112,40 +119,6 @@ class QwenVLLMBackend:
             for k in range(0, len(audio_bytes), chunk_size):
                 yield audio_bytes[k : k + chunk_size]
 
-    def _prepare_inputs(self, text: str, params: TTSParams) -> dict:
-        """Prepare input dictionary for vLLM-Omni."""
-        task_type = "Base"
-        if params.mode == "voice_design":
-            task_type = "VoiceDesign"
-        elif params.mode == "custom_voice":
-            task_type = "CustomVoice"
-
-        prompt = f"<|im_start|>assistant\n{text}<|im_end|>\n<|im_start|>assistant\n"
-
-        additional_info: dict = {
-            "task_type": [task_type],
-            "text": [text],
-            "language": [params.resolved_language],
-            "max_new_tokens": [QWEN_GENERATION_CONFIG["max_new_tokens"]],
-        }
-
-        if params.mode == "base":
-            ref_audio_path = self._resolve_ref_audio(params)
-            if not ref_audio_path:
-                from core.exceptions import ReferenceAudioNotFoundError
-
-                raise ReferenceAudioNotFoundError(
-                    "No reference audio found for voice cloning. "
-                    "Please provide `reference_audio` or ensure a default voice exists in `voices/`."
-                )
-            additional_info["ref_audio"] = [ref_audio_path]
-            additional_info["ref_text"] = [params.ref_text or ""]
-
-        if params.instruct:
-            additional_info["instruct"] = [params.instruct]
-
-        return {"prompt": prompt, "additional_information": additional_info}
-
     def _resolve_ref_audio(self, params: TTSParams) -> str | None:
         """Resolve reference audio path."""
         if params.reference_audio:
@@ -167,17 +140,17 @@ class QwenVLLMBackend:
 
 
 class QwenTextToSpeech(TTSEngine):
-    """Qwen3-TTS implementation using vLLM backend."""
+    """Qwen3-TTS implementation using the official qwen-tts package."""
 
     def __init__(self) -> None:
-        """Initialize the Qwen Text-to-Speech engine with vLLM."""
+        """Initialize the Qwen Text-to-Speech engine."""
         self.settings = ProjectConfig.get_settings()
-        logger.info("Initializing vLLM backend...")
-        self.backend = QwenVLLMBackend(self.settings)
-        logger.info("vLLM backend initialized successfully.")
+        logger.info("Initializing Qwen3-TTS backend...")
+        self.backend = QwenTTSBackend(self.settings)
+        logger.info("Qwen3-TTS backend initialized successfully.")
 
     def generate_audio(self, text: str, params: TTSParams | None = None) -> tuple[torch.Tensor, int]:
-        """Generates audio waveform via vLLM backend."""
+        """Generates audio waveform via qwen-tts backend."""
         if params is None:
             params = TTSParams()
 
@@ -209,7 +182,7 @@ class QwenTextToSpeech(TTSEngine):
     def generate_audio_stream(
         self, text: str, params: TTSParams | None = None, chunk_size: int = 4096
     ) -> Generator[bytes, None, None]:
-        """Stream audio via vLLM backend."""
+        """Stream audio via qwen-tts backend."""
         if params is None:
             params = TTSParams()
 

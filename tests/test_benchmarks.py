@@ -23,7 +23,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from config import ProjectConfig
-from engine.qwen import QwenTextToSpeech, QwenVLLMBackend
+from engine.qwen import QwenTextToSpeech, QwenTTSBackend
 from schemas import TTSParams
 from schemas.languages import resolve_language
 
@@ -33,9 +33,9 @@ from schemas.languages import resolve_language
 
 
 @pytest.fixture(scope="module")
-def mock_vllm_backend() -> MagicMock:
-    """Create a mock vLLM backend for benchmarking without actual inference."""
-    mock = MagicMock(spec=QwenVLLMBackend)
+def mock_tts_backend() -> MagicMock:
+    """Create a mock qwen-tts backend for benchmarking without actual inference."""
+    mock = MagicMock(spec=QwenTTSBackend)
     # Simulate audio output (1 second at 24kHz)
     mock.generate_audio.return_value = (
         torch.zeros(1, 24000, dtype=torch.float32),
@@ -45,12 +45,12 @@ def mock_vllm_backend() -> MagicMock:
 
 
 @pytest.fixture(scope="module")
-def tts_engine(mock_vllm_backend: MagicMock) -> QwenTextToSpeech:
-    """Get TTS engine instance with mocked vLLM backend."""
+def tts_engine(mock_tts_backend: MagicMock) -> QwenTextToSpeech:
+    """Get TTS engine instance with mocked qwen-tts backend."""
     with patch.object(QwenTextToSpeech, "__init__", lambda self: None):
         engine = QwenTextToSpeech()
         engine.settings = ProjectConfig.get_settings()
-        engine.backend = mock_vllm_backend
+        engine.backend = mock_tts_backend
         return engine
 
 
@@ -74,7 +74,7 @@ LONG_TEXT = (
 
 
 # =============================================================================
-# Benchmark: Audio Generation (Mocked vLLM Backend)
+# Benchmark: Audio Generation (Mocked qwen-tts Backend)
 # =============================================================================
 
 
@@ -120,7 +120,7 @@ def test_benchmark_generate_long_text(
 # =============================================================================
 
 
-def test_memory_baseline(mock_vllm_backend: MagicMock) -> None:
+def test_memory_baseline(mock_tts_backend: MagicMock) -> None:
     """Establish memory baseline before TTS operations."""
     gc.collect()
 
@@ -130,7 +130,7 @@ def test_memory_baseline(mock_vllm_backend: MagicMock) -> None:
     with patch.object(QwenTextToSpeech, "__init__", lambda self: None):
         engine = QwenTextToSpeech()
         engine.settings = ProjectConfig.get_settings()
-        engine.backend = mock_vllm_backend
+        engine.backend = mock_tts_backend
 
     current, peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()

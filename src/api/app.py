@@ -20,13 +20,15 @@ def _validate_startup_requirements() -> None:
 
     import torch
 
-    # 1. Check vLLM
+    # 1. Check qwen-tts
     try:
-        import vllm  # noqa: F401
+        import qwen_tts  # noqa: F401
 
-        logger.info(f"✓ vLLM {vllm.__version__} is available.")
+        logger.info("✓ qwen-tts is available.")
     except ImportError as e:
-        raise RuntimeError("vLLM is required but not installed. Install it with: pip install 'vllm>=0.3.0'") from e
+        raise RuntimeError(
+            "qwen-tts is required but not installed. Install it with: pip install qwen-tts"
+        ) from e
 
     # 2. Check sox binary
     try:

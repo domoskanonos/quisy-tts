@@ -37,7 +37,7 @@ def read_root() -> dict[str, Any]:
         "message": "Cosmo TTS API is running",
         "version": "3.0.0",
         "architecture": "Clean Architecture (Hexagonal)",
-        "backend": "vLLM",
+        "backend": "qwen-tts",
         "available_endpoints": [
             "/generate/base/0.6b",
             "/generate/base/1.7b",

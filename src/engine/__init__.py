@@ -1,4 +1,4 @@
-"""Engine package - vLLM-based TTS adapter (Infrastructure layer)."""
+"""Engine package - qwen-tts based TTS adapter (Infrastructure layer)."""
 
 from core import TTSEngine
 from engine.qwen import QwenTextToSpeech
