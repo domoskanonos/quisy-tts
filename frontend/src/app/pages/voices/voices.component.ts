@@ -49,6 +49,7 @@ export class VoicesComponent implements OnInit {
     editInstruct = '';
     selectedAudioFile: File | null = null;
     isUploading = signal(false);
+    generatingVoiceId = signal<string | null>(null);
 
     readonly speakerDescriptions: Record<string, string> = {
         Chelsie: 'Warm, freundliche weibliche Stimme',
@@ -237,12 +238,75 @@ export class VoicesComponent implements OnInit {
         });
     }
 
-    // ─── Audio Preview ──────────────────────────────────────────
+    // ─── Audio Preview & Generate ───────────────────────────────
 
-    playPreview(voice: Voice): void {
-        if (!voice.audio_filename) return;
-        const audio = new Audio(this.ttsApi.getVoiceAudioUrl(voice.id));
-        audio.play();
+    playOrGenerate(voice: Voice): void {
+        if (voice.audio_filename) {
+            // Audio exists → play directly
+            const audio = new Audio(this.ttsApi.getVoiceAudioUrl(voice.id));
+            audio.play();
+        } else {
+            // No audio → generate, play, and save
+            this.generateAndPlay(voice);
+        }
+    }
+
+    private generateAndPlay(voice: Voice): void {
+        if (this.generatingVoiceId()) return; // already generating
+        if (!voice.instruct) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Instruct fehlt',
+                detail: 'Diese Stimme hat keinen Instruct-Text. Bitte bearbeite die Stimme zuerst.',
+            });
+            return;
+        }
+
+        this.generatingVoiceId.set(voice.id);
+
+        this.ttsApi.generateVoiceDesign({
+            text: voice.example_text,
+            language: 'Deutsch',
+            instruct: voice.instruct,
+        }).subscribe({
+            next: (blob: Blob) => {
+                // Play the generated audio
+                const url = URL.createObjectURL(blob);
+                const audio = new Audio(url);
+                audio.play();
+                audio.onended = () => URL.revokeObjectURL(url);
+
+                // Upload as the voice's reference audio
+                const file = new File([blob], `voice_${voice.id}.wav`, { type: 'audio/wav' });
+                this.ttsApi.uploadVoiceAudio(voice.id, file).subscribe({
+                    next: () => {
+                        this.generatingVoiceId.set(null);
+                        this.loadVoices();
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: 'Audio erstellt',
+                            detail: `Referenz-Audio für "${voice.name}" wurde generiert und gespeichert.`,
+                        });
+                    },
+                    error: () => {
+                        this.generatingVoiceId.set(null);
+                        this.messageService.add({
+                            severity: 'warn',
+                            summary: 'Teilweise erfolgreich',
+                            detail: 'Audio wurde abgespielt, aber das Speichern ist fehlgeschlagen.',
+                        });
+                    },
+                });
+            },
+            error: () => {
+                this.generatingVoiceId.set(null);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Fehler',
+                    detail: 'Audio konnte nicht generiert werden. Ist das Backend erreichbar?',
+                });
+            },
+        });
     }
 
     // ─── Helpers ────────────────────────────────────────────────
