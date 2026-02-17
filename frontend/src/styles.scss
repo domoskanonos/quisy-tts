@@ -1,0 +1,279 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+// ─── CSS Custom Properties ──────────────────────────────────────
+:root {
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  // Brand palette
+  --brand-primary: #8b5cf6;
+  --brand-primary-light: #a78bfa;
+  --brand-primary-dark: #7c3aed;
+  --brand-accent: #06b6d4;
+  --brand-accent-light: #22d3ee;
+
+  // Gradient
+  --gradient-brand: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+  --gradient-brand-hover: linear-gradient(135deg, #a78bfa 0%, #22d3ee 100%);
+  --gradient-dark: linear-gradient(180deg, #0f0a1a 0%, #1a1025 50%, #0d1117 100%);
+
+  // Surface colors
+  --surface-ground: #0f0a1a;
+  --surface-section: #1a1025;
+  --surface-card: #1e1530;
+  --surface-overlay: #251d3a;
+  --surface-border: rgba(139, 92, 246, 0.15);
+  --surface-hover: rgba(139, 92, 246, 0.08);
+
+  // Text
+  --text-color: #e8e0f0;
+  --text-color-secondary: #9a8cb0;
+  --text-color-muted: #6b5d80;
+
+  // Status
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  // Effects
+  --glass-bg: rgba(30, 21, 48, 0.7);
+  --glass-border: rgba(139, 92, 246, 0.2);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --glow-primary: 0 0 20px rgba(139, 92, 246, 0.3);
+
+  // Transitions
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Radii
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  // Sidebar
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
+}
+
+// ─── Global Reset & Base ────────────────────────────────────────
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  background: var(--surface-ground);
+  color: var(--text-color);
+  font-family: var(--font-family);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+::selection {
+  background: rgba(139, 92, 246, 0.4);
+  color: #fff;
+}
+
+// Scrollbar
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.3);
+  border-radius: 3px;
+  &:hover {
+    background: rgba(139, 92, 246, 0.5);
+  }
+}
+
+// ─── Glassmorphism Card ─────────────────────────────────────────
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
+  transition: all var(--transition-normal);
+
+  &:hover {
+    border-color: rgba(139, 92, 246, 0.35);
+    box-shadow: var(--glass-shadow), var(--glow-primary);
+  }
+}
+
+// ─── Gradient Button ────────────────────────────────────────────
+.btn-gradient {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: var(--gradient-brand);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-brand-hover);
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+    &::before { opacity: 1; }
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  span, i {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+// ─── Waveform Visualization ─────────────────────────────────────
+.waveform-container {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 64px;
+  padding: 8px 0;
+
+  .waveform-bar {
+    flex: 1;
+    background: var(--brand-primary);
+    border-radius: 2px;
+    min-height: 4px;
+    transition: height var(--transition-fast), background var(--transition-fast);
+    opacity: 0.5;
+
+    &.active {
+      opacity: 1;
+      background: var(--gradient-brand);
+    }
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+}
+
+// ─── Utility Classes ────────────────────────────────────────────
+.text-gradient {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.fade-in {
+  animation: fadeIn var(--transition-slow) ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+// ─── PrimeNG Overrides ──────────────────────────────────────────
+.p-inputtextarea,
+.p-inputtext {
+  background: var(--surface-card) !important;
+  border-color: var(--surface-border) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+
+  &:focus {
+    border-color: var(--brand-primary) !important;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2) !important;
+  }
+}
+
+.p-dropdown {
+  background: var(--surface-card) !important;
+  border-color: var(--surface-border) !important;
+  color: var(--text-color) !important;
+}
+
+.p-selectbutton .p-button {
+  background: var(--surface-card) !important;
+  border-color: var(--surface-border) !important;
+  color: var(--text-color-secondary) !important;
+
+  &.p-highlight {
+    background: var(--brand-primary) !important;
+    border-color: var(--brand-primary) !important;
+    color: #fff !important;
+  }
+}
+
+.p-tabview .p-tabview-nav {
+  background: transparent !important;
+  border-bottom-color: var(--surface-border) !important;
+
+  li {
+    .p-tabview-nav-link {
+      color: var(--text-color-secondary) !important;
+      &:hover { color: var(--text-color) !important; }
+    }
+
+    &.p-highlight .p-tabview-nav-link {
+      color: var(--brand-primary) !important;
+      border-bottom-color: var(--brand-primary) !important;
+    }
+  }
+}
+
+.p-tabview .p-tabview-panels {
+  background: transparent !important;
+}

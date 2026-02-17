@@ -4,9 +4,10 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from api.routes import base, custom_voice, info, voice_design, websocket
+from api.routes import base, custom_voice, info, voice_design, voices_crud, websocket
 from config import ProjectConfig
 
 logger = ProjectConfig.get_logger()
@@ -84,6 +85,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# CORS for Angular frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # =============================================================================
 # Global Exception Handlers
@@ -113,4 +123,5 @@ app.include_router(info.router)
 app.include_router(base.router, prefix="/generate/base")
 app.include_router(voice_design.router, prefix="/generate/voice-design")
 app.include_router(custom_voice.router, prefix="/generate/custom-voice")
+app.include_router(voices_crud.router, prefix="/voices")
 app.include_router(websocket.router)

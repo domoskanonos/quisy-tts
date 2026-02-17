@@ -1,0 +1,47 @@
+<div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed()">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">
+          <i class="pi pi-volume-up"></i>
+        </div>
+        @if (!sidebarCollapsed()) {
+          <div class="logo-text">
+            <span class="text-gradient">Quisy</span>
+            <span class="logo-tts">TTS</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      @for (item of navItems; track item.route) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          class="nav-item"
+          [title]="item.label"
+        >
+          <i [class]="item.icon"></i>
+          @if (!sidebarCollapsed()) {
+            <span class="nav-label">{{ item.label }}</span>
+          }
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="toggle-btn" (click)="toggleSidebar()">
+        <i class="pi" [class.pi-chevron-left]="!sidebarCollapsed()" [class.pi-chevron-right]="sidebarCollapsed()"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="content-wrapper">
+      <router-outlet />
+    </div>
+  </main>
+</div>

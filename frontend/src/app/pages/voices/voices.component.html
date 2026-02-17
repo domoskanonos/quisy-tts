@@ -1,0 +1,191 @@
+<div class="voices-page fade-in">
+    <p-toast />
+    <p-confirmDialog />
+
+    <div class="page-header">
+        <div class="header-row">
+            <div>
+                <h1>
+                    <i class="pi pi-users"></i>
+                    Voice Library
+                </h1>
+                <p class="subtitle">Verwalte und entdecke KI-Stimmen</p>
+            </div>
+            <button class="btn-gradient create-btn" (click)="openCreateDialog()">
+                <i class="pi pi-plus"></i>
+                <span>Neue Stimme</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Custom Voices Section -->
+    @if (voices().length > 0) {
+    <div class="section">
+        <h2 class="section-title">
+            <i class="pi pi-star"></i>
+            Eigene Stimmen
+            <span class="count-badge">{{ voices().length }}</span>
+        </h2>
+        <div class="voices-grid">
+            @for (voice of voices(); track voice.id) {
+            <div class="voice-card glass-card custom-voice-card">
+                <div class="voice-avatar" [style.background]="getColor(voice.name)">
+                    {{ getInitials(voice.name) }}
+                </div>
+                <div class="voice-info">
+                    <h3 class="voice-name">{{ voice.name }}</h3>
+                    <p class="voice-desc">{{ voice.example_text }}</p>
+                    @if (voice.audio_filename) {
+                    <span class="audio-badge">
+                        <i class="pi pi-volume-up"></i> Audio vorhanden
+                    </span>
+                    } @else {
+                    <span class="no-audio-badge">
+                        <i class="pi pi-volume-off"></i> Kein Audio
+                    </span>
+                    }
+                </div>
+                <div class="voice-actions">
+                    @if (voice.audio_filename) {
+                    <button class="action-btn play" title="Abspielen"
+                        (click)="playPreview(voice); $event.stopPropagation()">
+                        <i class="pi pi-play"></i>
+                    </button>
+                    }
+                    <button class="action-btn edit" title="Bearbeiten"
+                        (click)="openEditDialog(voice); $event.stopPropagation()">
+                        <i class="pi pi-pencil"></i>
+                    </button>
+                    <button class="action-btn delete" title="Löschen"
+                        (click)="confirmDelete(voice); $event.stopPropagation()">
+                        <i class="pi pi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+    }
+
+    <!-- Built-in Speakers Section -->
+    <div class="section">
+        <h2 class="section-title">
+            <i class="pi pi-box"></i>
+            Eingebaute Stimmen
+            <span class="count-badge">{{ builtInSpeakers().length }}</span>
+        </h2>
+        <div class="voices-grid">
+            @for (speaker of builtInSpeakers(); track speaker) {
+            <div class="voice-card glass-card" (click)="trySpeaker(speaker)">
+                <div class="voice-avatar" [style.background]="getColor(speaker)">
+                    {{ getInitials(speaker) }}
+                </div>
+                <div class="voice-info">
+                    <h3 class="voice-name">{{ speaker }}</h3>
+                    <p class="voice-desc">{{ getDescription(speaker) }}</p>
+                </div>
+                <div class="voice-actions">
+                    <button class="try-btn btn-gradient" (click)="trySpeaker(speaker); $event.stopPropagation()">
+                        <i class="pi pi-play"></i>
+                        <span>Testen</span>
+                    </button>
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+
+    @if (isLoading()) {
+    <div class="empty-state">
+        <i class="pi pi-spin pi-spinner" style="font-size: 32px; color: var(--brand-primary)"></i>
+        <p>Lade Stimmen...</p>
+    </div>
+    }
+
+    <!-- Create Dialog -->
+    <p-dialog header="Neue Stimme erstellen" [(visible)]="showCreateDialog" [modal]="true" [style]="{ width: '500px' }"
+        [draggable]="false" [resizable]="false">
+        <div class="dialog-content">
+            <div class="dialog-field">
+                <label class="dialog-label">Name</label>
+                <input pInputText [(ngModel)]="newVoiceName" placeholder="z.B. Podcast-Sprecher" class="dialog-input" />
+            </div>
+
+            <div class="dialog-field">
+                <label class="dialog-label">Beispielsatz</label>
+                <textarea pTextarea [(ngModel)]="newVoiceText" rows="3"
+                    placeholder="Ein Satz, der mit dieser Stimme vorgelesen wird..." class="dialog-input"></textarea>
+            </div>
+
+            <div class="dialog-field">
+                <label class="dialog-label">Audio-Datei (WAV)</label>
+                <div class="file-upload">
+                    <input type="file" accept="audio/*" (change)="onFileSelected($event)" id="audioFileCreate"
+                        class="file-input" />
+                    <label for="audioFileCreate" class="file-label">
+                        <i class="pi pi-upload"></i>
+                        {{ selectedAudioFile ? selectedAudioFile.name : 'WAV-Datei auswählen' }}
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <ng-template #footer>
+            <div class="dialog-footer">
+                <button class="cancel-btn" (click)="showCreateDialog.set(false)">Abbrechen</button>
+                <button class="btn-gradient" (click)="createVoice()"
+                    [disabled]="!newVoiceName.trim() || !newVoiceText.trim() || isUploading()">
+                    @if (isUploading()) {
+                    <i class="pi pi-spinner animate-spin"></i>
+                    } @else {
+                    <i class="pi pi-plus"></i>
+                    }
+                    <span>Erstellen</span>
+                </button>
+            </div>
+        </ng-template>
+    </p-dialog>
+
+    <!-- Edit Dialog -->
+    <p-dialog header="Stimme bearbeiten" [(visible)]="showEditDialog" [modal]="true" [style]="{ width: '500px' }"
+        [draggable]="false" [resizable]="false">
+        <div class="dialog-content">
+            <div class="dialog-field">
+                <label class="dialog-label">Name</label>
+                <input pInputText [(ngModel)]="editName" class="dialog-input" />
+            </div>
+
+            <div class="dialog-field">
+                <label class="dialog-label">Beispielsatz</label>
+                <textarea pTextarea [(ngModel)]="editText" rows="3" class="dialog-input"></textarea>
+            </div>
+
+            <div class="dialog-field">
+                <label class="dialog-label">Audio-Datei ersetzen (optional)</label>
+                <div class="file-upload">
+                    <input type="file" accept="audio/*" (change)="onFileSelected($event)" id="audioFileEdit"
+                        class="file-input" />
+                    <label for="audioFileEdit" class="file-label">
+                        <i class="pi pi-upload"></i>
+                        {{ selectedAudioFile ? selectedAudioFile.name : 'Neue WAV-Datei auswählen' }}
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <ng-template #footer>
+            <div class="dialog-footer">
+                <button class="cancel-btn" (click)="showEditDialog.set(false)">Abbrechen</button>
+                <button class="btn-gradient" (click)="saveEdit()"
+                    [disabled]="!editName.trim() || !editText.trim() || isUploading()">
+                    @if (isUploading()) {
+                    <i class="pi pi-spinner animate-spin"></i>
+                    } @else {
+                    <i class="pi pi-check"></i>
+                    }
+                    <span>Speichern</span>
+                </button>
+            </div>
+        </ng-template>
+    </p-dialog>
+</div>

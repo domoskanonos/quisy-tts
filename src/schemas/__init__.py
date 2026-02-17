@@ -7,7 +7,7 @@ from schemas.requests import (
     CustomVoiceRequest,
     VoiceDesignRequest,
 )
-
+from schemas.voice import VoiceCreate, VoiceListResponse, VoiceResponse, VoiceUpdate
 
 __all__ = [
     "LANGUAGE_MAP",
@@ -16,4 +16,8 @@ __all__ = [
     "VoiceDesignRequest",
     "CustomVoiceRequest",
     "TTSParams",
+    "VoiceCreate",
+    "VoiceUpdate",
+    "VoiceResponse",
+    "VoiceListResponse",
 ]
