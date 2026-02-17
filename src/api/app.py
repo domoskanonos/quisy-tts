@@ -71,6 +71,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     settings.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     settings.VOICES_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Trigger model loading in background to optimize startup time
+    # This prevents blocking the server while the model loads (10s+)
+    import asyncio
+    from api.dependencies import get_tts_engine
+
+    engine = get_tts_engine()
+    if hasattr(engine, "ensure_loaded"):
+        # Preload the most commonly used model in background
+        asyncio.create_task(engine.ensure_loaded("voice_design"))
+
     yield
 
     # Shutdown

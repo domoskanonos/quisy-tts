@@ -2,7 +2,7 @@
 
 import asyncio
 import uuid
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from pathlib import Path
 
 from config import ProjectConfig
@@ -78,10 +78,9 @@ class TTSService:
         output_path = settings.OUTPUT_DIR / filename
 
         try:
-            loop = asyncio.get_event_loop()
-            result_path = await loop.run_in_executor(
-                None,
-                self.engine.generate_and_save,
+            # Engine methods are now async, so we await them directly.
+            # Internal heavy lifting (model inference, I/O) is handled in thread pools within the engine.
+            result_path = await self.engine.generate_and_save(
                 text,
                 str(output_path),
                 params,
@@ -95,7 +94,7 @@ class TTSService:
 
         return Path(result_path)
 
-    def generate_stream(  # noqa: PLR0913
+    async def generate_stream(  # noqa: PLR0913
         self,
         text: str,
         language: str,
@@ -106,7 +105,7 @@ class TTSService:
         instruct: str | None = None,
         speaker: str | None = None,
         chunk_size: int = 4096,
-    ) -> Generator[bytes, None, None]:
+    ) -> AsyncGenerator[bytes, None]:
         """Generate audio stream from text.
 
         Args:
@@ -133,4 +132,6 @@ class TTSService:
             speaker=speaker,
         )
 
-        return self.engine.generate_audio_stream(text, params, chunk_size)
+        # Engine returns an AsyncGenerator, so we yield from it (or iterate)
+        async for chunk in self.engine.generate_audio_stream(text, params, chunk_size):
+            yield chunk

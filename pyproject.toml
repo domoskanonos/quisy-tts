@@ -79,3 +79,15 @@ version_toml = ["pyproject.toml:project.version"]
 branches.main = { match = "main" }
 build_command = "python -m pip install uv && uv build"
 upload_to_pypi = false
+
+[tool.uv]
+override-dependencies = ["numba>=0.59.0", "llvmlite>=0.42.0", "librosa>=0.10.0"]
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }
+torchaudio = { index = "pytorch-cu128" }

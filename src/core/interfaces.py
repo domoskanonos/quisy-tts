@@ -1,7 +1,7 @@
 """Core domain interfaces (Ports in Hexagonal Architecture)."""
 
 from abc import ABC, abstractmethod
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +16,7 @@ class TTSEngine(ABC):
     """
 
     @abstractmethod
-    def generate_audio(self, text: str, params: Any) -> tuple[torch.Tensor, int]:
+    async def generate_audio(self, text: str, params: Any) -> tuple[torch.Tensor, int]:
         """Generate audio waveform from text.
 
         Args:
@@ -29,7 +29,7 @@ class TTSEngine(ABC):
         ...
 
     @abstractmethod
-    def generate_and_save(self, text: str, output_path: str, params: Any) -> str:
+    async def generate_and_save(self, text: str, output_path: str, params: Any) -> str:
         """Generate audio and save to file.
 
         Args:
@@ -43,7 +43,9 @@ class TTSEngine(ABC):
         ...
 
     @abstractmethod
-    def generate_audio_stream(self, text: str, params: Any, chunk_size: int = 4096) -> Generator[bytes, None, None]:
+    async def generate_audio_stream(
+        self, text: str, params: Any, chunk_size: int = 4096
+    ) -> AsyncGenerator[bytes, None]:
         """Generate audio and yield as byte chunks for streaming.
 
         Args:
