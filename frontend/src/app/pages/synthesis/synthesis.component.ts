@@ -60,7 +60,7 @@ export class SynthesisComponent implements OnInit {
     });
 
     selectedVoice: Voice | null = null;
-    selectedModel: ModelSize = '1.7b';
+    selectedModel: ModelSize = this.settingsService.defaultModel() as ModelSize;
 
     // Model Options
     modelOptions = [
@@ -95,7 +95,18 @@ export class SynthesisComponent implements OnInit {
         this.ttsApi.getVoices().subscribe({
             next: res => {
                 this.voices.set(res.voices);
-                // Select default voice if available
+
+                // Select default voice logic
+                const savedVoiceId = this.settingsService.defaultVoiceId();
+                if (savedVoiceId) {
+                    const savedVoice = res.voices.find(v => v.id === savedVoiceId);
+                    if (savedVoice) {
+                        this.selectedVoice = savedVoice;
+                        return;
+                    }
+                }
+
+                // Fallback
                 const defaultVoice = res.voices.find(v => v.is_default) || res.voices[0];
                 if (defaultVoice) {
                     this.selectedVoice = defaultVoice;
@@ -272,5 +283,18 @@ export class SynthesisComponent implements OnInit {
         const rect = container.getBoundingClientRect();
         const percent = ((event.clientX - rect.left) / rect.width) * 100;
         this.audioPlayer.seekPercent(percent);
+    }
+
+    onVoiceChange(voice: Voice): void {
+        this.selectedVoice = voice;
+        this.settingsService.setDefaultVoiceId(voice.id);
+
+        // Background generation if needed
+        if (!voice.audio_filename) {
+            this.ttsApi.ensureVoiceAudio(voice.id).subscribe({
+                next: () => console.log(`Background generation triggered for ${voice.name}`),
+                error: (err) => console.warn('Failed to trigger background generation', err)
+            });
+        }
     }
 }

@@ -2,11 +2,13 @@
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
+from api.dependencies import get_tts_service
 from config import ProjectConfig
 from schemas.voice import VoiceCreate, VoiceListResponse, VoiceResponse, VoiceUpdate
+from services import TTSService
 from services.voice_service import VoiceService
 
 logger = ProjectConfig.get_logger()
@@ -145,3 +147,88 @@ def get_audio(voice_id: str) -> FileResponse:
         media_type="audio/wav",
         filename=audio_path.name,
     )
+
+
+# ─── Ensure Audio (Background Generation) ────────────────────────
+
+
+async def _generate_preview_task(
+    voice_id: str,
+    text: str,
+    language: str,
+    instruct: str | None,
+    tts_service: TTSService,
+) -> None:
+    """Background task to generate preview audio."""
+    try:
+        logger.info(f"Starting background preview generation for voice {voice_id}...")
+
+        # Determine mode based on available data
+        # If we have an instruct, use voice_design (1.7B)
+        # If not, we might fail or default to something else?
+        # But `ensure_audio` is usually for voices that HAVE metadata but NO audio.
+        # Ideally we use voice_design since it's the only way to generate FROM metadata.
+
+        mode = "voice_design"
+        final_instruct = instruct or "A clear and natural voice."
+
+        # Generate
+        path = await tts_service.generate_audio(
+            text=text,
+            language=language,
+            mode=mode,
+            model_size="1.7B",  # VoiceDesign is 1.7B only
+            instruct=final_instruct,
+        )
+
+        if path and path.exists():
+            # Save to voice service (database + persistent storage)
+            service = _get_service()
+            audio_data = path.read_bytes()
+            service.set_audio(voice_id, audio_data, f"preview_{voice_id}.wav")
+
+            # Cleanup temp file from output dir if needed, or let cleanup service handle it
+            # But TTSService saves to OUTPUT_DIR. We copied it to VOICES_DIR via set_audio.
+            # So we can delete the temp one.
+            try:
+                path.unlink()
+            except Exception as e:
+                logger.warning(f"Failed to delete temp preview file: {e}")
+
+            logger.info(f"Background generation completed for voice {voice_id}")
+
+    except Exception as e:
+        logger.error(f"Background generation failed for voice {voice_id}: {e}")
+
+
+@router.post("/{voice_id}/ensure-audio", status_code=202)
+async def ensure_audio(
+    voice_id: str,
+    background_tasks: BackgroundTasks,
+    tts_service: TTSService = Depends(get_tts_service),
+) -> dict[str, str]:
+    """Trigger background audio generation if missing."""
+    service = _get_service()
+    voice = service.get_voice(voice_id)
+
+    if not voice:
+        raise HTTPException(status_code=404, detail="Voice not found")
+
+    if voice.get("audio_filename"):
+        return {"status": "exists", "message": "Audio already exists"}
+
+    # Check requirements
+    if not voice.get("example_text"):
+        raise HTTPException(status_code=400, detail="Voice has no example text")
+
+    # Trigger background task
+    background_tasks.add_task(
+        _generate_preview_task,
+        voice_id=voice_id,
+        text=voice["example_text"],
+        language=voice.get("language", "german"),
+        instruct=voice.get("instruct"),
+        tts_service=tts_service,
+    )
+
+    return {"status": "triggered", "message": "Generation started in background"}

@@ -71,9 +71,9 @@
         <!-- Speaker Selection -->
         <div class="setting-group">
             <label class="setting-label">Sprecher</label>
-            <p-select [options]="sortedVoices()" [(ngModel)]="selectedVoice" optionLabel="name" [filter]="true"
-                filterBy="name" placeholder="Sprecher wählen" [virtualScroll]="true" [virtualScrollItemSize]="38"
-                class="full-width-select" [style]="{'width': '100%'}">
+            <p-select [options]="sortedVoices()" [(ngModel)]="selectedVoice" (onChange)="onVoiceChange($event.value)"
+                optionLabel="name" [filter]="true" filterBy="name" placeholder="Sprecher wählen" [virtualScroll]="true"
+                [virtualScrollItemSize]="38" class="full-width-select" [style]="{'width': '100%'}">
                 <ng-template let-voice pTemplate="item">
                     <div class="voice-item">
                         <span>{{ voice.name }}</span>

@@ -16,8 +16,12 @@ export class SettingsService {
         // Auto-save effect
         effect(() => {
             const lang = this.defaultLanguage();
+            const model = this.defaultModel();
+            const voiceId = this.defaultVoiceId();
             if (isPlatformBrowser(this.platformId)) {
                 localStorage.setItem('settings_default_language', lang);
+                localStorage.setItem('settings_default_model', model);
+                if (voiceId) localStorage.setItem('settings_default_voice_id', voiceId);
             }
         });
     }
@@ -36,10 +40,34 @@ export class SettingsService {
                     this.defaultLanguage.set('English');
                 }
             }
+
+            const savedModel = localStorage.getItem('settings_default_model');
+            if (savedModel) {
+                this.defaultModel.set(savedModel);
+            }
+
+            const savedVoiceId = localStorage.getItem('settings_default_voice_id');
+            if (savedVoiceId) {
+                this.defaultVoiceId.set(savedVoiceId);
+            }
         }
     }
 
     setDefaultLanguage(lang: string): void {
         this.defaultLanguage.set(lang);
+    }
+
+    // New: Model Settings
+    readonly defaultModel = signal<string>('1.7b'); // Default to 1.7b
+
+    setDefaultModel(model: string): void {
+        this.defaultModel.set(model);
+    }
+
+    // New: Voice Settings
+    readonly defaultVoiceId = signal<string | null>(null);
+
+    setDefaultVoiceId(id: string): void {
+        this.defaultVoiceId.set(id);
     }
 }

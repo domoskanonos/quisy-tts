@@ -90,4 +90,12 @@ export class TtsApiService {
     getVoiceAudioUrl(voiceId: string): string {
         return `${this.baseUrl}/voices/${voiceId}/audio`;
     }
+
+    // ─── Background Generation ──────────────────────────────────
+    ensureVoiceAudio(voiceId: string): Observable<{ status: string; message: string }> {
+        return this.http.post<{ status: string; message: string }>(
+            `${this.baseUrl}/voices/${voiceId}/ensure-audio`,
+            {}
+        );
+    }
 }
