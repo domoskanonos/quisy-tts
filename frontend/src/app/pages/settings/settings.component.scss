@@ -1,0 +1,78 @@
+.settings-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding-bottom: 40px;
+}
+
+.page-header {
+    margin-bottom: 32px;
+
+    h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        i {
+            color: var(--brand-primary);
+        }
+    }
+
+    .subtitle {
+        color: var(--text-color-secondary);
+        margin-top: 4px;
+        font-size: 15px;
+    }
+}
+
+.settings-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--surface-border);
+    transition: background-color var(--transition-fast);
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    &:hover {
+        background-color: var(--surface-hover);
+    }
+
+    @media (max-width: 640px) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+
+        .setting-control {
+            width: 100%;
+
+            ::ng-deep .p-select {
+                width: 100% !important;
+            }
+        }
+    }
+}
+
+.setting-info {
+    h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-color);
+        margin-bottom: 4px;
+    }
+
+    p {
+        font-size: 14px;
+        color: var(--text-color-secondary);
+    }
+}

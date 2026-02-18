@@ -1,223 +1,140 @@
-<div class="synthesis-page fade-in">
+<div class="synthesis-container fade-in">
     <p-toast />
 
-    <!-- Page Header -->
-    <div class="page-header">
-        <h1>
-            <i class="pi pi-microphone"></i>
-            Speech Synthesis
-        </h1>
-        <p class="subtitle">Erstelle natürliche Sprachausgaben mit KI-Stimmen</p>
-    </div>
+    <!-- Main Content Area -->
+    <main class="main-area">
+        <header class="page-header">
+            <h1>
+                <i class="pi pi-microphone"></i>
+                Speech Synthesis
+            </h1>
+            <p class="subtitle">Erstelle natürliche Sprachausgaben</p>
+        </header>
 
-    <!-- Backend Offline Banner -->
-    @if (backendOnline() === false) {
-    <div class="backend-offline-banner fade-in">
-        <div class="banner-content">
+        <!-- Backend Offline Banner -->
+        @if (backendOnline() === false) {
+        <div class="backend-offline-banner">
             <i class="pi pi-exclamation-triangle"></i>
-            <div class="banner-text">
-                <strong>Backend nicht erreichbar</strong>
-                <span>Der TTS-Server antwortet nicht. Bitte stelle sicher, dass das Backend läuft.</span>
-            </div>
-            <button class="retry-btn" (click)="retryConnection()">
-                <i class="pi pi-refresh"></i>
-                Erneut versuchen
-            </button>
+            <span>Backend nicht erreichbar.</span>
+            <button class="retry-btn" (click)="retryConnection()">Retry</button>
         </div>
-    </div>
-    }
+        }
 
-    <!-- Main Card -->
-    <div class="synthesis-card glass-card">
+        <!-- Text Input (Full Height) -->
+        <div class="text-editor-container glass-card">
+            <textarea pTextarea [(ngModel)]="text" placeholder="Gib hier deinen Text ein..." class="main-textarea">
+            </textarea>
+            <div class="editor-footer">
+                <span class="char-count">{{ text.length }} Zeichen</span>
 
-        <!-- Text Input -->
-        <div class="input-section">
-            <label class="section-label">
-                <i class="pi pi-pen-to-square"></i>
-                Text
-            </label>
-            <textarea pTextarea [(ngModel)]="text" rows="5"
-                placeholder="Gib hier deinen Text ein, der vorgelesen werden soll..." class="text-input"
-                [autoResize]="true"></textarea>
-            <div class="char-count">{{ text.length }} Zeichen</div>
-        </div>
-
-        <!-- Controls Row -->
-        <div class="controls-row">
-            <!-- Language -->
-            <div class="control-group">
-                <label class="control-label">Sprache</label>
-                <p-select [options]="languages()" [(ngModel)]="language" placeholder="Sprache wählen"
-                    [style]="{'width': '100%'}" />
-            </div>
-
-            <!-- Model Size -->
-            <div class="control-group">
-                <label class="control-label">Modell</label>
-                <p-selectbutton [options]="modelSizeOptions" [(ngModel)]="modelSize" optionLabel="label"
-                    optionValue="value" [disabled]="currentMode === 'voice_design'" />
-            </div>
-        </div>
-
-        <!-- Mode Tabs -->
-        <div class="mode-section">
-            <p-tabs [value]="0" (activeIndexChange)="onTabChange($any($event))">
-                <p-tablist>
-                    <p-tab [value]="0">
-                        <i class="pi pi-user"></i>&nbsp;Custom Voice
-                    </p-tab>
-                    <p-tab [value]="1">
-                        <i class="pi pi-clone"></i>&nbsp;Voice Cloning
-                    </p-tab>
-                    <p-tab [value]="2">
-                        <i class="pi pi-sparkles"></i>&nbsp;Voice Design
-                    </p-tab>
-                </p-tablist>
-
-                <p-tabpanels>
-                    <!-- Custom Voice Tab -->
-                    <p-tabpanel [value]="0">
-                        <div class="tab-content">
-                            <label class="section-label">
-                                <i class="pi pi-users"></i>
-                                Sprecher wählen
-                            </label>
-                            <div class="speaker-grid">
-                                @for (speaker of speakers(); track speaker) {
-                                <div class="speaker-card" [class.selected]="selectedSpeaker === speaker"
-                                    (click)="selectSpeaker(speaker)">
-                                    <div class="speaker-avatar" [style.background]="getSpeakerColor(speaker)">
-                                        {{ getSpeakerInitials(speaker) }}
-                                    </div>
-                                    <span class="speaker-name">{{ speaker }}</span>
-                                    @if (selectedSpeaker === speaker) {
-                                    <i class="pi pi-check checkmark"></i>
-                                    }
-                                </div>
-                                }
-                            </div>
-
-                            <div class="instruct-section">
-                                <label class="control-label">Stil-Anweisung (optional)</label>
-                                <input pInputText [(ngModel)]="customInstruct"
-                                    placeholder="z.B. 'Sprich fröhlich und energisch'" class="instruct-input" />
-                            </div>
-                        </div>
-                    </p-tabpanel>
-
-                    <!-- Voice Cloning Tab -->
-                    <p-tabpanel [value]="1">
-                        <div class="tab-content">
-                            <div class="control-group">
-                                <label class="control-label">Referenz-Audio</label>
-                                <p-select [options]="referenceAudios" [(ngModel)]="referenceAudio"
-                                    placeholder="Referenz wählen" [style]="{'width': '100%'}" />
-                            </div>
-
-                            <div class="control-group" style="margin-top: 16px;">
-                                <label class="control-label">Referenz-Text (optional, verbessert Qualität)</label>
-                                <input pInputText [(ngModel)]="refText" placeholder="Transkription des Referenz-Audios"
-                                    class="instruct-input" />
-                            </div>
-                        </div>
-                    </p-tabpanel>
-
-                    <!-- Voice Design Tab -->
-                    <p-tabpanel [value]="2">
-                        <div class="tab-content">
-                            <label class="section-label">
-                                <i class="pi pi-sparkles"></i>
-                                Stimme beschreiben
-                            </label>
-                            <textarea pTextarea [(ngModel)]="voiceDescription" rows="3"
-                                placeholder="Beschreibe die gewünschte Stimme, z.B. 'Eine tiefe, ruhige männliche Stimme, wie ein professioneller Podcaster'"
-                                class="text-input" [autoResize]="true"></textarea>
-                            <div class="info-badge">
-                                <i class="pi pi-info-circle"></i>
-                                Voice Design nutzt nur das 1.7B Modell
-                            </div>
-                        </div>
-                    </p-tabpanel>
-                </p-tabpanels>
-            </p-tabs>
-        </div>
-
-        <!-- Generate Button -->
-        <div class="generate-section">
-            <button class="btn-gradient generate-btn" (click)="generate()"
-                [disabled]="isGenerating() || !text.trim() || backendOnline() === false">
-                @if (isGenerating()) {
-                <i class="pi pi-spinner animate-spin"></i>
-                <span>Generiere...</span>
-                } @else {
-                <i class="pi pi-play"></i>
-                <span>Audio generieren</span>
-                }
-            </button>
-        </div>
-
-        <!-- Audio Player -->
-        @if (audioPlayer.audioUrl()) {
-        <div class="player-section fade-in">
-            <div class="player-card glass-card">
-                <!-- Waveform -->
-                <div class="waveform-container" #waveformContainer (click)="onWaveformClick($event, waveformContainer)">
-                    @for (bar of audioPlayer.waveformData(); track $index; let i = $index) {
-                    <div class="waveform-bar"
-                        [class.active]="(i / audioPlayer.waveformData().length * 100) <= getProgressPercent()"
-                        [style.height.px]="8 + bar * 48"></div>
+                <button class="btn-gradient generate-btn" (click)="generate()"
+                    [disabled]="isGenerating() || !text.trim() || backendOnline() === false">
+                    @if (isGenerating()) {
+                    <i class="pi pi-spinner animate-spin"></i>
+                    <span>Generiere...</span>
+                    } @else {
+                    <i class="pi pi-play"></i>
+                    <span>Generieren</span>
                     }
-                </div>
+                </button>
+            </div>
+        </div>
 
-                <!-- Controls -->
-                <div class="player-controls">
-                    <div class="player-buttons">
-                        <button class="player-btn" (click)="audioPlayer.stop()">
-                            <i class="pi pi-stop"></i>
-                        </button>
-                        <button class="player-btn play-btn"
-                            (click)="audioPlayer.isPlaying() ? audioPlayer.pause() : audioPlayer.play()">
-                            <i class="pi" [class.pi-pause]="audioPlayer.isPlaying()"
-                                [class.pi-play]="!audioPlayer.isPlaying()"></i>
-                        </button>
-                        <button class="player-btn" (click)="audioPlayer.download()">
-                            <i class="pi pi-download"></i>
-                        </button>
-                    </div>
-                    <div class="player-time">
-                        {{ audioPlayer.formatTime(audioPlayer.currentTime()) }}
-                        /
-                        {{ audioPlayer.formatTime(audioPlayer.duration()) }}
-                    </div>
-                </div>
+        <!-- Audio Player (Floating/Bottom) -->
+        @if (audioPlayer.audioUrl()) {
+        <div class="player-container glass-card fade-in">
+            <div class="waveform-container" #waveformContainer (click)="onWaveformClick($event, waveformContainer)">
+                @for (bar of audioPlayer.waveformData(); track $index; let i = $index) {
+                <div class="waveform-bar"
+                    [class.active]="(i / audioPlayer.waveformData().length * 100) <= getProgressPercent()"
+                    [style.height.px]="8 + bar * 48"></div>
+                }
+            </div>
+
+            <div class="player-controls">
+                <button class="player-btn" (click)="audioPlayer.stop()"><i class="pi pi-stop"></i></button>
+                <button class="player-btn play-btn"
+                    (click)="audioPlayer.isPlaying() ? audioPlayer.pause() : audioPlayer.play()">
+                    <i class="pi" [class.pi-pause]="audioPlayer.isPlaying()"
+                        [class.pi-play]="!audioPlayer.isPlaying()"></i>
+                </button>
+                <button class="player-btn" (click)="audioPlayer.download()"><i class="pi pi-download"></i></button>
             </div>
         </div>
         }
-    </div>
+    </main>
 
-    <!-- History -->
-    @if (history().length > 0) {
-    <div class="history-section fade-in">
-        <h3 class="section-title">
-            <i class="pi pi-history"></i>
-            Letzte Generierungen
-        </h3>
-        <div class="history-list">
-            @for (item of history(); track item.id) {
-            <div class="history-item glass-card">
-                <div class="history-meta">
-                    <span class="history-mode">{{ item.mode === 'base' ? 'Cloning' : item.mode === 'custom_voice' ?
-                        'Custom' : 'Design' }}</span>
-                    <span class="history-model">{{ item.modelSize }}</span>
-                    @if (item.speaker) {
-                    <span class="history-speaker">{{ item.speaker }}</span>
-                    }
-                </div>
-                <p class="history-text">{{ item.text }}{{ item.text.length >= 80 ? '...' : '' }}</p>
-                <span class="history-time">{{ item.language }} · {{ item.timestamp | date:'HH:mm' }}</span>
+    <!-- Right Sidebar -->
+    <aside class="settings-sidebar glass-card">
+        <h2 class="sidebar-title">Einstellungen</h2>
+
+        <!-- Speaker Selection -->
+        <div class="setting-group">
+            <label class="setting-label">Sprecher</label>
+            <p-select [options]="sortedVoices()" [(ngModel)]="selectedVoice" optionLabel="name" [filter]="true"
+                filterBy="name" placeholder="Sprecher wählen" [virtualScroll]="true" [virtualScrollItemSize]="38"
+                class="full-width-select" [style]="{'width': '100%'}">
+                <ng-template let-voice pTemplate="item">
+                    <div class="voice-item">
+                        <span>{{ voice.name }}</span>
+                        <span class="lang-badge">{{ voice.language }}</span>
+                    </div>
+                </ng-template>
+                <ng-template let-voice pTemplate="selectedItem">
+                    <div class="voice-item selected">
+                        <span>{{ voice.name }}</span>
+                    </div>
+                </ng-template>
+            </p-select>
+        </div>
+
+        <!-- Speaker Details / Play Example -->
+        @if (selectedVoice) {
+        <div class="voice-details fade-in">
+            <div class="detail-row">
+                <span class="detail-label">Sprache:</span>
+                <span class="detail-value">{{ selectedVoice.language }}</span>
+            </div>
+
+            <button class="btn-secondary play-example-btn" (click)="playExample()" [disabled]="isPlayingExample()">
+                @if (isPlayingExample()) {
+                <i class="pi pi-spinner animate-spin"></i>
+                } @else {
+                <i class="pi pi-volume-up"></i>
+                }
+                <span>Beispiel anhören</span>
+            </button>
+
+            @if (selectedVoice.instruct) {
+            <div class="instruct-preview">
+                <i class="pi pi-info-circle"></i>
+                <p>{{ selectedVoice.instruct }}</p>
             </div>
             }
         </div>
-    </div>
-    }
+        }
+
+        <!-- Model Selection -->
+        <div class="setting-group">
+            <label class="setting-label">Modell</label>
+            <p-select [options]="modelOptions" [(ngModel)]="selectedModel" optionLabel="label" optionValue="value"
+                [style]="{'width': '100%'}">
+            </p-select>
+        </div>
+
+        <!-- History (Compact) -->
+        @if (history().length > 0) {
+        <div class="history-list-sidebar">
+            <h3 class="sidebar-subtitle">Verlauf</h3>
+            @for (item of history(); track item.id) {
+            <div class="history-item-compact">
+                <div class="history-info">
+                    <span class="history-text-preview">{{ item.text | slice:0:30 }}...</span>
+                    <span class="history-meta">{{ item.timestamp | date:'HH:mm' }}</span>
+                </div>
+            </div>
+            }
+        </div>
+        }
+    </aside>
 </div>

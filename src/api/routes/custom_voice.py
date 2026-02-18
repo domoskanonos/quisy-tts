@@ -44,6 +44,18 @@ async def generate_custom_voice_17b(
     return await _generate(request, "1.7B", service, voice_service, background_tasks, cleanup)
 
 
+@router.post("/3b", response_model=None)
+async def generate_custom_voice_3b(
+    request: CustomVoiceRequest,
+    background_tasks: BackgroundTasks,
+    service: TTSService = Depends(get_tts_service),
+    voice_service: VoiceService = Depends(get_voice_service),
+    cleanup: CleanupService = Depends(get_cleanup_service),
+) -> FileResponse:
+    """Generate audio using custom voice mode with 3B model."""
+    return await _generate(request, "3B", service, voice_service, background_tasks, cleanup)
+
+
 async def _generate(
     request: CustomVoiceRequest,
     model_size: str,

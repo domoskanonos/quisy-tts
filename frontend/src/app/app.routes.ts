@@ -21,4 +21,9 @@ export const routes: Routes = [
         loadComponent: () =>
             import('./pages/status/status.component').then(m => m.StatusComponent),
     },
+    {
+        path: 'settings',
+        loadComponent: () =>
+            import('./pages/settings/settings.component').then(m => m.SettingsComponent),
+    },
 ];

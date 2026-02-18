@@ -32,6 +32,9 @@
     </nav>
 
     <div class="sidebar-footer">
+      <button class="toggle-btn" (click)="toggleTheme()" [title]="isDarkMode() ? 'Light Mode' : 'Dark Mode'">
+        <i class="pi" [class.pi-sun]="isDarkMode()" [class.pi-moon]="!isDarkMode()"></i>
+      </button>
       <button class="toggle-btn" (click)="toggleSidebar()">
         <i class="pi" [class.pi-chevron-left]="!sidebarCollapsed()" [class.pi-chevron-right]="sidebarCollapsed()"></i>
       </button>

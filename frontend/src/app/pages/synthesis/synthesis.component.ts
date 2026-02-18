@@ -1,16 +1,16 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TabsModule } from 'primeng/tabs';
 import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectButtonModule } from 'primeng/selectbutton';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { TtsApiService } from '../../services/tts-api.service';
 import { AudioPlayerService } from '../../services/audio-player.service';
-import { ModelSize, TtsMode, GenerationHistoryItem } from '../../models/tts.models';
+import { SettingsService } from '../../services/settings.service';
+import { ModelSize, TtsMode, GenerationHistoryItem, Voice } from '../../models/tts.models';
 
 @Component({
     selector: 'app-synthesis',
@@ -22,7 +22,6 @@ import { ModelSize, TtsMode, GenerationHistoryItem } from '../../models/tts.mode
         SelectModule,
         TextareaModule,
         InputTextModule,
-        SelectButtonModule,
         ToastModule,
     ],
     providers: [MessageService],
@@ -33,36 +32,47 @@ export class SynthesisComponent implements OnInit {
     private readonly ttsApi = inject(TtsApiService);
     readonly audioPlayer = inject(AudioPlayerService);
     private readonly messageService = inject(MessageService);
+    private readonly settingsService = inject(SettingsService);
 
     // Form state
     text = '';
-    language = 'Deutsch';
-    modelSize: ModelSize = '1.7b';
-    currentMode: TtsMode = 'custom_voice';
 
-    // Base mode
-    referenceAudio = 'chatbot_male.wav';
-    refText = '';
+    // Settings (Sidebar)
+    voices = signal<Voice[]>([]);
 
-    // Custom voice
-    selectedSpeaker = 'Chelsie';
-    customInstruct = '';
+    // Computed sorted voices based on default language
+    sortedVoices = computed(() => {
+        const allVoices = this.voices();
+        const defaultLang = this.settingsService.defaultLanguage();
 
-    // Voice design
-    voiceDescription = '';
+        if (!defaultLang) return allVoices;
 
-    // Dropdowns
-    languages = signal<string[]>([]);
-    speakers = signal<string[]>([]);
-    referenceAudios = ['chatbot_male.wav', 'book_reader_male.wav', 'podcast_male.wav'];
+        return [...allVoices].sort((a, b) => {
+            const aIsDefault = a.language === defaultLang;
+            const bIsDefault = b.language === defaultLang;
 
-    modelSizeOptions = [
-        { label: '0.6B – Fast', value: '0.6b' },
-        { label: '1.7B – Quality', value: '1.7b' },
+            if (aIsDefault && !bIsDefault) return -1;
+            if (!aIsDefault && bIsDefault) return 1;
+
+            // Secondary sort by name
+            return a.name.localeCompare(b.name);
+        });
+    });
+
+    selectedVoice: Voice | null = null;
+    selectedModel: ModelSize = '3b';
+
+    // Model Options
+    modelOptions = [
+        { label: 'Standard (0.6B)', value: '0.6b' },
+        { label: 'High Quality (1.7B)', value: '1.7b' },
+        { label: 'Balanced (3B)', value: '3b' },
     ];
+
 
     // State
     isGenerating = signal(false);
+    isPlayingExample = signal(false);
     backendOnline = signal<boolean | null>(null);
     history = signal<GenerationHistoryItem[]>([]);
 
@@ -74,32 +84,27 @@ export class SynthesisComponent implements OnInit {
         this.ttsApi.getStatus().subscribe({
             next: () => {
                 this.backendOnline.set(true);
-                this.loadData();
+                this.loadVoices();
             },
             error: () => {
                 this.backendOnline.set(false);
-                // Use fallback data so the UI is still usable
-                this.languages.set(['German', 'English', 'French', 'Spanish']);
-                this.speakers.set([
-                    'Chelsie', 'Aidan', 'Serena', 'Ethan', 'Vivian',
-                    'Lucas', 'Aria', 'Oliver', 'Isabel', 'Caleb', 'eric',
-                ]);
             },
         });
     }
 
-    private loadData(): void {
-        this.ttsApi.getLanguages().subscribe({
-            next: res => this.languages.set(res.languages),
-            error: () => this.languages.set(['German', 'English', 'French', 'Spanish']),
-        });
-        this.ttsApi.getSpeakers().subscribe({
-            next: res => this.speakers.set(res.speakers),
-            error: () =>
-                this.speakers.set([
-                    'Chelsie', 'Aidan', 'Serena', 'Ethan', 'Vivian',
-                    'Lucas', 'Aria', 'Oliver', 'Isabel', 'Caleb', 'eric',
-                ]),
+    private loadVoices(): void {
+        this.ttsApi.getVoices().subscribe({
+            next: res => {
+                this.voices.set(res.voices);
+                // Select default voice if available
+                const defaultVoice = res.voices.find(v => v.is_default) || res.voices[0];
+                if (defaultVoice) {
+                    this.selectedVoice = defaultVoice;
+                }
+            },
+            error: () => {
+                this.messageService.add({ severity: 'error', summary: 'Fehler', detail: 'Stimmen konnten nicht geladen werden.' });
+            },
         });
     }
 
@@ -108,128 +113,145 @@ export class SynthesisComponent implements OnInit {
         this.checkBackend();
     }
 
-    onTabChange(index: number): void {
-        const modes: TtsMode[] = ['custom_voice', 'base', 'voice_design'];
-        this.currentMode = modes[index] || 'custom_voice';
-
-        // Voice design only supports 1.7B
-        if (this.currentMode === 'voice_design') {
-            this.modelSize = '1.7b';
-        }
-    }
-
-    selectSpeaker(speaker: string): void {
-        this.selectedSpeaker = speaker;
-    }
-
-    getSpeakerInitials(name: string): string {
-        return name.charAt(0).toUpperCase();
-    }
-
-    getSpeakerColor(name: string): string {
-        const colors = [
-            '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b',
-            '#ef4444', '#ec4899', '#6366f1', '#14b8a6',
-            '#f97316', '#84cc16', '#a855f7',
-        ];
-        let hash = 0;
-        for (const char of name) hash = char.charCodeAt(0) + ((hash << 5) - hash);
-        return colors[Math.abs(hash) % colors.length];
-    }
-
     generate(): void {
         if (!this.text.trim()) {
-            this.messageService.add({
-                severity: 'warn',
-                summary: 'Text fehlt',
-                detail: 'Bitte gib einen Text zum Vorlesen ein.',
-            });
+            this.messageService.add({ severity: 'warn', summary: 'Text fehlt', detail: 'Bitte gib einen Text ein.' });
+            return;
+        }
+
+        if (!this.selectedVoice) {
+            this.messageService.add({ severity: 'warn', summary: 'Stimme fehlt', detail: 'Bitte wähle eine Stimme aus.' });
             return;
         }
 
         this.isGenerating.set(true);
 
-        let request$;
-
-        switch (this.currentMode) {
-            case 'base':
-                request$ = this.ttsApi.generateBase(
-                    {
-                        text: this.text,
-                        language: this.language,
-                        reference_audio: this.referenceAudio,
-                        ref_text: this.refText || null,
-                    },
-                    this.modelSize
-                );
-                break;
-
-            case 'voice_design':
-                if (!this.voiceDescription.trim()) {
-                    this.messageService.add({
-                        severity: 'warn',
-                        summary: 'Beschreibung fehlt',
-                        detail: 'Bitte beschreibe die gewünschte Stimme.',
-                    });
-                    this.isGenerating.set(false);
-                    return;
-                }
-                request$ = this.ttsApi.generateVoiceDesign({
-                    text: this.text,
-                    language: this.language,
-                    instruct: this.voiceDescription,
-                });
-                break;
-
-            case 'custom_voice':
-                request$ = this.ttsApi.generateCustomVoice(
-                    {
-                        text: this.text,
-                        language: this.language,
-                        speaker: this.selectedSpeaker,
-                        instruct: this.customInstruct || null,
-                    },
-                    this.modelSize
-                );
-                break;
-        }
-
-        request$.subscribe({
+        this.ttsApi.generateCustomVoice(
+            {
+                text: this.text,
+                language: this.selectedVoice.language || 'german', // Use voice language
+                speaker: this.selectedVoice.name,
+                instruct: this.selectedVoice.instruct || null, // Use voice instruct
+            },
+            this.selectedModel
+        ).subscribe({
             next: (blob: Blob) => {
                 this.audioPlayer.loadAudio(blob);
                 this.isGenerating.set(false);
-
-                // Add to history
-                const item: GenerationHistoryItem = {
-                    id: crypto.randomUUID(),
-                    text: this.text.substring(0, 80),
-                    mode: this.currentMode,
-                    modelSize: this.modelSize,
-                    language: this.language,
-                    speaker: this.currentMode === 'custom_voice' ? this.selectedSpeaker : undefined,
-                    audioUrl: this.audioPlayer.audioUrl() || '',
-                    timestamp: new Date(),
-                };
-                this.history.update(h => [item, ...h].slice(0, 20));
-
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Audio generiert',
-                    detail: 'Die Sprachausgabe wurde erfolgreich erstellt.',
-                });
+                this.addToHistory();
             },
             error: (err: unknown) => {
                 this.isGenerating.set(false);
-                const errorDetail = err instanceof Error ? err.message : 'Verbindung zum Backend fehlgeschlagen.';
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Fehler',
-                    detail: errorDetail,
-                });
+                this.messageService.add({ severity: 'error', summary: 'Fehler', detail: 'Generierung fehlgeschlagen.' });
             },
         });
     }
 
+    playExample(): void {
+        const voice = this.selectedVoice;
+        if (!voice) return;
+
+        // If voice has audio, try to play it
+        if (voice.audio_filename) {
+            const url = this.ttsApi.getVoiceAudioUrl(voice.id);
+            const audio = new Audio(url);
+
+            this.isPlayingExample.set(true);
+
+            // Handle errors (e.g. 404 Not Found) by falling back to generation
+            const errorHandler = () => {
+                console.warn(`Audio file for ${voice.name} not found or failed to load. Generating new example...`);
+                // Remove listeners to avoid double triggers if possible, though new Audio instance is mostly safe
+                audio.onended = null;
+                audio.onerror = null;
+                this.generateExampleAudio(voice);
+            };
+
+            audio.onerror = errorHandler;
+
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => {
+                        // Playback started successfully
+                    })
+                    .catch(error => {
+                        console.warn("Audio playback prevented or failed:", error);
+                        errorHandler();
+                    });
+            }
+
+            audio.onended = () => this.isPlayingExample.set(false);
+            return;
+        }
+
+        // Otherwise generate it
+        this.generateExampleAudio(voice);
+    }
+
+    private generateExampleAudio(voice: Voice): void {
+        this.isPlayingExample.set(true);
+
+        // Use VoiceDesign generation (prompt-based) as requested
+        this.ttsApi.generateVoiceDesign({
+            text: voice.example_text || 'Dies ist eine Hörprobe meiner Stimme.',
+            language: voice.language || 'german',
+            instruct: voice.instruct || '',
+        }).subscribe({
+            next: (blob) => {
+                // 1. Play locally
+                const url = URL.createObjectURL(blob);
+                const audio = new Audio(url);
+                audio.play();
+                audio.onended = () => {
+                    this.isPlayingExample.set(false);
+                    URL.revokeObjectURL(url);
+                };
+
+                // 2. Upload and Persist
+                const file = new File([blob], `voice_${voice.id}.wav`, { type: 'audio/wav' });
+                this.ttsApi.uploadVoiceAudio(voice.id, file).subscribe({
+                    next: (updatedVoice) => {
+                        // Update local state so next time we play the file
+                        this.voices.update(currentVoices =>
+                            currentVoices.map(v => v.id === updatedVoice.id ? updatedVoice : v)
+                        );
+
+                        // Also update selectedVoice if it matches
+                        if (this.selectedVoice?.id === updatedVoice.id) {
+                            this.selectedVoice = updatedVoice;
+                        }
+
+                        this.messageService.add({ severity: 'success', summary: 'Gespeichert', detail: 'Hörprobe wurde gespeichert.' });
+                    },
+                    error: () => {
+                        console.warn('Failed to upload generated example audio.');
+                    }
+                });
+            },
+            error: () => {
+                this.isPlayingExample.set(false);
+                this.messageService.add({ severity: 'error', summary: 'Fehler', detail: 'Beispiel konnte nicht generiert werden.' });
+            }
+        });
+    }
+
+    // History helper
+    private addToHistory(): void {
+        const item: GenerationHistoryItem = {
+            id: crypto.randomUUID(),
+            text: this.text.substring(0, 80),
+            mode: 'custom_voice',
+            modelSize: this.selectedModel,
+            language: this.selectedVoice?.language || '?',
+            speaker: this.selectedVoice?.name,
+            audioUrl: this.audioPlayer.audioUrl() || '',
+            timestamp: new Date(),
+        };
+        this.history.update(h => [item, ...h].slice(0, 20));
+    }
+
+    // Player helpers
     getProgressPercent(): number {
         const dur = this.audioPlayer.duration();
         if (!dur) return 0;
