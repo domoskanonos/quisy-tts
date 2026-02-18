@@ -42,17 +42,6 @@ async def generate_base_17b(
     return await _generate(request, "1.7B", service, background_tasks, cleanup)
 
 
-@router.post("/3b", response_model=None)
-async def generate_base_3b(
-    request: BaseGenerateRequest,
-    background_tasks: BackgroundTasks,
-    service: TTSService = Depends(get_tts_service),
-    cleanup: CleanupService = Depends(get_cleanup_service),
-) -> FileResponse:
-    """Generate audio using base mode (voice cloning) with 3B model."""
-    return await _generate(request, "3B", service, background_tasks, cleanup)
-
-
 async def _generate(
     request: BaseGenerateRequest,
     model_size: str,

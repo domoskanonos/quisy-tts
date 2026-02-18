@@ -38,7 +38,7 @@ export interface CustomVoiceRequest {
 
 // ─── UI Models ──────────────────────────────────────────────────
 export type TtsMode = 'base' | 'voice_design' | 'custom_voice';
-export type ModelSize = '0.5b' | '0.6b' | '1.7b' | '3b' | '7b' | '14b' | '32b';
+export type ModelSize = '0.5b' | '0.6b' | '1.7b' | '7b' | '14b' | '32b';
 
 export interface GenerationHistoryItem {
   id: string;

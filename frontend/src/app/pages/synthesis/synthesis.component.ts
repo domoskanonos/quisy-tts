@@ -60,13 +60,12 @@ export class SynthesisComponent implements OnInit {
     });
 
     selectedVoice: Voice | null = null;
-    selectedModel: ModelSize = '3b';
+    selectedModel: ModelSize = '1.7b';
 
     // Model Options
     modelOptions = [
         { label: 'Standard (0.6B)', value: '0.6b' },
         { label: 'High Quality (1.7B)', value: '1.7b' },
-        { label: 'Balanced (3B)', value: '3b' },
     ];
 
 
@@ -126,12 +125,23 @@ export class SynthesisComponent implements OnInit {
 
         this.isGenerating.set(true);
 
-        this.ttsApi.generateCustomVoice(
+        if (!this.selectedVoice.audio_filename) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Kein Audio',
+                detail: 'Diese Stimme hat keine Audiodatei für Cloning (Base Mode).'
+            });
+            return;
+        }
+
+        this.isGenerating.set(true);
+
+        this.ttsApi.generateBase(
             {
                 text: this.text,
-                language: this.selectedVoice.language || 'german', // Use voice language
-                speaker: this.selectedVoice.name,
-                instruct: this.selectedVoice.instruct || null, // Use voice instruct
+                language: this.selectedVoice.language || 'german',
+                reference_audio: this.selectedVoice.audio_filename,
+                ref_text: this.selectedVoice.example_text || null,
             },
             this.selectedModel
         ).subscribe({
