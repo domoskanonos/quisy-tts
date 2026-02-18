@@ -43,9 +43,7 @@ class QwenTTSBackend:
         """Initialize backend without loading any models."""
         self.settings = settings
         self._models: dict[str, Qwen3TTSModel] = {}
-        self._locks: dict[str, asyncio.Lock] = {
-            mode: asyncio.Lock() for mode in MODEL_MAP
-        }
+        self._locks: dict[str, asyncio.Lock] = {mode: asyncio.Lock() for mode in MODEL_MAP}
 
     async def ensure_loaded(self, mode: str = "base") -> Qwen3TTSModel:
         """Ensure the model for a given mode is loaded. Safe to call concurrently.
@@ -114,9 +112,7 @@ class QwenTTSBackend:
 
         return audio_tensor, sr
 
-    def _generate_sync(
-        self, model: Qwen3TTSModel, text: str, params: TTSParams, gen_kwargs: dict
-    ) -> tuple[list, int]:
+    def _generate_sync(self, model: Qwen3TTSModel, text: str, params: TTSParams, gen_kwargs: dict) -> tuple[list, int]:
         """Synchronous generation logic."""
         if params.mode == "voice_design":
             return model.generate_voice_design(
@@ -187,6 +183,13 @@ class QwenTTSBackend:
             path = self.settings.VOICES_DIR / params.reference_audio
             if path.exists():
                 return str(path)
+
+            # If a specific file was requested but not found, RAISE ERROR instead of falling back
+            from core.exceptions import ReferenceAudioNotFoundError
+
+            raise ReferenceAudioNotFoundError(
+                f"Requested reference audio '{params.reference_audio}' not found in voices directory."
+            )
 
         default = self.settings.DEFAULT_REFERENCE_AUDIO
         if default:
