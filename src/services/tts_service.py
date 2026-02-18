@@ -1,15 +1,13 @@
 """TTS orchestration service - Application layer."""
 
-import asyncio
 import uuid
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator
 from pathlib import Path
 
 from config import ProjectConfig
 from core import AudioGenerationError, CacheService, TTSEngine
 from schemas import TTSParams
 from schemas.languages import resolve_language
-
 
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
