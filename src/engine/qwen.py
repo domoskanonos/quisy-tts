@@ -1,7 +1,6 @@
 """Qwen3-TTS engine implementation using the official qwen-tts package."""
 
 import asyncio
-import re
 import time
 from collections.abc import AsyncGenerator
 from pathlib import Path
@@ -14,6 +13,7 @@ from audio.processor import AudioUtils
 from config import ProjectConfig, ProjectSettings
 from core import TTSEngine
 from schemas import TTSParams
+from services.text_splitter import get_text_splitter
 
 logger = ProjectConfig.get_logger()
 
@@ -35,6 +35,9 @@ MODEL_MAP = {
     "custom_voice": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
 }
 
+# Silence duration between chunks in seconds
+INTER_CHUNK_SILENCE_SECS = 0.15
+
 
 class QwenTTSBackend:
     """Backend for Qwen3-TTS using the official qwen-tts package with lazy async loading."""
@@ -44,6 +47,7 @@ class QwenTTSBackend:
         self.settings = settings
         self._models: dict[str, Qwen3TTSModel] = {}
         self._locks: dict[str, asyncio.Lock] = {mode: asyncio.Lock() for mode in MODEL_MAP}
+        self._text_splitter = get_text_splitter()
 
     async def ensure_loaded(self, mode: str = "base") -> Qwen3TTSModel:
         """Ensure the model for a given mode is loaded. Safe to call concurrently.
@@ -88,9 +92,52 @@ class QwenTTSBackend:
         )
 
     async def generate_audio(self, text: str, params: TTSParams) -> tuple[torch.Tensor, int]:
-        """Generate audio using qwen-tts (async)."""
+        """Generate audio using qwen-tts (async).
+
+        For long texts, splits into chunks using spaCy, generates audio for each,
+        and concatenates them with short silence gaps for natural pacing.
+        """
         model = await self.ensure_loaded(params.mode)
 
+        # Split text into chunks using language-aware splitter
+        language = params.resolved_language if hasattr(params, "resolved_language") else (params.language or "german")
+        chunks = self._text_splitter.split(text, language)
+
+        if len(chunks) <= 1:
+            # Short text — generate directly (no splitting overhead)
+            return await self._generate_single(model, text, params)
+
+        logger.info(f"Text split into {len(chunks)} chunks for language '{language}' (total {len(text)} chars)")
+
+        # Generate audio for each chunk
+        audio_segments: list[torch.Tensor] = []
+        sample_rate = 24000  # Will be overwritten by actual SR
+
+        for i, chunk in enumerate(chunks):
+            logger.debug(f"Generating chunk {i + 1}/{len(chunks)}: {chunk[:60]}...")
+            waveform, sr = await self._generate_single(model, chunk, params)
+            audio_segments.append(waveform)
+            sample_rate = sr
+
+        # Concatenate with silence gaps
+        silence_samples = int(sample_rate * INTER_CHUNK_SILENCE_SECS)
+        silence = torch.zeros(1, silence_samples)
+
+        combined_parts: list[torch.Tensor] = []
+        for i, segment in enumerate(audio_segments):
+            combined_parts.append(segment)
+            if i < len(audio_segments) - 1:
+                combined_parts.append(silence)
+
+        final_audio = torch.cat(combined_parts, dim=1)
+        logger.info(
+            f"Combined {len(audio_segments)} audio chunks. Total duration: {final_audio.shape[1] / sample_rate:.1f}s"
+        )
+
+        return final_audio, sample_rate
+
+    async def _generate_single(self, model: Qwen3TTSModel, text: str, params: TTSParams) -> tuple[torch.Tensor, int]:
+        """Generate audio for a single text chunk."""
         gen_kwargs = {
             "max_new_tokens": QWEN_GENERATION_CONFIG["max_new_tokens"],
             "temperature": QWEN_GENERATION_CONFIG["temperature"],
@@ -99,17 +146,14 @@ class QwenTTSBackend:
             "repetition_penalty": QWEN_GENERATION_CONFIG["repetition_penalty"],
         }
 
-        # Run inference in thread pool to avoid blocking event loop
         loop = asyncio.get_running_loop()
         wavs, sr = await loop.run_in_executor(
             None,
             lambda: self._generate_sync(model, text, params, gen_kwargs),
         )
 
-        # wavs is a list of numpy arrays, take the first one
         audio_np = wavs[0]
         audio_tensor = torch.from_numpy(audio_np).float().unsqueeze(0)  # [1, T]
-
         return audio_tensor, sr
 
     def _generate_sync(self, model: Qwen3TTSModel, text: str, params: TTSParams, gen_kwargs: dict) -> tuple[list, int]:
@@ -150,25 +194,18 @@ class QwenTTSBackend:
     async def generate_audio_stream(
         self, text: str, params: TTSParams, chunk_size: int = 4096
     ) -> AsyncGenerator[bytes, None]:
-        """Stream audio by splitting text into sentences (async)."""
+        """Stream audio by splitting text into sentences using spaCy (async)."""
         await self.ensure_loaded(params.mode)
 
-        sentences = re.split(r"([.!?]+)", text)
-        chunks: list[str] = []
-        current_chunk = ""
-        for item in sentences:
-            current_chunk += item
-            if re.match(r"[.!?]+", item):
-                chunks.append(current_chunk.strip())
-                current_chunk = ""
-        if current_chunk.strip():
-            chunks.append(current_chunk.strip())
+        # Use language-aware text splitting
+        language = params.resolved_language if hasattr(params, "resolved_language") else (params.language or "german")
+        chunks = self._text_splitter.split(text, language)
 
         for chunk in chunks:
             if not chunk:
                 continue
 
-            # Re-use async generation logic
+            # Generate audio for each chunk
             waveform, _ = await self.generate_audio(chunk, params)
 
             audio_np = waveform.squeeze().cpu().numpy()

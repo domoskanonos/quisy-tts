@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DialogModule } from 'primeng/dialog';
+import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { ToastModule } from 'primeng/toast';
@@ -17,13 +18,15 @@ import { Voice } from '../../models/tts.models';
     imports: [
         CommonModule,
         FormsModule,
+        FormsModule,
         DialogModule,
+        SelectModule,
         InputTextModule,
         TextareaModule,
         ToastModule,
         ConfirmDialogModule,
     ],
-    providers: [MessageService, ConfirmationService],
+    providers: [ConfirmationService],
     templateUrl: './voices.component.html',
     styleUrl: './voices.component.scss',
 })

@@ -1,36 +1,16 @@
+@import '../../_shared.scss';
+
 .voices-page {
     max-width: 1000px;
     margin: 0 auto;
 }
 
-.page-header {
-    margin-bottom: 32px;
-}
-
+// ─── Header ─────────────────────────────────────────────────
 .header-row {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
-
-    h1 {
-        font-size: 28px;
-        font-weight: 700;
-        color: var(--text-color);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-
-        i {
-            color: var(--brand-primary);
-        }
-    }
-
-    .subtitle {
-        color: var(--text-color-secondary);
-        margin-top: 4px;
-        font-size: 15px;
-    }
 }
 
 .create-btn {
@@ -42,21 +22,6 @@
 // ─── Sections ───────────────────────────────────────────────
 .section {
     margin-bottom: 40px;
-}
-
-.section-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    color: var(--text-color);
-
-    i {
-        color: var(--brand-primary);
-        font-size: 18px;
-    }
 }
 
 .count-badge {
@@ -132,6 +97,7 @@
     color: var(--text-color-secondary);
     line-height: 1.4;
     display: -webkit-box;
+    line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
@@ -142,6 +108,7 @@
     color: var(--text-color-muted);
     font-style: italic;
     display: -webkit-box;
+    line-clamp: 1;
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
@@ -197,21 +164,8 @@
     font-size: 11px;
     color: var(--brand-primary-light);
     margin-top: 4px;
-
-    .animate-spin {
-        animation: spin 1s linear infinite;
-    }
 }
 
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
-}
 
 // ─── Actions ────────────────────────────────────────────────
 .voice-actions {
@@ -263,37 +217,6 @@
     gap: 16px;
     padding: 60px 0;
     color: var(--text-color-secondary);
-}
-
-// ─── Dialog Styles ──────────────────────────────────────────
-.dialog-content {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 8px 0;
-}
-
-.dialog-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.dialog-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-color);
-}
-
-.dialog-input {
-    width: 100%;
-}
-
-.dialog-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    padding-top: 8px;
 }
 
 .cancel-btn {

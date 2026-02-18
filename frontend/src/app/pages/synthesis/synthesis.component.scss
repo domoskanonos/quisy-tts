@@ -1,3 +1,5 @@
+@import '../../_shared.scss';
+
 .synthesis-container {
     display: flex;
     gap: 24px;
@@ -27,29 +29,6 @@
 
     @media (max-width: 1024px) {
         height: 600px; // Min height for tablet/mobile
-    }
-}
-
-.page-header {
-    flex-shrink: 0;
-
-    h1 {
-        font-size: 24px;
-        font-weight: 700;
-        color: var(--text-color);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-
-        i {
-            color: var(--brand-primary);
-        }
-    }
-
-    .subtitle {
-        color: var(--text-color-secondary);
-        font-size: 14px;
-        margin-top: 4px;
     }
 }
 
@@ -166,7 +145,7 @@
     }
 
     &.selected span {
-        color: var(--text-color); // Keeps contrast in dark/light
+        color: var(--text-color);
     }
 }
 
@@ -267,74 +246,5 @@
     .history-meta {
         color: var(--text-color-muted);
         font-size: 11px;
-    }
-}
-
-
-// ─── Player (Floating/Bottom) ───────────────────────────────
-.player-container {
-    margin-top: auto; // Push to bottom of main area if needed, OR simple margin
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--glass-bg);
-}
-
-.waveform-container {
-    flex: 1;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    margin-right: 24px;
-    cursor: pointer;
-
-    .waveform-bar {
-        flex: 1;
-        background: var(--brand-primary);
-        opacity: 0.3;
-        border-radius: 2px;
-        transition: all 0.2s;
-        min-height: 4px;
-
-        &.active {
-            opacity: 1;
-            background: var(--brand-primary);
-        }
-    }
-}
-
-.player-controls {
-    display: flex;
-    gap: 8px;
-
-    .player-btn {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        border: 1px solid var(--surface-border);
-        background: var(--surface-card);
-        color: var(--text-color);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s;
-
-        &:hover {
-            border-color: var(--brand-primary);
-            color: var(--brand-primary);
-        }
-
-        &.play-btn {
-            background: var(--brand-primary);
-            color: #fff;
-            border: none;
-
-            &:hover {
-                background: var(--brand-primary-dark);
-            }
-        }
     }
 }

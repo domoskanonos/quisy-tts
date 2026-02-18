@@ -1,3 +1,4 @@
+<a class="skip-link" href="#main-content">Zum Inhalt springen</a>
 <div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed()">
   <!-- Sidebar -->
   <aside class="sidebar">
@@ -7,27 +8,22 @@
           <i class="pi pi-volume-up"></i>
         </div>
         @if (!sidebarCollapsed()) {
-          <div class="logo-text">
-            <span class="text-gradient">Quisy</span>
-            <span class="logo-tts">TTS</span>
-          </div>
+        <div class="logo-text">
+          <span class="text-gradient">Quisy</span>
+          <span class="logo-tts">TTS</span>
+        </div>
         }
       </div>
     </div>
 
     <nav class="sidebar-nav">
       @for (item of navItems; track item.route) {
-        <a
-          [routerLink]="item.route"
-          routerLinkActive="active"
-          class="nav-item"
-          [title]="item.label"
-        >
-          <i [class]="item.icon"></i>
-          @if (!sidebarCollapsed()) {
-            <span class="nav-label">{{ item.label }}</span>
-          }
-        </a>
+      <a [routerLink]="item.route" routerLinkActive="active" class="nav-item" [title]="item.label">
+        <i [class]="item.icon"></i>
+        @if (!sidebarCollapsed()) {
+        <span class="nav-label">{{ item.label }}</span>
+        }
+      </a>
       }
     </nav>
 
@@ -42,7 +38,7 @@
   </aside>
 
   <!-- Main Content -->
-  <main class="main-content">
+  <main id="main-content" class="main-content">
     <div class="content-wrapper">
       <router-outlet />
     </div>

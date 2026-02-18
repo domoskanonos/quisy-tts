@@ -86,6 +86,14 @@ export class AudioPlayerService {
         }
     }
 
+    togglePlay(): void {
+        if (this.isPlaying()) {
+            this.pause();
+        } else {
+            this.play();
+        }
+    }
+
     pause(): void {
         if (this.audioElement) {
             this.audioElement.pause();

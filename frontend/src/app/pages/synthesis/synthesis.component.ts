@@ -9,6 +9,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { TtsApiService } from '../../services/tts-api.service';
 import { AudioPlayerService } from '../../services/audio-player.service';
+import { AudioPlayerComponent } from '../../components/audio-player/audio-player.component';
 import { SettingsService } from '../../services/settings.service';
 import { ModelSize, TtsMode, GenerationHistoryItem, Voice } from '../../models/tts.models';
 
@@ -23,8 +24,8 @@ import { ModelSize, TtsMode, GenerationHistoryItem, Voice } from '../../models/t
         TextareaModule,
         InputTextModule,
         ToastModule,
+        AudioPlayerComponent,
     ],
-    providers: [MessageService],
     templateUrl: './synthesis.component.html',
     styleUrl: './synthesis.component.scss',
 })
@@ -133,8 +134,6 @@ export class SynthesisComponent implements OnInit {
             this.messageService.add({ severity: 'warn', summary: 'Stimme fehlt', detail: 'Bitte wähle eine Stimme aus.' });
             return;
         }
-
-        this.isGenerating.set(true);
 
         if (!this.selectedVoice.audio_filename) {
             this.messageService.add({

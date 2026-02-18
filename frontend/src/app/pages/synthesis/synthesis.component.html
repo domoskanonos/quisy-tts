@@ -42,25 +42,8 @@
 
         <!-- Audio Player (Floating/Bottom) -->
         @if (audioPlayer.audioUrl()) {
-        <div class="player-container glass-card fade-in">
-            <div class="waveform-container" #waveformContainer (click)="onWaveformClick($event, waveformContainer)">
-                @for (bar of audioPlayer.waveformData(); track $index; let i = $index) {
-                <div class="waveform-bar"
-                    [class.active]="(i / audioPlayer.waveformData().length * 100) <= getProgressPercent()"
-                    [style.height.px]="8 + bar * 48"></div>
-                }
-            </div>
-
-            <div class="player-controls">
-                <button class="player-btn" (click)="audioPlayer.stop()"><i class="pi pi-stop"></i></button>
-                <button class="player-btn play-btn"
-                    (click)="audioPlayer.isPlaying() ? audioPlayer.pause() : audioPlayer.play()">
-                    <i class="pi" [class.pi-pause]="audioPlayer.isPlaying()"
-                        [class.pi-play]="!audioPlayer.isPlaying()"></i>
-                </button>
-                <button class="player-btn" (click)="audioPlayer.download()"><i class="pi pi-download"></i></button>
-            </div>
-        </div>
+        <!-- New Audio Player Component -->
+        <app-audio-player />
         }
     </main>
 

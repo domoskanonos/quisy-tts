@@ -119,11 +119,19 @@
 
             <div class="dialog-field">
                 <label class="dialog-label">Sprache</label>
-                <select [(ngModel)]="newVoiceLanguage" class="dialog-input">
-                    @for (lang of languageOptions; track lang.value) {
-                    <option [value]="lang.value">{{ lang.flag }} {{ lang.label }}</option>
-                    }
-                </select>
+                <p-select [(ngModel)]="newVoiceLanguage" [options]="languageOptions" optionLabel="label"
+                    optionValue="value" appendTo="body" [style]="{'width': '100%'}">
+                    <ng-template let-lang pTemplate="selectedItem">
+                        <div class="flex align-items-center gap-2">
+                            <span>{{ lang.flag }} {{ lang.label }}</span>
+                        </div>
+                    </ng-template>
+                    <ng-template let-lang pTemplate="item">
+                        <div class="flex align-items-center gap-2">
+                            <span>{{ lang.flag }} {{ lang.label }}</span>
+                        </div>
+                    </ng-template>
+                </p-select>
             </div>
 
             <div class="dialog-field">
@@ -177,11 +185,19 @@
 
             <div class="dialog-field">
                 <label class="dialog-label">Sprache</label>
-                <select [(ngModel)]="editLanguage" class="dialog-input">
-                    @for (lang of languageOptions; track lang.value) {
-                    <option [value]="lang.value">{{ lang.flag }} {{ lang.label }}</option>
-                    }
-                </select>
+                <p-select [(ngModel)]="editLanguage" [options]="languageOptions" optionLabel="label" optionValue="value"
+                    appendTo="body" [style]="{'width': '100%'}">
+                    <ng-template let-lang pTemplate="selectedItem">
+                        <div class="flex align-items-center gap-2">
+                            <span>{{ lang.flag }} {{ lang.label }}</span>
+                        </div>
+                    </ng-template>
+                    <ng-template let-lang pTemplate="item">
+                        <div class="flex align-items-center gap-2">
+                            <span>{{ lang.flag }} {{ lang.label }}</span>
+                        </div>
+                    </ng-template>
+                </p-select>
             </div>
 
             <div class="dialog-field">

@@ -1,0 +1,127 @@
+@import '../../_shared.scss';
+
+:host {
+    display: block;
+    width: 100%;
+}
+
+.player-container {
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    background: var(--glass-bg);
+    border-top: 1px solid var(--glass-border);
+    backdrop-filter: blur(12px);
+
+    // Ensure it sticks to bottom if parent allows, or just block
+    margin-top: auto;
+}
+
+.waveform-container {
+    flex: 1;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+
+    .waveform-bar {
+        flex: 1;
+        background: var(--brand-primary);
+        opacity: 0.3;
+        border-radius: 2px;
+        transition: height 0.1s ease, opacity 0.2s, background-color 0.2s;
+        min-height: 4px;
+
+        &.active {
+            opacity: 1;
+            background: var(--brand-accent);
+            box-shadow: 0 0 8px rgba(139, 92, 246, 0.4);
+        }
+    }
+
+    &:hover .waveform-bar {
+        opacity: 0.5;
+
+        &.active {
+            opacity: 1;
+        }
+    }
+}
+
+.player-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.time-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text-color-secondary);
+    min-width: 100px;
+    text-align: right;
+    margin-right: 8px;
+}
+
+.player-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--surface-border);
+    background: var(--surface-card);
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    i {
+        font-size: 14px;
+    }
+
+    &:hover {
+        border-color: var(--brand-primary);
+        color: var(--brand-primary);
+        transform: translateY(-2px);
+    }
+
+    &.play-btn {
+        width: 48px;
+        height: 48px;
+        background: var(--brand-gradient);
+        color: #fff;
+        border: none;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+
+        i {
+            font-size: 18px;
+        }
+
+        &:hover {
+            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+            transform: translateY(-2px) scale(1.05);
+        }
+    }
+}
+
+@media (max-width: 640px) {
+    .player-container {
+        flex-direction: column;
+        gap: 16px;
+        padding: 16px;
+    }
+
+    .waveform-container {
+        width: 100%;
+    }
+
+    .player-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+}

@@ -1,28 +1,8 @@
+@import '../../_shared.scss';
+
 .status-page {
     max-width: 800px;
     margin: 0 auto;
-}
-
-.page-header {
-    margin-bottom: 32px;
-
-    h1 {
-        font-size: 28px;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-
-        i {
-            color: var(--brand-primary);
-        }
-    }
-
-    .subtitle {
-        color: var(--text-color-secondary);
-        margin-top: 4px;
-        font-size: 15px;
-    }
 }
 
 .loading-state {
@@ -148,19 +128,6 @@
 }
 
 // ─── Endpoints ──────────────────────────────────────────────
-.section-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 16px;
-
-    i {
-        color: var(--brand-primary);
-    }
-}
-
 .endpoints-list {
     padding: 8px;
 }
