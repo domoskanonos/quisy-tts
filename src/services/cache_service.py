@@ -8,7 +8,6 @@ from config import ProjectConfig
 from core import CacheService
 from schemas import TTSParams
 
-
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
 
@@ -27,7 +26,17 @@ class FileCacheService(CacheService):
 
     def get_key(self, text: str, params: TTSParams) -> str:
         """Generate a cache key from text and parameters."""
-        content = f"{text}:{params.language}:{params.mode}:{params.model_size}"
+        # Include all parameters that affect the output audio in the hash
+        content = (
+            f"{text}:"
+            f"{params.language}:"
+            f"{params.mode}:"
+            f"{params.model_size}:"
+            f"{params.reference_audio or ''}:"
+            f"{params.ref_text or ''}:"
+            f"{params.instruct or ''}:"
+            f"{params.speaker or ''}"
+        )
         return hashlib.md5(content.encode()).hexdigest()
 
     def get(self, key: str) -> Path | None:
