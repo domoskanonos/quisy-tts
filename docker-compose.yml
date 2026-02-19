@@ -8,6 +8,8 @@ services:
     volumes:
       - ./src:/app/src
       - ./output:/app/output
+      - ./resources:/app/resources
+      - ${APP_DIR:-./app_data}:/app/app_data
       # Mount cache directory to persist models
       - ~/.cache/huggingface:/root/.cache/huggingface
     deploy:

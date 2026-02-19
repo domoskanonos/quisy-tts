@@ -1,6 +1,8 @@
 /models
-/output/
-/temp/
+/output
+/temp
+/voices
+/app_data
 
 .venv
 .env

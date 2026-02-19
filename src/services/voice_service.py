@@ -1,5 +1,6 @@
 """Voice management service – CRUD operations with SQLite persistence."""
 
+import shutil
 import sqlite3
 import uuid
 from datetime import UTC, datetime
@@ -32,7 +33,21 @@ class VoiceService:
     def __init__(self, voices_dir: Path | None = None) -> None:
         self._voices_dir = voices_dir or settings.VOICES_DIR
         self._voices_dir.mkdir(parents=True, exist_ok=True)
-        self._db_path = self._voices_dir / "voices.db"
+
+        # Database now lives in APP_DIR
+        self._app_dir = settings.APP_DIR
+        self._app_dir.mkdir(parents=True, exist_ok=True)
+        self._db_path = self._app_dir / "quisy-tts.db"
+
+        # Check if DB exists. If not, try to copy from resources
+        if not self._db_path.exists():
+            resource_db_path = settings.RESOURCES_DIR / "quisy-tts.db"
+            if resource_db_path.exists():
+                logger.info(f"Checking for database seeding: Copying {resource_db_path} to {self._db_path}")
+                shutil.copy2(resource_db_path, self._db_path)
+            else:
+                logger.info("No seed database found in resources. Starting fresh.")
+
         self._init_db()
 
     # ─── Database Setup ──────────────────────────────────────────
@@ -73,7 +88,15 @@ class VoiceService:
             conn.execute(
                 """INSERT INTO voices (id, name, example_text, instruct, language, audio_filename, is_default, created_at, updated_at)
                    VALUES (?, ?, ?, ?, ?, NULL, 1, ?, ?)""",
-                (voice_id, voice["name"], voice["example_text"], voice["instruct"], voice.get("language", "german"), now, now),
+                (
+                    voice_id,
+                    voice["name"],
+                    voice["example_text"],
+                    voice["instruct"],
+                    voice.get("language", "german"),
+                    now,
+                    now,
+                ),
             )
 
     # ─── Helper ──────────────────────────────────────────────────

@@ -26,6 +26,8 @@ class ProjectSettings(BaseSettings):
     MODELS_DIR: Path = Path("models")
     VOICES_DIR: Path = Path("voices")
     OUTPUT_DIR: Path = Path("output")
+    APP_DIR: Path = Path("app_data")
+    RESOURCES_DIR: Path = Path("resources")
     DEFAULT_LANGUAGE: str = "de"
     DEFAULT_REFERENCE_AUDIO: str | None = "chatbot_male.wav"
 

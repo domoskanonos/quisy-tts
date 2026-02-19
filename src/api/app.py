@@ -26,9 +26,7 @@ def _validate_startup_requirements() -> None:
 
         logger.info("✓ qwen-tts is available.")
     except ImportError as e:
-        raise RuntimeError(
-            "qwen-tts is required but not installed. Install it with: pip install qwen-tts"
-        ) from e
+        raise RuntimeError("qwen-tts is required but not installed. Install it with: pip install qwen-tts") from e
 
     # 2. Check sox binary
     try:
@@ -70,10 +68,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Ensure directories exist
     settings.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     settings.VOICES_DIR.mkdir(parents=True, exist_ok=True)
+    settings.APP_DIR.mkdir(parents=True, exist_ok=True)
 
     # Trigger model loading in background to optimize startup time
     # This prevents blocking the server while the model loads (10s+)
     import asyncio
+
     from api.dependencies import get_tts_engine
 
     engine = get_tts_engine()
