@@ -87,7 +87,7 @@ class QwenTTSBackend:
         """Synchronous model loading (runs in thread)."""
         return Qwen3TTSModel.from_pretrained(
             model_name,
-            device_map="cuda:0",
+            device_map="auto",
             dtype=torch.bfloat16,
         )
 
