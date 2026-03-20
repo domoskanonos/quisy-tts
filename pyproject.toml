@@ -14,8 +14,6 @@ dependencies = [
     "fastapi>=0.115.0",
     "uvicorn>=0.30.0",
     "python-multipart>=0.0.9",
-    "torch>=2.0.0",
-    "torchaudio>=2.0.0",
     "qwen-tts>=0.1.1",
     "websockets>=13.0",
     "requests>=2.31.0",
@@ -23,6 +21,12 @@ dependencies = [
     "soundfile>=0.12.1",
     "numpy>=1.26.0",
     "spacy>=3.7.0",
+]
+
+[project.optional-dependencies]
+gpu = [
+    "torch>=2.0.0",
+    "torchaudio>=2.0.0",
 ]
 
 [build-system]
