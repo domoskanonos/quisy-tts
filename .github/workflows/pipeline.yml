@@ -28,8 +28,14 @@ jobs:
       - name: Check if uv.lock is up to date
         run: uv lock --check
 
-      - name: Run pre-commit hooks
-        run: uv run pre-commit run --all-files
+      - name: Run linter (ruff)
+        run: uv run ruff check .
+
+      - name: Run formatter (ruff)
+        run: uv run ruff format .
+
+      - name: Run type checks (mypy)
+        run: uv run mypy .
 
       - name: Run tests
         run: uv run pytest
