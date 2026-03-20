@@ -16,8 +16,6 @@ settings = ProjectConfig.get_settings()
 router = APIRouter(tags=["Info"])
 
 
-
-
 @router.get("/")
 def read_root() -> dict[str, Any]:
     """Returns the API status."""

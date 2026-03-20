@@ -1,7 +1,7 @@
 """Core domain interfaces (Ports in Hexagonal Architecture)."""
 
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Any
 

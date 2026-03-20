@@ -4,7 +4,18 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-SUPPORTED_LANGUAGES = ["german", "english", "french", "spanish", "italian", "portuguese", "russian", "japanese", "korean", "chinese"]
+SUPPORTED_LANGUAGES = [
+    "german",
+    "english",
+    "french",
+    "spanish",
+    "italian",
+    "portuguese",
+    "russian",
+    "japanese",
+    "korean",
+    "chinese",
+]
 
 
 class VoiceCreate(BaseModel):
