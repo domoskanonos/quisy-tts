@@ -1,7 +1,15 @@
 # CHANGELOG
 
 
+## v0.6.1 (2026-03-20)
+
+
 ## v0.6.0 (2026-03-20)
+
+### Bug Fixes
+
+- Copy voices
+  ([`3cdbd55`](https://github.com/domoskanonos/quisy-tts/commit/3cdbd550040758831e00a7573670b6275601073a))
 
 ### Build System
 
