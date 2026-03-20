@@ -95,6 +95,7 @@ class TextSplitterService:
 
         try:
             import spacy
+            import spacy.cli
 
             # Try loading the model
             try:
