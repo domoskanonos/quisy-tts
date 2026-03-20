@@ -80,7 +80,6 @@ COPY --from=builder /app/.venv /app/.venv
 
 # Copy source code and config
 COPY src/ src/
-COPY voices/ voices/
 COPY .env.example .env
 
 # Copy built frontend from stage 1
