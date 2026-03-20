@@ -1,6 +1,49 @@
 # CHANGELOG
 
 
+## v0.5.0 (2026-03-20)
+
+### Bug Fixes
+
+- Fehler korrigiert
+  ([`4475d96`](https://github.com/domoskanonos/quisy-tts/commit/4475d96d04e37166222b3c2ff1848f95733133f6))
+
+- Fix formatter
+  ([`b4addab`](https://github.com/domoskanonos/quisy-tts/commit/b4addab6879eed3a0cba1ead4ce7cc5176d8d2b9))
+
+### Chores
+
+- Add remaining local edits (scripts, api info, core interfaces, voice schema)
+  ([`f62dd95`](https://github.com/domoskanonos/quisy-tts/commit/f62dd9556cab6d3249587fb3a8910b45887186b3))
+
+### Features
+
+- Add language-aware text splitting service using spaCy with regex fallback for TTS chunking.
+  ([`0ffbcbd`](https://github.com/domoskanonos/quisy-tts/commit/0ffbcbd281dfefcfe29a49b2251d45a2a3fa0e92))
+
+- Add Text-to-Speech synthesis and voice management functionality with dedicated frontend pages and
+  backend services.
+  ([`ab9802c`](https://github.com/domoskanonos/quisy-tts/commit/ab9802c0a946a6022e6b10d73ab4be614aec23d9))
+
+- Frontend and backen will be startet now
+  ([`ab2b981`](https://github.com/domoskanonos/quisy-tts/commit/ab2b981ada090933c93e1cfa12de8deafdfe1fa3))
+
+- Implement custom voice mode with API endpoints for generation and streaming, and a new synthesis
+  UI.
+  ([`a96c37a`](https://github.com/domoskanonos/quisy-tts/commit/a96c37a03cb720b47296b9b1d458ba1031d1237b))
+
+- Implement the Qwen3-TTS engine, establish core API structure, and add performance benchmarks.
+  ([`77b0360`](https://github.com/domoskanonos/quisy-tts/commit/77b036086dadd608dc88c03388ed292114aad254))
+
+- Initialize the Angular frontend application and FastAPI backend for voice management.
+  ([`fa4569f`](https://github.com/domoskanonos/quisy-tts/commit/fa4569fb9aa0ddb358fcc39010abf96c33698c41))
+
+### Testing
+
+- Make benchmark tests async-safe and case-insensitive language check
+  ([`96553ee`](https://github.com/domoskanonos/quisy-tts/commit/96553ee0cc41e65d3945a1ce03adf785421d60ec))
+
+
 ## v0.4.6 (2026-02-12)
 
 ### Bug Fixes
