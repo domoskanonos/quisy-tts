@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v0.6.0 (2026-03-20)
+
+### Build System
+
+- Remove copying `voices/` directory from Dockerfile.
+  ([`19808c2`](https://github.com/domoskanonos/quisy-tts/commit/19808c2760badd5dee29389b97624ceacedb1b1e))
+
+### Features
+
+- Init new version
+  ([`fa8d7c2`](https://github.com/domoskanonos/quisy-tts/commit/fa8d7c2e46a8e1c6720ffa80aa9129170e80affe))
+
+
 ## v0.5.0 (2026-03-20)
 
 ### Bug Fixes
