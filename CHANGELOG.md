@@ -1,7 +1,15 @@
 # CHANGELOG
 
 
+## v0.7.0 (2026-03-20)
+
+
 ## v0.6.1 (2026-03-20)
+
+### Features
+
+- Bump project version to 0.6.0 and move torch/torchaudio to an optional `gpu` extra.
+  ([`768f5d6`](https://github.com/domoskanonos/quisy-tts/commit/768f5d6f6ea3953a506d1a6e4caa0c49e0f12390))
 
 
 ## v0.6.0 (2026-03-20)
