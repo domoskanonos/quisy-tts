@@ -47,7 +47,6 @@ RUN uv sync --frozen --no-dev --extra gpu --no-install-project
 
 # Copy source code
 COPY src/ src/
-COPY voices/ voices/
 COPY README.md .
 
 # Install project
