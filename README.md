@@ -3,7 +3,7 @@
 [![Pipeline](https://github.com/domoskanonos/quisy-tts/actions/workflows/pipeline.yml/badge.svg)](https://github.com/domoskanonos/quisy-tts/actions/workflows/pipeline.yml)
 [![Python Version](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 
-Quisy TTS is a modern, high-performance Text-to-Speech API powered by **Qwen3-TTS**. It supports advanced features like voice cloning, instructed voice design, and real-time streaming via WebSockets and HTTP.
+Quisy TTS is a modern, high-performance Text-to-Speech API powered by **Qwen3-TTS**. It supports voice cloning, instructed voice design, custom (predefined) speakers, and real-time streaming via WebSockets and HTTP.
 
 ---
 
@@ -35,11 +35,17 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### 🔊 Audio Processing (Sox)
-This project requires **Sox** for high-quality audio normalization.
-- **Windows**: `scoop install sox`, `choco install sox`, or download from [SourceForge](http://sox.sourceforge.net/).
-- **macOS**: `brew install sox`
-- **Linux**: `sudo apt install sox libsox-fmt-all`
+### 🔊 Requirements
+The application performs runtime validations on startup and will fail early if mandatory dependencies are missing. The most important requirements are:
+
+- `qwen-tts` Python package (model runtime adapter). Install with `pip install qwen-tts`.
+- `sox` binary for optional high-quality audio post-processing (normalization, equalization).
+  - **Windows**: `scoop install sox`, `choco install sox`, or download from SourceForge.
+  - **macOS**: `brew install sox`
+  - **Linux**: `sudo apt install sox libsox-fmt-all`
+- CUDA-capable NVIDIA GPU and matching `torch` build when running on `DEVICE=cuda`. The application currently checks `torch.cuda.is_available()` at startup and will raise an error if a CUDA device is required but not available.
+
+If you want to run without GPU in development, set `DEVICE=cpu`, but note that performance and some generation modes may be substantially slower or unsupported depending on available models.
 
 ---
 
@@ -103,6 +109,7 @@ All settings are managed via Pydantic and can be overridden by environment varia
 | `MODELS_DIR` | Directory to store model checkpoints | `models` |
 | `VOICES_DIR` | Directory for reference audio files | `voices` |
 | `OUTPUT_DIR` | Directory for generated audio files | `output` |
+| `APP_DIR` | Application data directory (preload/cache) | `app_data` |
 
 ---
 
@@ -119,6 +126,16 @@ All settings are managed via Pydantic and can be overridden by environment varia
 ### Custom Voice (Predefined Speakers)
 - `POST /generate/custom-voice/0.6b` / `1.7b`
 - `POST /generate/custom-voice/stream/0.6b` / `1.7b`
+
+### Voice Management (CRUD & Audio)
+- `GET /voices/` — list available voices (including built-in defaults)
+- `GET /voices/{voice_id}` — retrieve voice metadata
+- `POST /voices/` — create voice metadata (upload audio separately)
+- `PUT /voices/{voice_id}` — update voice metadata
+- `DELETE /voices/{voice_id}` — delete a non-default voice
+- `POST /voices/{voice_id}/audio` — upload or replace the audio file for a voice
+- `GET /voices/{voice_id}/audio` — download the voice example audio
+- `POST /voices/{voice_id}/ensure-audio` — trigger background generation of example audio (returns 202)
 
 ### WebSocket
 Real-time streaming endpoint:

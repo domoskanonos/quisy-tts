@@ -1,59 +1,49 @@
-# Frontend
+Frontend Development
+====================
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.4.
+This short guide explains how to run the Angular frontend during development and how it connects to the FastAPI backend.
 
-## Development server
+Start the backend
+-----------------
+- Run the backend API first (see top-level README). By default the backend listens on `http://localhost:8000`.
 
-To start a local development server, run:
+Start the frontend (dev server)
+------------------------------
+- Install frontend deps (if needed):
 
-```bash
-ng serve
-```
+  ```bash
+  cd frontend
+  npm install
+  # or: pnpm install / yarn
+  ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- Run the dev server with the proxy (recommended):
 
-## Code scaffolding
+  ```bash
+  # From the repo root
+  cd frontend
+  npm run start
+  ```
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+  The Angular dev server is configured to forward API calls under `/api` to the backend (see `proxy.conf.json`).
 
-```bash
-ng generate component component-name
-```
+API base path
+-------------
+- The frontend uses `/api` as the base path for backend calls (see `src/app/services/tts-api.service.ts`).
+- The proxy configuration (`frontend/proxy.conf.json`) rewrites `/api` -> `http://localhost:8000` during development so CORS is not required.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+WebSocket / Streaming
+---------------------
+- The frontend connects to WebSocket endpoints on the backend using the same host (e.g. `ws://localhost:8000/ws/1.7b`). If you run backend on a different host/port, update the code that opens the WebSocket accordingly.
 
-```bash
-ng generate --help
-```
+Changing the backend host
+-------------------------
+- If your backend is not on `localhost:8000`, update `frontend/proxy.conf.json` -> `target` and restart the dev server.
 
-## Building
+Build for production
+--------------------
+- Use the standard Angular build command and host the compiled files behind a webserver. Make sure your production backend accepts requests from the frontend origin or use the same host to avoid CORS issues.
 
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Notes
+-----
+- The frontend expects the backend to expose API docs at `/docs` (used for manual testing) and the `/voices` CRUD endpoints described in the main README.

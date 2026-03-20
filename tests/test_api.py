@@ -27,15 +27,15 @@ class TestLanguageMapping:
 
     def test_short_code_to_full_name(self) -> None:
         """Test that short codes are correctly resolved to full names."""
-        assert resolve_language("de") == "German"
+        assert resolve_language("de") == "german"
 
     def test_english_mapping(self) -> None:
         """Test English language mapping."""
-        assert resolve_language("en") == "English"
+        assert resolve_language("en") == "english"
 
     def test_full_name_passthrough(self) -> None:
         """Test that full names are mapped to capitalized versions."""
-        assert resolve_language("german") == "German"
+        assert resolve_language("german") == "german"
 
     def test_unknown_code_passthrough(self) -> None:
         """Test that unknown codes pass through unchanged."""
@@ -44,17 +44,17 @@ class TestLanguageMapping:
     def test_all_supported_languages(self) -> None:
         """Test all supported language mappings."""
         expected = {
-            "de": "German",
-            "en": "English",
-            "fr": "French",
-            "es": "Spanish",
-            "it": "Italian",
-            "pt": "Portuguese",
-            "ru": "Russian",
-            "ja": "Japanese",
-            "ko": "Korean",
-            "zh": "Chinese",
-            "auto": "Auto",
+            "de": "german",
+            "en": "english",
+            "fr": "french",
+            "es": "spanish",
+            "it": "italian",
+            "pt": "portuguese",
+            "ru": "russian",
+            "ja": "japanese",
+            "ko": "korean",
+            "zh": "chinese",
+            "auto": "auto",
         }
         for code, full_name in expected.items():
             assert resolve_language(code) == full_name
@@ -122,8 +122,14 @@ class TestAPIEndpoints:
         return TestClient(app)
 
     def test_root_endpoint(self, client: TestClient) -> None:
-        """Test the root endpoint returns status."""
-        response = client.get("/")
+        """Test the root endpoint redirects to /ui."""
+        response = client.get("/", follow_redirects=False)
+        assert response.status_code == status.HTTP_307_TEMPORARY_REDIRECT
+        assert response.headers["location"] == "/ui"
+
+    def test_api_status_endpoint(self, client: TestClient) -> None:
+        """Test the API status endpoint returns status."""
+        response = client.get("/api/")
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["version"] == "3.0.0"
@@ -131,16 +137,16 @@ class TestAPIEndpoints:
 
     def test_openapi_endpoint(self, client: TestClient) -> None:
         """Test the OpenAPI schema endpoint."""
-        response = client.get("/openapi.json")
+        response = client.get("/api/openapi.json")
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert "/generate/base/0.6b" in data["paths"]
-        assert "/generate/voice-design/1.7b" in data["paths"]
-        assert "/generate/custom-voice/0.6b" in data["paths"]
+        assert "/api/generate/base/0.6b" in data["paths"]
+        assert "/api/generate/voice-design/1.7b" in data["paths"]
+        assert "/api/generate/custom-voice/0.6b" in data["paths"]
 
     def test_docs_endpoint(self, client: TestClient) -> None:
         """Test Swagger UI is accessible."""
-        response = client.get("/docs")
+        response = client.get("/api/docs")
         assert response.status_code == status.HTTP_200_OK
 
     def test_base_endpoint_invalid_input(self, client: TestClient) -> None:
@@ -150,7 +156,7 @@ class TestAPIEndpoints:
             # Missing text which is required
             "language": "German",
         }
-        response = client.post("/generate/base/0.6b", json=payload)
+        response = client.post("/api/generate/base/0.6b", json=payload)
         assert response.status_code == 422
 
     def test_voice_design_endpoint_invalid_input(self, client: TestClient) -> None:
@@ -159,7 +165,7 @@ class TestAPIEndpoints:
             "text": "test",
             # Missing language
         }
-        response = client.post("/generate/voice-design/1.7b", json=payload)
+        response = client.post("/api/generate/voice-design/1.7b", json=payload)
         assert response.status_code == 422
 
     def test_custom_voice_requires_speaker(self, client: TestClient) -> None:
@@ -167,10 +173,10 @@ class TestAPIEndpoints:
 
     def test_speakers_post_not_allowed(self, client: TestClient) -> None:
         """Test POST method not allowed on speakers endpoint."""
-        response = client.post("/speakers")
+        response = client.post("/api/speakers")
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
     def test_languages_post_not_allowed(self, client: TestClient) -> None:
         """Test POST method not allowed on languages endpoint."""
-        response = client.post("/languages")
+        response = client.post("/api/languages")
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED

@@ -1,4 +1,12 @@
-# Stage 1: Builder
+# Stage 1: Frontend Builder
+FROM node:20-slim AS frontend-builder
+WORKDIR /app
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend/ ./
+RUN npm run build -- --configuration production
+
+# Stage 2: Backend Builder
 FROM nvidia/cuda:12.1.0-devel-ubuntu22.04 AS builder
 
 # Set environment variables for build
@@ -45,7 +53,7 @@ COPY README.md .
 # Install project
 RUN uv sync --frozen --no-dev --extra gpu
 
-# Stage 2: Runtime (uses NVIDIA runtime image for GPU inference)
+# Stage 3: Runtime (uses NVIDIA runtime image for GPU inference)
 FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04 AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
@@ -74,6 +82,9 @@ COPY --from=builder /app/.venv /app/.venv
 COPY src/ src/
 COPY voices/ voices/
 COPY .env.example .env
+
+# Copy built frontend from stage 1
+COPY --from=frontend-builder /app/dist/frontend/browser src/static/ui
 
 # Expose API port
 EXPOSE 8000

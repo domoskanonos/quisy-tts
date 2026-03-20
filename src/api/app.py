@@ -3,9 +3,12 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from pathlib import Path
+
+from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from api.routes import base, custom_voice, info, voice_design, voices_crud, websocket
 from config import ProjectConfig
@@ -95,6 +98,8 @@ app = FastAPI(
     ),
     version="3.0.0",
     lifespan=lifespan,
+    docs_url="/api/docs",
+    openapi_url="/api/openapi.json",
 )
 
 # CORS for Angular frontend
@@ -127,13 +132,43 @@ async def runtime_exception_handler(_request: object, exc: RuntimeError) -> JSON
 
 
 # =============================================================================
-# Include Routers
+# API Routes
 # =============================================================================
 
 
-app.include_router(info.router)
-app.include_router(base.router, prefix="/generate/base")
-app.include_router(voice_design.router, prefix="/generate/voice-design")
-app.include_router(custom_voice.router, prefix="/generate/custom-voice")
-app.include_router(voices_crud.router, prefix="/voices")
-app.include_router(websocket.router)
+api_router = APIRouter()
+api_router.include_router(info.router)
+api_router.include_router(base.router, prefix="/generate/base")
+api_router.include_router(voice_design.router, prefix="/generate/voice-design")
+api_router.include_router(custom_voice.router, prefix="/generate/custom-voice")
+api_router.include_router(voices_crud.router, prefix="/voices")
+api_router.include_router(websocket.router)
+
+app.include_router(api_router, prefix="/api")
+
+
+# =============================================================================
+# Static Files & UI
+# =============================================================================
+
+
+static_dir = Path(__file__).parent.parent / "static" / "ui"
+
+
+@app.get("/", include_in_schema=False)
+async def root_redirect():
+    """Redirect root to /ui."""
+    return RedirectResponse(url="/ui")
+
+
+# Mount static files (will serve index.html for /ui)
+if static_dir.exists():
+    app.mount("/ui", StaticFiles(directory=static_dir, html=True), name="ui")
+
+
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc: HTTPException):
+    """Deep link support for Angular SPA."""
+    if request.url.path.startswith("/ui") and static_dir.exists():
+        return FileResponse(static_dir / "index.html")
+    return JSONResponse(status_code=404, content={"detail": "Not Found"})
