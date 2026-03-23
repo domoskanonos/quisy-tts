@@ -1,6 +1,15 @@
 # CHANGELOG
 
 
+## v0.8.0 (2026-03-21)
+
+### Features
+
+- Add PowerShell scripts for local backend and frontend startup with dynamic proxy configuration and
+  update project version.
+  ([`afb9c3d`](https://github.com/domoskanonos/quisy-tts/commit/afb9c3d7b5c024c1823a8ae707f7456314534f83))
+
+
 ## v0.7.0 (2026-03-20)
 
 
