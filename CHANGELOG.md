@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.9.0 (2026-03-23)
+
+### Features
+
+- Add initial `quisy-tts.db` database file.
+  ([`13ba438`](https://github.com/domoskanonos/quisy-tts/commit/13ba438ecce2288dcbe13924699a4c11436a98c2))
+
+
 ## v0.8.0 (2026-03-21)
 
 ### Features
