@@ -1,4 +1,4 @@
-@import '../../_shared.scss';
+@use '../../_shared' as *;
 
 .voices-page {
     max-width: 1000px;

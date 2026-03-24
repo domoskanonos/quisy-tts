@@ -1,4 +1,4 @@
-@import '../../_shared.scss';
+@use '../../_shared' as *;
 
 .settings-page {
     max-width: 900px;
