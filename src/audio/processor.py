@@ -2,7 +2,14 @@ import subprocess
 import time
 
 import soundfile as sf
-import torch
+from typing import Any
+
+# Import torch lazily in functions that need it to allow running tests without
+# an installed torch wheel in lightweight environments
+try:
+    import torch  # type: ignore
+except Exception:
+    torch = None  # type: ignore
 
 from config import ProjectConfig
 
@@ -50,4 +57,14 @@ class AudioUtils:
     @staticmethod
     def save_waveform(waveform: torch.Tensor, sr: int, path: str) -> None:
         """Saves a waveform tensor to a file."""
-        sf.write(path, waveform.squeeze().cpu().numpy(), sr)
+        # Accept both numpy arrays and torch tensors
+        data = waveform
+        if torch is not None and hasattr(waveform, "cpu"):
+            data = waveform.squeeze().cpu().numpy()
+        elif hasattr(waveform, "squeeze") and not isinstance(waveform, (bytes, str)):
+            try:
+                data = waveform.squeeze()
+            except Exception:
+                pass
+
+        sf.write(path, data, sr)

@@ -7,7 +7,7 @@ from typing import Coroutine
 from pathlib import Path
 
 import numpy as np
-import torch
+from typing import Any
 from qwen_tts import Qwen3TTSModel
 
 from audio.processor import AudioUtils
@@ -86,13 +86,22 @@ class QwenTTSBackend:
 
     def _load_model_sync(self, model_name: str) -> Qwen3TTSModel:
         """Synchronous model loading (runs in thread)."""
-        return Qwen3TTSModel.from_pretrained(
-            model_name,
-            device_map="auto",
-            dtype=torch.bfloat16,
-        )
+        # Import torch lazily to allow tests/environments without torch installed
+        try:
+            import torch
+        except Exception:
+            torch = None  # type: ignore
 
-    async def generate_audio(self, text: str, params: TTSParams) -> tuple[torch.Tensor, int]:
+        kwargs: dict[str, Any] = {"device_map": "auto"}
+        if torch is not None:
+            # Set dtype only if torch exposes the attribute
+            dtype = getattr(torch, "bfloat16", None)
+            if dtype is not None:
+                kwargs["dtype"] = dtype
+
+        return Qwen3TTSModel.from_pretrained(model_name, **kwargs)
+
+    async def generate_audio(self, text: str, params: TTSParams) -> tuple[Any, int]:
         """Generate audio using qwen-tts (async).
 
         For long texts, splits into chunks using spaCy, generates audio for each,
@@ -104,7 +113,7 @@ class QwenTTSBackend:
         # Splitting and orchestration are handled by the TTSService to avoid duplicate work.
         return await self._generate_single(model, text, params)
 
-    async def _generate_single(self, model: Qwen3TTSModel, text: str, params: TTSParams) -> tuple[torch.Tensor, int]:
+    async def _generate_single(self, model: Qwen3TTSModel, text: str, params: TTSParams) -> tuple[Any, int]:
         """Generate audio for a single text chunk."""
         gen_kwargs = {
             "max_new_tokens": QWEN_GENERATION_CONFIG["max_new_tokens"],
@@ -126,9 +135,15 @@ class QwenTTSBackend:
             lambda: self._generate_sync(model, text, params, gen_kwargs),
         )
 
+        # Convert numpy array to torch tensor if torch is available, otherwise return numpy
         audio_np = wavs[0]
-        audio_tensor = torch.from_numpy(audio_np).float().unsqueeze(0)  # [1, T]
-        return audio_tensor, sr
+        try:
+            import torch
+
+            audio_tensor = torch.from_numpy(audio_np).float().unsqueeze(0)  # [1, T]
+            return audio_tensor, sr
+        except Exception:
+            return audio_np, sr
 
     def _generate_sync(self, model: Qwen3TTSModel, text: str, params: TTSParams, gen_kwargs: dict) -> tuple[list, int]:
         """Synchronous generation logic."""
@@ -228,7 +243,7 @@ class QwenTextToSpeech(TTSEngine):
         """Explicitly trigger model loading for a specific mode."""
         await self.backend.ensure_loaded(mode)
 
-    async def generate_audio(self, text: str, params: TTSParams | None = None) -> tuple[torch.Tensor, int]:
+    async def generate_audio(self, text: str, params: TTSParams | None = None) -> tuple[Any, int]:
         """Generates audio waveform via qwen-tts backend (async)."""
         if params is None:
             params = TTSParams()
