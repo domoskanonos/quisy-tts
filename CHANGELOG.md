@@ -1,6 +1,26 @@
 # CHANGELOG
 
 
+## v0.14.0 (2026-03-24)
+
+### Features
+
+- Add pytest configuration to mock `qwen_tts` module and system dependencies like `torch.cuda` and
+  `sox` for testing.
+  ([`9fd4f77`](https://github.com/domoskanonos/quisy-tts/commit/9fd4f77eea79b4dbba5ee9d847af408d723d343b))
+
+- Add Qwen3-TTS engine implementation, core interfaces for TTS, caching, and cleanup, and audio
+  processing utilities.
+  ([`ff51894`](https://github.com/domoskanonos/quisy-tts/commit/ff51894be2534d1ed3fdef3338017f680ff569ad))
+
+- Implement Qwen3-TTS engine with asynchronous model loading and audio post-processing utilities.
+  ([`3dafec2`](https://github.com/domoskanonos/quisy-tts/commit/3dafec23fc6d48cc5d1a029362349157de782cd0))
+
+- Implement TTS service with caching, text splitting, and Qwen engine integration, alongside new
+  core interfaces and concurrency tests.
+  ([`88541dd`](https://github.com/domoskanonos/quisy-tts/commit/88541dd397246a0d49323b835ea5dd54cb235efc))
+
+
 ## v0.13.0 (2026-03-24)
 
 ### Features
