@@ -3,7 +3,6 @@
 import asyncio
 import time
 from collections.abc import AsyncGenerator
-from typing import Coroutine
 from pathlib import Path
 
 import numpy as np

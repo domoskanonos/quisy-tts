@@ -10,7 +10,6 @@ Do not rely on this for production inference.
 from __future__ import annotations
 
 import numpy as np
-from types import SimpleNamespace
 from typing import Any
 
 

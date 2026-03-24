@@ -55,7 +55,7 @@ class AudioUtils:
     """Utilities for audio manipulation."""
 
     @staticmethod
-    def save_waveform(waveform: torch.Tensor, sr: int, path: str) -> None:
+    def save_waveform(waveform: Any, sr: int, path: str) -> None:
         """Saves a waveform tensor to a file."""
         # Accept both numpy arrays and torch tensors
         data = waveform
