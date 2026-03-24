@@ -1,113 +1,121 @@
-// ─── Shared Global Patterns ─────────────────────────────────────
+// ─── Shared Global Module (Sass) ─────────────────────────────────
 
-// Page Headers
-.page-header {
-    margin-bottom: 32px;
-    flex-shrink: 0;
+// Design tokens as Sass variables (also exported to CSS custom properties)
+$brand-primary: #6366f1 !default;
+$text-color: #111827 !default;
+$text-color-secondary: #6b7280 !default;
 
-    h1 {
-        font-size: 28px;
-        font-weight: 700;
-        color: var(--text-color);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-
-        i {
-            color: var(--brand-primary);
-        }
-    }
-
-    .subtitle {
-        color: var(--text-color-secondary);
-        margin-top: 4px;
-        font-size: 15px;
-        font-weight: 400;
-    }
+// Export CSS custom properties so runtime styles keep working with var(--...)
+:root {
+  --brand-primary: #{$brand-primary};
+  --text-color: #{$text-color};
+  --text-color-secondary: #{$text-color-secondary};
 }
 
-// Section Titles
-.section-title {
+// Reusable mixins
+@mixin page-header-base {
+  margin-bottom: 32px;
+  flex-shrink: 0;
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-color);
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    color: var(--text-color);
+    gap: 12px;
 
     i {
-        color: var(--brand-primary);
-        font-size: 18px;
+      color: var(--brand-primary);
     }
+  }
+
+  .subtitle {
+    color: var(--text-color-secondary);
+    margin-top: 4px;
+    font-size: 15px;
+    font-weight: 400;
+  }
 }
 
-// Dialogs (PrimeNG overrides or custom content)
-.dialog-content {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 8px 0;
+@mixin section-title-base {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--text-color);
+
+  i {
+    color: var(--brand-primary);
+    font-size: 18px;
+  }
 }
 
-.dialog-field {
+@mixin dialog-base {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px 0;
+
+  .dialog-field {
     display: flex;
     flex-direction: column;
     gap: 6px;
-}
+  }
 
-.dialog-label {
+  .dialog-label {
     font-size: 13px;
     font-weight: 600;
     color: var(--text-color);
-}
+  }
 
-.dialog-input {
-    width: 100%;
-}
+  .dialog-input { width: 100%; }
 
-.dialog-footer {
+  .dialog-footer {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
     padding-top: 8px;
+  }
 }
 
 // Animations
 @keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
-.animate-spin {
-    animation: spin 1s linear infinite;
-}
+@mixin animate-spin { animation: spin 1s linear infinite; }
 
 // Waveform Visualization (Base)
-.waveform-container {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    height: 48px;
-    padding: 8px 0;
-    cursor: pointer;
+@mixin waveform-base {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 48px;
+  padding: 8px 0;
+  cursor: pointer;
 
-    .waveform-bar {
-        flex: 1;
-        background: var(--brand-primary);
-        border-radius: 2px;
-        min-height: 4px;
-        transition: all 0.2s;
-        opacity: 0.3;
+  .waveform-bar {
+    flex: 1;
+    background: var(--brand-primary);
+    border-radius: 2px;
+    min-height: 4px;
+    transition: all 0.2s;
+    opacity: 0.3;
 
-        &.active {
-            opacity: 1;
-            background: var(--brand-primary);
-        }
+    &.active {
+      opacity: 1;
+      background: var(--brand-primary);
     }
+  }
 }
+
+// Provide default class implementations for backwards compatibility
+.page-header { @include page-header-base; }
+.section-title { @include section-title-base; }
+.dialog-content { @include dialog-base; }
+.animate-spin { @include animate-spin; }
+.waveform-container { @include waveform-base; }
