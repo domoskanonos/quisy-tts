@@ -273,11 +273,10 @@ export class VoicesComponent implements OnInit {
         this.voiceGen.ensureVoiceAudio(voice).subscribe({
             next: (updated: Voice) => {
                 this.generatingVoiceId.set(null);
-                // Play the newly uploaded audio
+                // Play the newly uploaded audio; if cross-origin or auth prevents playing the direct URL,
+                // fetch blob via generateVoiceDesign endpoint would be alternative, but we assume public endpoint here.
                 const audio = new Audio(this.ttsApi.getVoiceAudioUrl(updated.id));
-                audio.play().catch(() => {
-                    // If play fails, attempt to fetch blob and play via object URL
-                });
+                audio.play().catch(err => console.warn('Playback failed for uploaded audio, but generation succeeded', err));
                 this.loadVoices();
                 this.messageService.add({
                     severity: 'success',

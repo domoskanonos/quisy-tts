@@ -358,8 +358,8 @@ export class SynthesisComponent implements OnInit {
         // Background generation if needed
         if (!voice.audio_filename) {
             // Trigger background generation; prefer client-side service when available
+            this.messageService.add({ severity: 'info', summary: 'Generierung', detail: 'Hintergrund-Generierung wird gestartet.' });
             if (this.voiceGen && this.voiceGen.ensureVoiceAudio) {
-                this.messageService.add({ severity: 'info', summary: 'Generierung', detail: 'Hintergrund-Generierung wird gestartet.' });
                 this.voiceGen.ensureVoiceAudio(voice).subscribe({
                     next: (updated: any) => {
                         this.voices.update(vs => vs.map(v => v.id === updated.id ? updated : v));
@@ -371,9 +371,16 @@ export class SynthesisComponent implements OnInit {
                     }
                 });
             } else {
-                this.ttsApi.ensureVoiceAudio(voice.id).subscribe({
-                    next: () => this.messageService.add({ severity: 'info', summary: 'Generierung', detail: 'Hintergrund-Generierung angefragt.' }),
-                    error: (err) => this.messageService.add({ severity: 'warn', summary: 'Fehler', detail: 'Hintergrund-Generierung konnte nicht angefragt werden.' })
+                // Fallback: call backend ensure and then poll for audio availability
+                this.voiceGen.ensureVoiceAudioById(voice.id).subscribe({
+                    next: (updated: Voice) => {
+                        this.voices.update(vs => vs.map(v => v.id === updated.id ? updated : v));
+                        this.messageService.add({ severity: 'success', summary: 'Generierung', detail: 'Hörprobe wurde generiert und gespeichert.' });
+                    },
+                    error: (err: unknown) => {
+                        console.warn('Failed to poll for generated audio', err);
+                        this.messageService.add({ severity: 'warn', summary: 'Fehler', detail: 'Hintergrund-Generierung konnte nicht abgeschlossen werden.' });
+                    }
                 });
             }
         }
