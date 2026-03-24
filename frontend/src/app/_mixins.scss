@@ -1,0 +1,58 @@
+@use './_variables' as *;
+
+@mixin page-header-base {
+  margin-bottom: 32px;
+  flex-shrink: 0;
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    i { color: var(--brand-primary); }
+  }
+
+  .subtitle {
+    color: var(--text-color-secondary);
+    margin-top: 4px;
+    font-size: 15px;
+    font-weight: 400;
+  }
+}
+
+@mixin section-title-base {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--text-color);
+
+  i { color: var(--brand-primary); font-size: 18px; }
+}
+
+@mixin dialog-base {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px 0;
+
+  .dialog-field { display: flex; flex-direction: column; gap: 6px; }
+  .dialog-label { font-size: 13px; font-weight: 600; color: var(--text-color); }
+  .dialog-input { width: 100%; }
+  .dialog-footer { display:flex; justify-content:flex-end; gap:12px; padding-top:8px; }
+}
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@mixin animate-spin { animation: spin 1s linear infinite; }
+
+@mixin waveform-base {
+  display: flex; align-items: center; gap: 2px; height: 48px; padding: 8px 0; cursor: pointer;
+  .waveform-bar { flex:1; background: var(--brand-primary); border-radius:2px; min-height:4px; transition:all .2s; opacity:.3;
+    &.active { opacity:1; background:var(--brand-primary); }
+  }
+}

@@ -1,0 +1,15 @@
+// Design tokens
+$brand-primary: #6366f1 !default;
+$brand-accent: #06b6d4 !default;
+$text-color: #111827 !default;
+$text-color-secondary: #6b7280 !default;
+$text-color-muted: #9ca3af !default;
+
+// Export as CSS custom properties for runtime usage
+:root {
+  --brand-primary: #{$brand-primary};
+  --brand-accent: #{$brand-accent};
+  --text-color: #{$text-color};
+  --text-color-secondary: #{$text-color-secondary};
+  --text-color-muted: #{$text-color-muted};
+}
