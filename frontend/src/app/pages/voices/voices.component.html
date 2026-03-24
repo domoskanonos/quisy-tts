@@ -62,7 +62,7 @@
                 <div class="voice-actions">
                     <button class="action-btn play"
                         [title]="voice.audio_filename ? 'Abspielen' : 'Generieren & Abspielen'"
-                        [disabled]="generatingVoiceId() !== null"
+                        [disabled]="generatingVoiceId() !== null && generatingVoiceId() !== voice.id"
                         (click)="playOrGenerate(voice); $event.stopPropagation()">
                         @if (generatingVoiceId() === voice.id) {
                         <i class="pi pi-spinner animate-spin"></i>
