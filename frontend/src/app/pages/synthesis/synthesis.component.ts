@@ -12,6 +12,7 @@ import { AudioPlayerService } from '../../services/audio-player.service';
 import { AudioPlayerComponent } from '../../components/audio-player/audio-player.component';
 import { SettingsService } from '../../services/settings.service';
 import { ModelSize, TtsMode, GenerationHistoryItem, Voice } from '../../models/tts.models';
+import { VoiceGenerationService } from '../../services/voice-generation.service';
 
 @Component({
     selector: 'app-synthesis',
@@ -34,6 +35,7 @@ export class SynthesisComponent implements OnInit {
     readonly audioPlayer = inject(AudioPlayerService);
     private readonly messageService = inject(MessageService);
     private readonly settingsService = inject(SettingsService);
+    private readonly voiceGen = inject(VoiceGenerationService);
 
     // Form state
     text = '';
@@ -135,16 +137,44 @@ export class SynthesisComponent implements OnInit {
             return;
         }
 
+        // If voice has no audio yet, attempt to generate and persist it first (unified behavior with Voices page)
         if (!this.selectedVoice.audio_filename) {
-            this.messageService.add({
-                severity: 'warn',
-                summary: 'Kein Audio',
-                detail: 'Diese Stimme hat keine Audiodatei für Cloning (Base Mode).'
+            // If there's no instruct available, we cannot generate via Voice Design
+            if (!this.selectedVoice.instruct) {
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: 'Kein Audio',
+                    detail: 'Diese Stimme hat keine Audiodatei für Cloning (Base Mode) und keinen Instruct-Text zum Generieren. Bitte bearbeite die Stimme in der Voice Library.'
+                });
+                return;
+            }
+
+            this.isGenerating.set(true);
+            // Generate reference audio first, then continue with base generation
+            this.voiceGen.ensureVoiceAudio(this.selectedVoice).subscribe({
+                next: (updated: Voice) => {
+                    // Update voices and selectedVoice with persisted audio
+                    this.voices.update(vs => vs.map(v => v.id === updated.id ? updated : v));
+                    this.selectedVoice = updated;
+                    // Now call base generation
+                    this.callGenerateBase();
+                },
+                error: () => {
+                    this.isGenerating.set(false);
+                    this.messageService.add({ severity: 'error', summary: 'Fehler', detail: 'Referenz-Audio konnte nicht generiert werden.' });
+                }
             });
+
             return;
         }
 
+        // If we already have reference audio, generate directly
         this.isGenerating.set(true);
+        this.callGenerateBase();
+    }
+
+    private callGenerateBase(): void {
+        if (!this.selectedVoice) return;
 
         this.ttsApi.generateBase(
             {
@@ -184,7 +214,26 @@ export class SynthesisComponent implements OnInit {
                 // Remove listeners to avoid double triggers if possible, though new Audio instance is mostly safe
                 audio.onended = null;
                 audio.onerror = null;
-                this.generateExampleAudio(voice);
+                // Use unified generation service when available
+                if (this.voiceGen && this.voiceGen.ensureVoiceAudio) {
+                    this.voiceGen.ensureVoiceAudio(voice).subscribe({
+                        next: (updated: any) => {
+                            this.voices.update(current => current.map(v => v.id === updated.id ? updated : v));
+                            this.selectedVoice = updated;
+                            // play uploaded audio
+                            const url = this.ttsApi.getVoiceAudioUrl(updated.id);
+                            const a = new Audio(url);
+                            a.play();
+                            a.onended = () => this.isPlayingExample.set(false);
+                        },
+                        error: () => {
+                            // fallback to previous method
+                            this.generateExampleAudio(voice);
+                        }
+                    });
+                } else {
+                    this.generateExampleAudio(voice);
+                }
             };
 
             audio.onerror = errorHandler;
@@ -205,8 +254,26 @@ export class SynthesisComponent implements OnInit {
             return;
         }
 
-        // Otherwise generate it
-        this.generateExampleAudio(voice);
+        // Otherwise generate it using unified generation service if present
+        if (this.voiceGen && this.voiceGen.ensureVoiceAudio) {
+            this.isPlayingExample.set(true);
+            this.voiceGen.ensureVoiceAudio(voice).subscribe({
+                next: (updated: any) => {
+                    this.voices.update(current => current.map(v => v.id === updated.id ? updated : v));
+                    this.selectedVoice = updated;
+                    const url = this.ttsApi.getVoiceAudioUrl(updated.id);
+                    const a = new Audio(url);
+                    a.play();
+                    a.onended = () => this.isPlayingExample.set(false);
+                },
+                error: () => {
+                    this.isPlayingExample.set(false);
+                    this.messageService.add({ severity: 'error', summary: 'Fehler', detail: 'Beispiel konnte nicht generiert werden.' });
+                }
+            });
+        } else {
+            this.generateExampleAudio(voice);
+        }
     }
 
     private generateExampleAudio(voice: Voice): void {
@@ -290,10 +357,17 @@ export class SynthesisComponent implements OnInit {
 
         // Background generation if needed
         if (!voice.audio_filename) {
-            this.ttsApi.ensureVoiceAudio(voice.id).subscribe({
-                next: () => console.log(`Background generation triggered for ${voice.name}`),
-                error: (err) => console.warn('Failed to trigger background generation', err)
-            });
+            if (this.voiceGen && this.voiceGen.ensureVoiceAudio) {
+                this.voiceGen.ensureVoiceAudio(voice).subscribe({
+                    next: () => console.log(`Background generation triggered for ${voice.name}`),
+                    error: (err: unknown) => console.warn('Failed to trigger background generation', err)
+                });
+            } else {
+                this.ttsApi.ensureVoiceAudio(voice.id).subscribe({
+                    next: () => console.log(`Background generation triggered for ${voice.name}`),
+                    error: (err) => console.warn('Failed to trigger background generation', err)
+                });
+            }
         }
     }
 }

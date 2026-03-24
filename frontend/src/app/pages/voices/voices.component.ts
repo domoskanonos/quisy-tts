@@ -10,6 +10,7 @@ import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { TtsApiService } from '../../services/tts-api.service';
+import { VoiceGenerationService } from '../../services/voice-generation.service';
 import { Voice } from '../../models/tts.models';
 
 @Component({
@@ -32,6 +33,7 @@ import { Voice } from '../../models/tts.models';
 })
 export class VoicesComponent implements OnInit {
     private readonly ttsApi = inject(TtsApiService);
+    private readonly voiceGen = inject(VoiceGenerationService);
     private readonly router = inject(Router);
     private readonly messageService = inject(MessageService);
     private readonly confirmService = inject(ConfirmationService);
@@ -247,7 +249,7 @@ export class VoicesComponent implements OnInit {
             const audio = new Audio(this.ttsApi.getVoiceAudioUrl(voice.id));
             audio.play();
         } else {
-            // No audio → generate, play, and save
+            // No audio → generate, play, and save (reuse generation helper)
             this.generateAndPlay(voice);
         }
     }
@@ -265,38 +267,15 @@ export class VoicesComponent implements OnInit {
 
         this.generatingVoiceId.set(voice.id);
 
-        this.ttsApi.generateVoiceDesign({
-            text: voice.example_text,
-            language: voice.language || 'german',
-            instruct: voice.instruct,
-        }).subscribe({
-            next: (blob: Blob) => {
-                // Play the generated audio
-                const url = URL.createObjectURL(blob);
-                const audio = new Audio(url);
-                audio.play();
-                audio.onended = () => URL.revokeObjectURL(url);
-
-                // Upload as the voice's reference audio
-                const file = new File([blob], `voice_${voice.id}.wav`, { type: 'audio/wav' });
-                this.ttsApi.uploadVoiceAudio(voice.id, file).subscribe({
-                    next: () => {
-                        this.generatingVoiceId.set(null);
-                        this.loadVoices();
-                        this.messageService.add({
-                            severity: 'success',
-                            summary: 'Audio erstellt',
-                            detail: `Referenz-Audio für "${voice.name}" wurde generiert und gespeichert.`,
-                        });
-                    },
-                    error: () => {
-                        this.generatingVoiceId.set(null);
-                        this.messageService.add({
-                            severity: 'warn',
-                            summary: 'Teilweise erfolgreich',
-                            detail: 'Audio wurde abgespielt, aber das Speichern ist fehlgeschlagen.',
-                        });
-                    },
+        // Use unified generation service which handles generation + upload
+        this.voiceGen.ensureVoiceAudio(voice).subscribe({
+            next: (updated: Voice) => {
+                this.generatingVoiceId.set(null);
+                this.loadVoices();
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Audio erstellt',
+                    detail: `Referenz-Audio für "${voice.name}" wurde generiert und gespeichert.`,
                 });
             },
             error: () => {
@@ -306,7 +285,7 @@ export class VoicesComponent implements OnInit {
                     summary: 'Fehler',
                     detail: 'Audio konnte nicht generiert werden. Ist das Backend erreichbar?',
                 });
-            },
+            }
         });
     }
 
