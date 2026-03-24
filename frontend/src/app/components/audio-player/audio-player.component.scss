@@ -1,5 +1,7 @@
 @use '../../_shared' as *;
 
+.waveform-container { @include waveform-base; }
+
 :host {
     display: block;
     width: 100%;

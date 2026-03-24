@@ -1,5 +1,7 @@
 @use '../../_shared' as *;
 
+.page-header { @include page-header-base; }
+
 .synthesis-container {
     display: flex;
     gap: 24px;

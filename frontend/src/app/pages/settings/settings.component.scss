@@ -1,5 +1,7 @@
 @use '../../_shared' as *;
 
+.page-header { @include page-header-base; }
+
 .settings-page {
     max-width: 900px;
     margin: 0 auto;

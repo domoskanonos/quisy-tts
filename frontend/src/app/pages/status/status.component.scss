@@ -1,5 +1,7 @@
 @use '../../_shared' as *;
 
+.page-header { @include page-header-base; }
+
 .status-page {
     max-width: 800px;
     margin: 0 auto;

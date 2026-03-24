@@ -1,5 +1,7 @@
 @use '../../_shared' as *;
 
+.page-header { @include page-header-base; }
+
 .voices-page {
     max-width: 1000px;
     margin: 0 auto;

@@ -2,8 +2,9 @@
 @use './_mixins' as *;
 
 // Provide default class implementations for backwards compatibility
-.page-header { @include page-header-base; }
-.section-title { @include section-title-base; }
-.dialog-content { @include dialog-base; }
-.animate-spin { @include animate-spin; }
-.waveform-container { @include waveform-base; }
+// NOTE: No default class implementations here anymore. Components should include
+// the required mixins explicitly to keep the scope local and avoid global
+// bleed. Example usage in a component SCSS:
+//
+// @use '../../_shared' as *;
+// .page-header { @include page-header-base; }
