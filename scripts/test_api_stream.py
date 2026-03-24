@@ -3,7 +3,7 @@ import time
 import wave
 from pathlib import Path
 
-import requests
+import requests  # type: ignore[import]
 
 
 # Add src to path to import config

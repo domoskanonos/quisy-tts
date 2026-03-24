@@ -27,11 +27,13 @@ cuda = _CudaStub()
 
 # Minimal dtype placeholders
 float32 = np.float32
+# Default to float32; override below if bfloat16 is supported by numpy
+bfloat16: Any = np.float32
 try:
     bfloat16 = np.dtype("bfloat16")
 except Exception:
-    # Fallback: use float32 when bfloat16 isn't supported in this environment
-    bfloat16 = np.float32
+    # Keep fallback as float32
+    pass
 
 
 def zeros(*shape: int, dtype: Any = None):

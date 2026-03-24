@@ -41,22 +41,31 @@ def mock_system_dependencies(monkeypatch):
     try:
         import torch  # type: ignore
     except Exception:
-        import sys
-        import types
+        # Use our local shim if available (for lightweight test envs)
+        try:
+            # Prefer a local shim if present (torch.py in repo root)
+            import importlib
 
-        torch = types.ModuleType("torch")
+            torch_shim = importlib.import_module("torch")
+            torch = torch_shim
+            sys.modules["torch"] = torch_shim
+        except Exception:
+            import sys
+            import types
 
-        class _CudaStub:
-            @staticmethod
-            def is_available():
-                return True
+            torch = types.ModuleType("torch")
 
-            @staticmethod
-            def get_device_name(_):
-                return "Mock NVIDIA GPU"
+            class _CudaStub:
+                @staticmethod
+                def is_available() -> bool:
+                    return True
 
-        torch.cuda = _CudaStub()
-        sys.modules["torch"] = torch
+                @staticmethod
+                def get_device_name(_):
+                    return "Mock NVIDIA GPU"
+
+            torch.cuda = _CudaStub()  # type: ignore[assignment,attr-defined]
+            sys.modules["torch"] = torch
 
     # 1. Mock torch.cuda.is_available to return True
     monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
