@@ -50,7 +50,6 @@ def mock_system_dependencies(monkeypatch):
             torch = torch_shim
             sys.modules["torch"] = torch_shim
         except Exception:
-            import sys
             import types
 
             torch = types.ModuleType("torch")
@@ -65,6 +64,7 @@ def mock_system_dependencies(monkeypatch):
                     return "Mock NVIDIA GPU"
 
             torch.cuda = _CudaStub()  # type: ignore[assignment,attr-defined]
+            # register shim
             sys.modules["torch"] = torch
 
     # 1. Mock torch.cuda.is_available to return True
