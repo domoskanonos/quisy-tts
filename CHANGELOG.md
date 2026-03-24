@@ -1,6 +1,15 @@
 # CHANGELOG
 
 
+## v0.13.0 (2026-03-24)
+
+### Features
+
+- Introduce a shared SCSS module for forwarding styles and enable backend host/port configuration
+  via `.env` file.
+  ([`c688536`](https://github.com/domoskanonos/quisy-tts/commit/c6885364c9ff39ae886ebbfcb2887e109f81971d))
+
+
 ## v0.12.0 (2026-03-24)
 
 
