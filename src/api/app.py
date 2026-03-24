@@ -84,6 +84,40 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         # Preload the most commonly used model in background
         asyncio.create_task(engine.ensure_loaded("voice_design"))
 
+    # Preload spaCy models used by the text splitter (in background).
+    # This avoids the first user request triggering a potentially slow
+    # model download or load. We only attempt the small core models.
+    try:
+        from services.text_splitter import LANGUAGE_TO_SPACY_MODEL
+
+        async def _preload_spacy_models():
+            import importlib
+            import asyncio as _asyncio
+
+            # Preload only a small set (german, english) to keep startup time
+            for lang in ("german", "english"):
+                model = LANGUAGE_TO_SPACY_MODEL.get(lang)
+                if not model:
+                    continue
+                try:
+                    # Import spacy lazily; the text_splitter will download if missing
+                    importlib.import_module("spacy")
+                    # Call the splitter's loader to ensure model is present/cached
+                    from services.text_splitter import get_text_splitter
+
+                    splitter = get_text_splitter()
+                    # Run in thread pool to avoid blocking the event loop
+                    await _asyncio.get_event_loop().run_in_executor(None, splitter._get_nlp, lang)
+                    logger.info(f"spaCy preload attempted for model {model} ({lang})")
+                except Exception as _:
+                    logger.debug(f"spaCy preload failed for model {model} ({lang}), will use regex fallback.")
+
+        asyncio.create_task(_preload_spacy_models())
+    except Exception:
+        # If anything goes wrong here, ignore — the text splitter already
+        # falls back to a regex-based splitter when spaCy isn't available.
+        logger.debug("spaCy preload not scheduled.")
+
     yield
 
     # Shutdown

@@ -5,6 +5,9 @@ receives manageable portions and maintains a natural speaking pace.
 """
 
 import re
+import subprocess
+import sys
+from typing import Any, Optional
 
 from config import ProjectConfig
 
@@ -39,7 +42,7 @@ class TextSplitterService:
 
     def __init__(self, max_chunk_chars: int = DEFAULT_MAX_CHUNK_CHARS) -> None:
         self.max_chunk_chars = max_chunk_chars
-        self._nlp_cache: dict[str, object] = {}
+        self._nlp_cache: dict[str, Optional[Any]] = {}
 
     def split(self, text: str, language: str = "german") -> list[str]:
         """Split text into chunks suitable for TTS generation.
@@ -62,7 +65,10 @@ class TextSplitterService:
         # Try spaCy first, fall back to regex
         sentences = self._split_sentences_spacy(text, language)
         if sentences is None:
+            logger.debug(f"TextSplitter: spaCy unavailable for '{language}', using regex fallback.")
             sentences = self._split_sentences_regex(text)
+        else:
+            logger.debug(f"TextSplitter: spaCy used for '{language}', {len(sentences)} sentences extracted.")
 
         # Group sentences into chunks
         return self._group_into_chunks(sentences)
@@ -81,7 +87,7 @@ class TextSplitterService:
         sentences = [sent.text.strip() for sent in doc.sents if sent.text.strip()]
         return sentences if sentences else None
 
-    def _get_nlp(self, language: str):
+    def _get_nlp(self, language: str) -> Optional[Any]:
         """Get or load a spaCy NLP pipeline for the given language."""
         language = language.lower()
 
@@ -95,16 +101,23 @@ class TextSplitterService:
 
         try:
             import spacy
-            import spacy.cli
 
             # Try loading the model
             try:
                 nlp = spacy.load(model_name, disable=["ner", "lemmatizer", "attribute_ruler"])
             except OSError:
-                # Model not installed — try downloading it
+                # Model not installed — try downloading it using the CLI to avoid
+                # relying on spacy.cli.download (which can be missing in some
+                # typing stubs). Using subprocess ensures the download step is
+                # executed in a separate process.
                 logger.info(f"spaCy model '{model_name}' not found. Downloading...")
-                spacy.cli.download(model_name)
-                nlp = spacy.load(model_name, disable=["ner", "lemmatizer", "attribute_ruler"])
+                try:
+                    subprocess.run([sys.executable, "-m", "spacy", "download", model_name], check=True)
+                    nlp = spacy.load(model_name, disable=["ner", "lemmatizer", "attribute_ruler"])
+                except Exception as dl_e:
+                    logger.warning(f"Failed to download spaCy model '{model_name}': {dl_e}. Using regex fallback.")
+                    self._nlp_cache[language] = None
+                    return None
 
             # Ensure sentencizer is available (the parser handles this in sm models,
             # but we add a rule-based sentencizer as fallback if parser is disabled)
@@ -132,6 +145,7 @@ class TextSplitterService:
         # This avoids splitting on "Dr. Müller" or "3.14"
         pattern = r"(?<=[.!?;:])\s+(?=[A-ZÄÖÜ\u0400-\u04FF\u3000-\u9FFF])"
         sentences = re.split(pattern, text)
+        logger.debug(f"TextSplitter: regex fallback produced {len(sentences)} sentences.")
         return [s.strip() for s in sentences if s.strip()]
 
     def _group_into_chunks(self, sentences: list[str]) -> list[str]:

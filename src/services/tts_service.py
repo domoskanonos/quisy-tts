@@ -63,15 +63,33 @@ class TTSService:
         Raises:
             AudioGenerationError: If generation fails.
         """
+        # Resolve canonical language for engine and ensure instruct contains an explicit
+        # language directive when appropriate. This helps avoid cases where style
+        # prompts in English cause the model to produce English output for German
+        # voices.
+        resolved = resolve_language(language)
+        final_instruct = instruct
+        try:
+            if final_instruct and resolved == "german":
+                # If instruct doesn't already mention the language, prefix a German directive
+                low = final_instruct.lower()
+                if not ("sprich" in low or "auf deutsch" in low or "in german" in low or "auf deutsch" in low):
+                    final_instruct = "Sprich auf Deutsch. " + final_instruct
+        except Exception:
+            # Be defensive: fallback to original instruct
+            final_instruct = instruct
+
         params = TTSParams(
-            language=resolve_language(language),
+            language=resolved,
             reference_audio=reference_audio,
             ref_text=ref_text,
             mode=mode,
             model_size=model_size,
-            instruct=instruct,
+            instruct=final_instruct,
             speaker=speaker,
         )
+
+        logger.debug(f"TTS params: language={params.language}, mode={params.mode}, model_size={params.model_size}")
 
         # 1. Check global cache for the full text
         global_key = self.cache.get_key(text, params)

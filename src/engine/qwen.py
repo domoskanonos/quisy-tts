@@ -146,6 +146,12 @@ class QwenTTSBackend:
             "repetition_penalty": QWEN_GENERATION_CONFIG["repetition_penalty"],
         }
 
+        # Defensive: ensure resolved_language is canonical and log it
+        resolved_lang = (
+            params.resolved_language if hasattr(params, "resolved_language") else (params.language or "german")
+        )
+        logger.debug(f"_generate_single: resolved_language={resolved_lang}, mode={params.mode}")
+
         loop = asyncio.get_running_loop()
         wavs, sr = await loop.run_in_executor(
             None,
