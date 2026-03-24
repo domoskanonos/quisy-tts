@@ -1,12 +1,27 @@
 # CHANGELOG
 
 
+## v0.10.0 (2026-03-24)
+
+### Features
+
+- **frontend**: Improve UX — toasts and unified background generation; play uploaded audio after
+  generation
+  ([`92e33ee`](https://github.com/domoskanonos/quisy-tts/commit/92e33ee2df2034a7948e81cf57113cdc68ffd102))
+
+
 ## v0.9.0 (2026-03-23)
 
 ### Features
 
 - Add initial `quisy-tts.db` database file.
   ([`13ba438`](https://github.com/domoskanonos/quisy-tts/commit/13ba438ecce2288dcbe13924699a4c11436a98c2))
+
+### Refactoring
+
+- **frontend**: Unify voice generation logic via VoiceGenerationService and reuse in
+  Synthesis/Voices pages
+  ([`a091104`](https://github.com/domoskanonos/quisy-tts/commit/a0911042e65d745db62ffc43379a1583499f5b58))
 
 
 ## v0.8.0 (2026-03-21)
