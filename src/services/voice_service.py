@@ -8,6 +8,7 @@ from pathlib import Path
 
 from config import ProjectConfig
 from services.default_voices import DEFAULT_VOICES
+from schemas.languages import resolve_language
 
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
@@ -79,6 +80,22 @@ class VoiceService:
             logger.info("Migrating voices table: adding 'language' column...")
             conn.execute("ALTER TABLE voices ADD COLUMN language TEXT NOT NULL DEFAULT 'german'")
             conn.commit()
+
+        # Normalize existing language values to canonical form (resolve_language)
+        try:
+            rows = conn.execute("SELECT id, language FROM voices").fetchall()
+            for r in rows:
+                vid = r[0]
+                lang = (r[1] or "").strip()
+                if not lang:
+                    continue
+                resolved = resolve_language(lang)
+                if resolved != lang.lower():
+                    logger.info(f"Normalizing language for voice {vid}: '{lang}' -> '{resolved}'")
+                    conn.execute("UPDATE voices SET language = ? WHERE id = ?", (resolved, vid))
+            conn.commit()
+        except Exception as e:
+            logger.warning(f"Failed to normalize voice languages during migration: {e}")
 
     def _seed_defaults(self, conn: sqlite3.Connection) -> None:
         """Insert all default voices."""
