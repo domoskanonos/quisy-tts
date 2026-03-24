@@ -1,7 +1,46 @@
 # CHANGELOG
 
 
+## v0.12.0 (2026-03-24)
+
+
 ## v0.11.0 (2026-03-24)
+
+### Bug Fixes
+
+- **defaults**: Correct language tags for English default voices
+  ([`4ceff78`](https://github.com/domoskanonos/quisy-tts/commit/4ceff785e2d86b89ec1798651c73aad7cef5dffc))
+
+- **frontend**: Migrate deprecated Sass @import to @use for shared styles
+  ([`027b72f`](https://github.com/domoskanonos/quisy-tts/commit/027b72f0c0c97a20e9e485a01148e4d3edb9ad3a))
+
+- **voices**: Normalize languages on migration using resolve_language
+  ([`6dd20a5`](https://github.com/domoskanonos/quisy-tts/commit/6dd20a508e77c858feaf2e02c05cdf4bf32abb65))
+
+### Features
+
+- Implement core TTS generation service with language-aware text splitting, caching, and Qwen engine
+  integration.
+  ([`121e3c3`](https://github.com/domoskanonos/quisy-tts/commit/121e3c3c7eae79d04de5adba261067e6a3aa8b30))
+
+### Refactoring
+
+- **sass**: Convert _shared.scss to Sass module with variables/mixins and CSS exports
+  ([`26ef07a`](https://github.com/domoskanonos/quisy-tts/commit/26ef07a764b9026b3897f330c4e80e486fa5754b))
+
+- **sass**: Enforce local inclusion of shared mixins in component styles (no global fallbacks)
+  ([`4f64afa`](https://github.com/domoskanonos/quisy-tts/commit/4f64afa8db8e22a08e344b72df26b731d7a8c221))
+
+- **sass**: Split shared variables and mixins into separate files and import from _shared
+  ([`be8e443`](https://github.com/domoskanonos/quisy-tts/commit/be8e443828d525bbaa6b2089351d7846bb345cca))
+
+### Testing
+
+- **frontend**: Add component specs for Synthesis and Voices flows
+  ([`bd3299a`](https://github.com/domoskanonos/quisy-tts/commit/bd3299aa324b169096db5dc6d408625233341e42))
+
+- **frontend**: Extend VoiceGenerationService specs (generate & upload, ensure-by-id poll)
+  ([`d20d61e`](https://github.com/domoskanonos/quisy-tts/commit/d20d61ebb4b380452b1b2ea5070a35348a924e6f))
 
 
 ## v0.10.0 (2026-03-24)
