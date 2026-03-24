@@ -1,13 +1,30 @@
 # CHANGELOG
 
 
+## v0.11.0 (2026-03-24)
+
+
 ## v0.10.0 (2026-03-24)
 
+### Chores
+
+- **frontend**: Small UX improvements — disable play only for other generating items, show toasts
+  ([`1ce1795`](https://github.com/domoskanonos/quisy-tts/commit/1ce17958e1c4ee5bbcfa2d02682dbeaa9b65cc06))
+
 ### Features
+
+- **frontend**: Add polling helper and fallback ensure-by-id; improve generation playback handling
+  and toasts
+  ([`de9b58e`](https://github.com/domoskanonos/quisy-tts/commit/de9b58ed95d7a116c0c5b73b152fa84bbc895fa0))
 
 - **frontend**: Improve UX — toasts and unified background generation; play uploaded audio after
   generation
   ([`92e33ee`](https://github.com/domoskanonos/quisy-tts/commit/92e33ee2df2034a7948e81cf57113cdc68ffd102))
+
+### Testing
+
+- **frontend**: Add basic spec for VoiceGenerationService
+  ([`479b114`](https://github.com/domoskanonos/quisy-tts/commit/479b1146c08cf3b003dcc246e3099417cae75e0e))
 
 
 ## v0.9.0 (2026-03-23)
