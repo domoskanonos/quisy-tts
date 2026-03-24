@@ -1,5 +1,7 @@
-@use './_variables' as *;
-@use './_mixins' as *;
+// Forward variables and mixins so consuming component styles can import
+// a single shared module and get access to variables and mixins.
+@forward './_variables';
+@forward './_mixins';
 
 // Provide default class implementations for backwards compatibility
 // NOTE: No default class implementations here anymore. Components should include
