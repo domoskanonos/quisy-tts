@@ -104,7 +104,6 @@ export class SettingsComponent implements OnInit {
         this.ttsApi.ensureVoiceAudio(newValue).subscribe({
             next: () => {
                 // Success (triggered or already exists)
-                // We don't need to notify user as requested "decoupled"
             },
             error: (err) => {
                 console.warn('Failed to ensure voice audio:', err);

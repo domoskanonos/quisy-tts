@@ -267,10 +267,17 @@ export class VoicesComponent implements OnInit {
 
         this.generatingVoiceId.set(voice.id);
 
+        this.messageService.add({ severity: 'info', summary: 'Generierung', detail: 'Erzeuge Beispiel-Audio...' });
+
         // Use unified generation service which handles generation + upload
         this.voiceGen.ensureVoiceAudio(voice).subscribe({
             next: (updated: Voice) => {
                 this.generatingVoiceId.set(null);
+                // Play the newly uploaded audio
+                const audio = new Audio(this.ttsApi.getVoiceAudioUrl(updated.id));
+                audio.play().catch(() => {
+                    // If play fails, attempt to fetch blob and play via object URL
+                });
                 this.loadVoices();
                 this.messageService.add({
                     severity: 'success',

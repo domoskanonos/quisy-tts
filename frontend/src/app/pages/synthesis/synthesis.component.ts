@@ -357,15 +357,23 @@ export class SynthesisComponent implements OnInit {
 
         // Background generation if needed
         if (!voice.audio_filename) {
+            // Trigger background generation; prefer client-side service when available
             if (this.voiceGen && this.voiceGen.ensureVoiceAudio) {
+                this.messageService.add({ severity: 'info', summary: 'Generierung', detail: 'Hintergrund-Generierung wird gestartet.' });
                 this.voiceGen.ensureVoiceAudio(voice).subscribe({
-                    next: () => console.log(`Background generation triggered for ${voice.name}`),
-                    error: (err: unknown) => console.warn('Failed to trigger background generation', err)
+                    next: (updated: any) => {
+                        this.voices.update(vs => vs.map(v => v.id === updated.id ? updated : v));
+                        this.messageService.add({ severity: 'success', summary: 'Generierung', detail: 'Hörprobe wurde generiert und gespeichert.' });
+                    },
+                    error: (err: unknown) => {
+                        console.warn('Failed to trigger background generation', err);
+                        this.messageService.add({ severity: 'warn', summary: 'Generierung fehlgeschlagen', detail: 'Hintergrund-Generierung konnte nicht gestartet werden.' });
+                    }
                 });
             } else {
                 this.ttsApi.ensureVoiceAudio(voice.id).subscribe({
-                    next: () => console.log(`Background generation triggered for ${voice.name}`),
-                    error: (err) => console.warn('Failed to trigger background generation', err)
+                    next: () => this.messageService.add({ severity: 'info', summary: 'Generierung', detail: 'Hintergrund-Generierung angefragt.' }),
+                    error: (err) => this.messageService.add({ severity: 'warn', summary: 'Fehler', detail: 'Hintergrund-Generierung konnte nicht angefragt werden.' })
                 });
             }
         }
