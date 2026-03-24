@@ -36,7 +36,27 @@ def mock_system_dependencies(monkeypatch):
     """Mock system checks for all tests."""
     import subprocess
 
-    import torch
+    # Import torch if available, otherwise create a lightweight stub so tests
+    # can run without the actual torch dependency.
+    try:
+        import torch  # type: ignore
+    except Exception:
+        import sys
+        import types
+
+        torch = types.ModuleType("torch")
+
+        class _CudaStub:
+            @staticmethod
+            def is_available():
+                return True
+
+            @staticmethod
+            def get_device_name(_):
+                return "Mock NVIDIA GPU"
+
+        torch.cuda = _CudaStub()
+        sys.modules["torch"] = torch
 
     # 1. Mock torch.cuda.is_available to return True
     monkeypatch.setattr(torch.cuda, "is_available", lambda: True)

@@ -7,6 +7,8 @@ from pathlib import Path
 from config import ProjectConfig
 from core import CacheService
 from schemas import TTSParams
+import asyncio
+import weakref
 
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
@@ -23,6 +25,20 @@ class FileCacheService(CacheService):
         """
         self.cache_dir = cache_dir or settings.OUTPUT_DIR
         self.cache_dir.mkdir(parents=True, exist_ok=True)
+        # locks per cache key to avoid duplicate generation across processes
+        # Use a WeakValueDictionary so locks can be GC'd when no longer referenced.
+        self._locks: "weakref.WeakValueDictionary[str, asyncio.Lock]" = weakref.WeakValueDictionary()
+
+    def get_lock(self, key: str) -> asyncio.Lock:
+        lock = self._locks.get(key)
+        if lock is None:
+            lock = asyncio.Lock()
+            try:
+                self._locks[key] = lock
+            except Exception:
+                # WeakValueDictionary may raise if key isn't hashable; fall back silently
+                pass
+        return lock
 
     def get_key(self, text: str, params: TTSParams) -> str:
         """Generate a cache key from text and parameters."""

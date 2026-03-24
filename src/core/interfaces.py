@@ -4,8 +4,9 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Any
+import asyncio
 
-import torch
+from typing import Any
 
 
 class TTSEngine(ABC):
@@ -16,7 +17,7 @@ class TTSEngine(ABC):
     """
 
     @abstractmethod
-    async def generate_audio(self, text: str, params: Any) -> tuple[torch.Tensor, int]:
+    async def generate_audio(self, text: str, params: Any) -> tuple[Any, int]:
         """Generate audio waveform from text.
 
         Args:
@@ -43,18 +44,13 @@ class TTSEngine(ABC):
         ...
 
     @abstractmethod
-    async def generate_audio_stream(
-        self, text: str, params: Any, chunk_size: int = 4096
-    ) -> AsyncGenerator[bytes, None]:
-        """Generate audio and yield as byte chunks for streaming.
+    def generate_audio_stream(self, text: str, params: Any, chunk_size: int = 4096) -> AsyncGenerator[bytes, None]:
+        """Return an async generator that yields audio byte chunks.
 
-        Args:
-            text: The text to convert to speech.
-            params: Engine-specific parameters.
-            chunk_size: Size of each chunk in bytes.
-
-        Yields:
-            Audio data chunks as bytes.
+        Implementations should return an async generator (an async def with
+        `yield`) which produces bytes for streaming. Keeping this method as a
+        synchronous abstractmethod simplifies typing compatibility with
+        async generator implementations.
         """
         ...
 
@@ -84,6 +80,15 @@ class CacheService(ABC):
 
         Returns:
             Path to cached file or None if not found.
+        """
+        ...
+
+    @abstractmethod
+    def get_lock(self, key: str) -> "asyncio.Lock":
+        """Return an asyncio.Lock for the given cache key.
+
+        This allows callers to perform atomic check+generate+set operations
+        guarded by a shared lock owned by the cache implementation.
         """
         ...
 

@@ -3,6 +3,7 @@
 import asyncio
 import time
 from collections.abc import AsyncGenerator
+from typing import Coroutine
 from pathlib import Path
 
 import numpy as np
@@ -99,42 +100,9 @@ class QwenTTSBackend:
         """
         model = await self.ensure_loaded(params.mode)
 
-        # Split text into chunks using language-aware splitter
-        language = params.resolved_language if hasattr(params, "resolved_language") else (params.language or "german")
-        chunks = self._text_splitter.split(text, language)
-
-        if len(chunks) <= 1:
-            # Short text — generate directly (no splitting overhead)
-            return await self._generate_single(model, text, params)
-
-        logger.info(f"Text split into {len(chunks)} chunks for language '{language}' (total {len(text)} chars)")
-
-        # Generate audio for each chunk
-        audio_segments: list[torch.Tensor] = []
-        sample_rate = 24000  # Will be overwritten by actual SR
-
-        for i, chunk in enumerate(chunks):
-            logger.debug(f"Generating chunk {i + 1}/{len(chunks)}: {chunk[:60]}...")
-            waveform, sr = await self._generate_single(model, chunk, params)
-            audio_segments.append(waveform)
-            sample_rate = sr
-
-        # Concatenate with silence gaps
-        silence_samples = int(sample_rate * INTER_CHUNK_SILENCE_SECS)
-        silence = torch.zeros(1, silence_samples)
-
-        combined_parts: list[torch.Tensor] = []
-        for i, segment in enumerate(audio_segments):
-            combined_parts.append(segment)
-            if i < len(audio_segments) - 1:
-                combined_parts.append(silence)
-
-        final_audio = torch.cat(combined_parts, dim=1)
-        logger.info(
-            f"Combined {len(audio_segments)} audio chunks. Total duration: {final_audio.shape[1] / sample_rate:.1f}s"
-        )
-
-        return final_audio, sample_rate
+        # The engine expects a single chunk of text and generates it.
+        # Splitting and orchestration are handled by the TTSService to avoid duplicate work.
+        return await self._generate_single(model, text, params)
 
     async def _generate_single(self, model: Qwen3TTSModel, text: str, params: TTSParams) -> tuple[torch.Tensor, int]:
         """Generate audio for a single text chunk."""
@@ -200,25 +168,21 @@ class QwenTTSBackend:
     async def generate_audio_stream(
         self, text: str, params: TTSParams, chunk_size: int = 4096
     ) -> AsyncGenerator[bytes, None]:
-        """Stream audio by splitting text into sentences using spaCy (async)."""
+        """Stream audio by generating a single text chunk and yielding bytes.
+
+        Note: orchestration and splitting are handled by the TTSService; the engine
+        stream method simply delegates to generate_audio for a single chunk and
+        yields bytes. The TTSService stream path handles multiple chunks.
+        """
         await self.ensure_loaded(params.mode)
 
-        # Use language-aware text splitting
-        language = params.resolved_language if hasattr(params, "resolved_language") else (params.language or "german")
-        chunks = self._text_splitter.split(text, language)
+        waveform, _ = await self._generate_single(await self.ensure_loaded(params.mode), text, params)
 
-        for chunk in chunks:
-            if not chunk:
-                continue
-
-            # Generate audio for each chunk
-            waveform, _ = await self.generate_audio(chunk, params)
-
-            audio_np = waveform.squeeze().cpu().numpy()
-            audio_int16 = (audio_np * 32767).astype(np.int16)
-            audio_bytes = audio_int16.tobytes()
-            for k in range(0, len(audio_bytes), chunk_size):
-                yield audio_bytes[k : k + chunk_size]
+        audio_np = waveform.squeeze().cpu().numpy()
+        audio_int16 = (audio_np * 32767).astype(np.int16)
+        audio_bytes = audio_int16.tobytes()
+        for k in range(0, len(audio_bytes), chunk_size):
+            yield audio_bytes[k : k + chunk_size]
 
     def _resolve_ref_audio(self, params: TTSParams) -> str | None:
         """Resolve reference audio path."""

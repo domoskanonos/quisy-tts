@@ -1,6 +1,7 @@
 """TTS orchestration service - Application layer."""
 
 from collections.abc import AsyncGenerator
+import asyncio
 from pathlib import Path
 
 import numpy as np
@@ -33,6 +34,32 @@ class TTSService:
         self.engine = engine
         self.cache = cache
         self.text_splitter = get_text_splitter()
+        # locks keyed by chunk cache key to prevent duplicate concurrent generation
+        self._locks: dict[str, asyncio.Lock] = {}
+
+    def _get_lock(self, key: str) -> asyncio.Lock:
+        """Return an asyncio.Lock for the given key, creating it if necessary.
+
+        Prefer the cache-provided lock when available so locking semantics are
+        centralized in the cache implementation.
+        """
+        # Prefer cache-level lock if implemented
+        cache_lock = getattr(self.cache, "get_lock", None)
+        if callable(cache_lock):
+            try:
+                lock = cache_lock(key)
+                # Some cache implementations might return non-asyncio locks; ensure type
+                if isinstance(lock, asyncio.Lock):
+                    return lock
+            except Exception:
+                # Fall back to local lock map on any error
+                pass
+
+        lock = self._locks.get(key)
+        if lock is None:
+            lock = asyncio.Lock()
+            self._locks[key] = lock
+        return lock
 
     async def generate_audio(  # noqa: PLR0913
         self,
@@ -110,31 +137,52 @@ class TTSService:
             # Calculate hash for this specific chunk
             chunk_key = self.cache.get_key(chunk_text, params)
 
-            # Check chunk cache
+            # Fast path: check chunk cache (no lock)
             if chunk_path := self.cache.get(chunk_key):
                 chunk_paths.append(chunk_path)
                 continue
 
-            # Generate if missed
-            # We use a temporary filename based on the hash to ensure uniqueness
-            filename = f"cache_{chunk_key}.wav"
-            output_path = settings.OUTPUT_DIR / filename
-
+            # Obtain per-chunk lock to avoid duplicate concurrent generation
+            lock = self._get_lock(chunk_key)
+            # Obtain per-chunk lock to avoid duplicate concurrent generation
+            lock = self._get_lock(chunk_key)
             try:
-                result_path = await self.engine.generate_and_save(
-                    chunk_text,
-                    str(output_path),
-                    params,
-                )
-                generated_path = Path(result_path)
+                async with lock:
+                    # Re-check inside the lock
+                    if chunk_path := self.cache.get(chunk_key):
+                        logger.info(f"Chunk cache hit inside lock for key: {chunk_key[:8]}...")
+                        chunk_paths.append(chunk_path)
+                    else:
+                        # Generate if still missed
+                        logger.info(f"Generating chunk for key: {chunk_key[:8]}...")
+                        filename = f"cache_{chunk_key}.wav"
+                        output_path = settings.OUTPUT_DIR / filename
 
-                # Register in cache (though we wrote directly to cache location effectively)
-                self.cache.set(chunk_key, generated_path)
-                chunk_paths.append(generated_path)
+                        try:
+                            result_path = await self.engine.generate_and_save(
+                                chunk_text,
+                                str(output_path),
+                                params,
+                            )
+                            generated_path = Path(result_path)
 
-            except Exception as e:
-                logger.error(f"Failed to generate chunk {i}: {e}")
-                raise AudioGenerationError(f"Chunk generation failed: {e}") from e
+                            # Register in cache
+                            self.cache.set(chunk_key, generated_path)
+                            chunk_paths.append(generated_path)
+
+                        except Exception as e:
+                            logger.error(f"Failed to generate chunk {i}: {e}")
+                            raise AudioGenerationError(f"Chunk generation failed: {e}") from e
+            finally:
+                # Cleanup lock to prevent unbounded growth of the lock map.
+                try:
+                    if not lock.locked():
+                        # It's safe to remove; if another coroutine creates a new lock concurrently
+                        # it will replace this entry.
+                        del self._locks[chunk_key]
+                except Exception:
+                    # Be defensive: do not raise from cleanup
+                    pass
 
         # 4. Combine chunks if necessary
         if len(chunks) == 1:
@@ -245,21 +293,28 @@ class TTSService:
         for i, chunk_text in enumerate(chunks):
             chunk_key = self.cache.get_key(chunk_text, params)
 
+            # Fast path
             chunk_path = self.cache.get(chunk_key)
             if not chunk_path:
-                # Generate and save chunk
-                output_path = settings.OUTPUT_DIR / f"cache_{chunk_key}.wav"
-                try:
-                    result_path = await self.engine.generate_and_save(
-                        chunk_text,
-                        str(output_path),
-                        params,
-                    )
-                    chunk_path = Path(result_path)
-                    self.cache.set(chunk_key, chunk_path)
-                except Exception as e:
-                    logger.error(f"Failed to generate chunk {i} for stream: {e}")
-                    raise AudioGenerationError(f"Stream generation failed: {e}") from e
+                # Acquire per-chunk lock to prevent duplicate concurrent generation
+                lock = self._get_lock(chunk_key)
+                async with lock:
+                    # Re-check inside lock
+                    chunk_path = self.cache.get(chunk_key)
+                    if not chunk_path:
+                        # Generate and save chunk
+                        output_path = settings.OUTPUT_DIR / f"cache_{chunk_key}.wav"
+                        try:
+                            result_path = await self.engine.generate_and_save(
+                                chunk_text,
+                                str(output_path),
+                                params,
+                            )
+                            chunk_path = Path(result_path)
+                            self.cache.set(chunk_key, chunk_path)
+                        except Exception as e:
+                            logger.error(f"Failed to generate chunk {i} for stream: {e}")
+                            raise AudioGenerationError(f"Stream generation failed: {e}") from e
 
             # Stream the chunk file
             with sf.SoundFile(str(chunk_path)) as f:
