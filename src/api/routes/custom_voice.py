@@ -54,23 +54,14 @@ async def _generate(
 ) -> FileResponse:
     """Internal handler for custom voice generation."""
     try:
-        # Resolve speaker from DB
+        # Resolve speaker from DB and require a voice ID
         voice = voice_service.get_voice_by_name(request.speaker)
-        reference_audio = None
-        speaker_id = request.speaker
-
-        if voice:
-            # If voice has audio file, use it as reference (cloning)
-            # If not (e.g. default voice), assume name matches built-in speaker
-            audio_path = voice_service.get_audio_path(voice["id"])
-            if audio_path:
-                reference_audio = str(audio_path)
-                speaker_id = None  # Use reference audio instead of speaker ID
-        else:
-            # If not in DB, technically we should reject if we "removed built-in voices".
-            # But for robustness, we might try to use it as built-in ID?
-            # Or strict mode:
+        if not voice:
             raise ReferenceAudioNotFoundError(f"Speaker '{request.speaker}' not found in database.")
+
+        # Only accept voice IDs now: pass the voice id into the engine.
+        speaker_id = voice["id"]
+        reference_audio = None
 
         result_path = await service.generate_audio(
             text=request.text,
@@ -125,17 +116,19 @@ def _stream(
     service: TTSService,
     voice_service: VoiceService,
 ) -> StreamingResponse:
-    """Internal handler for custom voice streaming."""
-    # Resolve speaker from DB
-    voice = voice_service.get_voice_by_name(request.speaker)
-    reference_audio = None
-    speaker_id = request.speaker
+    """Internal handler for custom voice streaming.
 
-    if voice:
-        audio_path = voice_service.get_audio_path(voice["id"])
-        if audio_path:
-            reference_audio = str(audio_path)
-            speaker_id = None
+    Note: the API now requires a speaker that exists in the DB; only voice IDs
+    (via their names in the request) are accepted — filenames are not allowed.
+    """
+
+    # Resolve speaker from DB and require voice id
+    voice = voice_service.get_voice_by_name(request.speaker)
+    if not voice:
+        raise ReferenceAudioNotFoundError(f"Speaker '{request.speaker}' not found in database.")
+
+    speaker_id = voice["id"]
+    reference_audio = None
 
     return StreamingResponse(
         service.generate_stream(

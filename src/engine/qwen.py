@@ -201,23 +201,56 @@ class QwenTTSBackend:
     def _resolve_ref_audio(self, params: TTSParams) -> str | None:
         """Resolve reference audio path."""
         if params.reference_audio:
-            path = self.settings.VOICES_DIR / params.reference_audio
-            if path.exists():
-                return str(path)
-
-            # If a specific file was requested but not found, RAISE ERROR instead of falling back
+            # Accept only a voice ID. Do NOT accept a filename here.
+            from services.voice_service import VoiceService
             from core.exceptions import ReferenceAudioNotFoundError
 
-            raise ReferenceAudioNotFoundError(
-                f"Requested reference audio '{params.reference_audio}' not found in voices directory."
-            )
+            try:
+                vs = VoiceService(self.settings.VOICES_DIR)
+                voice = vs.get_voice(params.reference_audio)
+                if not voice:
+                    raise ReferenceAudioNotFoundError(
+                        f"Requested reference voice id '{params.reference_audio}' not found in database."
+                    )
 
-        default = self.settings.DEFAULT_REFERENCE_AUDIO
-        if default:
-            path = self.settings.VOICES_DIR / default
-            if path.exists():
+                # Ensure that this voice has an attached audio file on disk
+                audio_filename = voice.get("audio_filename")
+                if not audio_filename:
+                    raise ReferenceAudioNotFoundError(
+                        f"Voice '{params.reference_audio}' exists but has no audio file attached."
+                    )
+
+                path = self.settings.VOICES_DIR / audio_filename
+                if not path.exists():
+                    raise ReferenceAudioNotFoundError(
+                        f"Audio file for voice '{params.reference_audio}' not found at: {path}"
+                    )
+
                 return str(path)
+            except ReferenceAudioNotFoundError:
+                raise
+            except Exception:
+                # Unexpected DB error -> surface as not found
+                raise ReferenceAudioNotFoundError(f"Failed to resolve reference voice id '{params.reference_audio}'.")
 
+        # Resolve default by DEFAULT_VOICE_ID if present
+        default_voice_id = getattr(self.settings, "DEFAULT_VOICE_ID", None)
+        if default_voice_id:
+            # Lazy import to avoid circular deps at module import time
+            from services.voice_service import VoiceService
+
+            try:
+                vs = VoiceService(self.settings.VOICES_DIR)
+                voice = vs.get_voice(default_voice_id)
+                if voice and voice.get("audio_filename"):
+                    path = self.settings.VOICES_DIR / voice["audio_filename"]
+                    if path.exists():
+                        return str(path)
+            except Exception:
+                # fall back to previous behavior when DB is not available
+                pass
+
+        # Previous fallback: first WAV file in VOICES_DIR
         voices = list(self.settings.VOICES_DIR.glob("*.wav"))
         if voices:
             return str(voices[0])

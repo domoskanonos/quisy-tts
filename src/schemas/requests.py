@@ -23,9 +23,15 @@ class BaseGenerateRequest(BaseModel):
         json_schema_extra={"example": "German"},
     )
     reference_audio: str | None = Field(
-        default_factory=lambda: ProjectSettings().DEFAULT_REFERENCE_AUDIO,
-        description="Filename of reference voice in voices/ directory.",
-        json_schema_extra={"example": "chatbot_male.wav"},
+        default_factory=lambda: ProjectSettings().DEFAULT_VOICE_ID,
+        description=(
+            "Voice ID to use as reference (e.g. 'default_001')."
+            " Explicit filenames (e.g. 'chatbot_male.wav') are no longer accepted"
+            " — the API accepts only voice IDs which are resolved against the"
+            " internal SQLite voices table. If unset, the system will fall back to"
+            " the configured DEFAULT_VOICE_ID or the first available voice audio."
+        ),
+        json_schema_extra={"example": "default_001"},
     )
     ref_text: str | None = Field(
         default=None,

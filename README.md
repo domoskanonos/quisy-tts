@@ -98,10 +98,45 @@ If you want to run without GPU in development, set `DEVICE=cpu`, but note that p
      UV_LOG_LEVEL=debug
      ```
 
-   - Then run:
-     ```bash
-     uv run start-dev
-     ```
+    - Then run:
+      ```bash
+      uv run start-dev
+      ```
+
+    Development frontend (Angular)
+    --------------------------------
+
+    - Create a proxy file `frontend/proxy.local.json` (example below) and adjust `target` to your backend port.
+      ```json
+      {
+        "/api": {
+          "target": "http://localhost:8000",
+          "secure": false,
+          "changeOrigin": true,
+          "logLevel": "debug"
+        },
+        "/ws": {
+          "target": "ws://localhost:8000",
+          "ws": true,
+          "secure": false,
+          "changeOrigin": true,
+          "logLevel": "debug"
+        }
+      }
+      ```
+
+    - Install frontend deps and start with the proxy (from the `frontend` folder):
+      ```bash
+      cd frontend
+      npm install
+      npm run start -- --proxy-config proxy.local.json
+      # or: npx ng serve --proxy-config proxy.local.json
+      ```
+
+    - If you prefer to make the proxy permanent for `npm run start`, update `frontend/package.json` start script to:
+      ```json
+      "start": "ng serve --proxy-config proxy.local.json"
+      ```
 
 5. **Docker Usage**:
    We provide a pre-built Docker image.

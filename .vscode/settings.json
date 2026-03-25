@@ -10,7 +10,7 @@
     "python.autoComplete.extraPaths": [
         "${workspaceFolder}/src"
     ],
-    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.defaultInterpreterPath": "",
     "python.envFile": "${workspaceFolder}/.env",
     "python.terminal.activateEnvironment": true,
     "git.enableSmartCommit": true,

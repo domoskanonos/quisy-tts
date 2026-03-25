@@ -3,7 +3,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 
-from api.dependencies import get_cleanup_service, get_tts_service
+from api.dependencies import get_cleanup_service, get_tts_service, get_voice_service
 from config import ProjectConfig
 from core import (
     AudioGenerationError,
@@ -13,6 +13,7 @@ from core import (
 )
 from schemas import BaseGenerateRequest
 from services import TTSService
+from services.voice_service import VoiceService
 
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
@@ -26,8 +27,13 @@ async def generate_base_06b(
     background_tasks: BackgroundTasks,
     service: TTSService = Depends(get_tts_service),
     cleanup: CleanupService = Depends(get_cleanup_service),
+    voice_service: VoiceService = Depends(get_voice_service),
 ) -> FileResponse:
     """Generate audio using base mode (voice cloning) with 0.6B model."""
+    # If a reference_audio is supplied it must be a voice ID (filenames are no longer accepted)
+    if request.reference_audio:
+        if voice_service.get_voice(request.reference_audio) is None:
+            raise HTTPException(status_code=400, detail=f"Reference voice id '{request.reference_audio}' not found")
     return await _generate(request, "0.6B", service, background_tasks, cleanup)
 
 
@@ -37,8 +43,12 @@ async def generate_base_17b(
     background_tasks: BackgroundTasks,
     service: TTSService = Depends(get_tts_service),
     cleanup: CleanupService = Depends(get_cleanup_service),
+    voice_service: VoiceService = Depends(get_voice_service),
 ) -> FileResponse:
     """Generate audio using base mode (voice cloning) with 1.7B model."""
+    if request.reference_audio:
+        if voice_service.get_voice(request.reference_audio) is None:
+            raise HTTPException(status_code=400, detail=f"Reference voice id '{request.reference_audio}' not found")
     return await _generate(request, "1.7B", service, background_tasks, cleanup)
 
 
@@ -81,8 +91,12 @@ async def _generate(
 async def stream_base_06b(
     request: BaseGenerateRequest,
     service: TTSService = Depends(get_tts_service),
+    voice_service: VoiceService = Depends(get_voice_service),
 ) -> StreamingResponse:
     """Stream audio using base mode (voice cloning) with 0.6B model."""
+    if request.reference_audio:
+        if voice_service.get_voice(request.reference_audio) is None:
+            raise HTTPException(status_code=400, detail=f"Reference voice id '{request.reference_audio}' not found")
     return _stream(request, "0.6B", service)
 
 
@@ -90,8 +104,12 @@ async def stream_base_06b(
 async def stream_base_17b(
     request: BaseGenerateRequest,
     service: TTSService = Depends(get_tts_service),
+    voice_service: VoiceService = Depends(get_voice_service),
 ) -> StreamingResponse:
     """Stream audio using base mode (voice cloning) with 1.7B model."""
+    if request.reference_audio:
+        if voice_service.get_voice(request.reference_audio) is None:
+            raise HTTPException(status_code=400, detail=f"Reference voice id '{request.reference_audio}' not found")
     return _stream(request, "1.7B", service)
 
 
