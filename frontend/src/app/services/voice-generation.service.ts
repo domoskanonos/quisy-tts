@@ -17,15 +17,15 @@ export class VoiceGenerationService {
      */
     ensureVoiceAudio(voice: Voice, force: boolean = false): Observable<Voice> {
         // Centralize generation on the backend: trigger server-side generation and poll status
-        if (voice.audio_filename) return of(voice);
+        // If audio already exists and the caller did not request a forced regeneration, return early.
+        if (voice.audio_filename && !force) return of(voice);
 
         if (!voice.instruct) {
             return throwError(() => new Error('Voice has no instruct text to generate audio.'));
         }
 
-        // Trigger backend generation and poll until done
-        this.ttsApi.ensureVoiceAudio(voice.id, force).subscribe({ next: () => {}, error: () => {} });
-        return this.ensureVoiceAudioById(voice.id);
+        // Delegate triggering and polling to the id-based helper which accepts the force flag.
+        return this.ensureVoiceAudioById(voice.id, 2000, 60000, undefined, force);
     }
 
     /**
@@ -37,9 +37,11 @@ export class VoiceGenerationService {
         pollIntervalMs = 2000,
         timeoutMs = 60000,
         statusCallback?: (status: any) => void,
+        force: boolean = false,
     ): Observable<Voice> {
         // Trigger backend ensure endpoint (fire-and-forget) then poll GET /voices/:id
-        this.ttsApi.ensureVoiceAudio(voiceId).subscribe({ next: () => { }, error: () => { } });
+        // Respect the `force` flag when requesting regeneration from the backend.
+        this.ttsApi.ensureVoiceAudio(voiceId, force).subscribe({ next: () => { }, error: () => { } });
 
         // Prefer WebSocket real-time updates when available; otherwise fall back to polling
         // Use StatusService (Angular DI) when available for real-time updates, and keep polling as reliable fallback.
@@ -58,9 +60,7 @@ export class VoiceGenerationService {
                     }
                 });
 
-                // Trigger backend generation (fire-and-forget)
-                this.ttsApi.ensureVoiceAudio(voiceId).subscribe({ next: () => {}, error: () => {} });
-
+                // Note: backend generation already triggered above; do not re-trigger here.
                 return () => wsSub.unsubscribe();
             });
 
