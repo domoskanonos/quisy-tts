@@ -313,7 +313,10 @@ class TTSService:
 
         # 1. Check global cache for the full text
         global_key = self.cache.get_key(text, params)
+        logger.info(f"Checking global cache for key: {global_key[:8]}...")
+        logger.debug(f"Global cache full key: {global_key}")
         if cached_path := self.cache.get(global_key):
+            logger.info(f"Global cache hit for key {global_key[:8]} -> {cached_path.name}")
             return cached_path
 
         # 2. Split text into chunks
@@ -332,11 +335,11 @@ class TTSService:
 
             # Fast path: check chunk cache (no lock)
             if chunk_path := self.cache.get(chunk_key):
+                logger.info(f"Chunk cache hit for key {chunk_key[:8]} ({i + 1}/{len(chunks)}) -> {chunk_path.name}")
+                logger.debug(f"Chunk full key: {chunk_key}")
                 chunk_paths.append(chunk_path)
                 continue
 
-            # Obtain per-chunk lock to avoid duplicate concurrent generation
-            lock = self._get_lock(chunk_key)
             # Obtain per-chunk lock to avoid duplicate concurrent generation
             lock = self._get_lock(chunk_key)
             try:
@@ -347,7 +350,8 @@ class TTSService:
                         chunk_paths.append(chunk_path)
                     else:
                         # Generate if still missed
-                        logger.info(f"Generating chunk for key: {chunk_key[:8]}...")
+                        logger.info(f"Generating chunk {i + 1}/{len(chunks)} for key: {chunk_key[:8]}...")
+                        logger.debug(f"Generating chunk full key: {chunk_key}")
                         filename = f"cache_{chunk_key}.wav"
                         output_path = settings.OUTPUT_DIR / filename
 
@@ -362,9 +366,12 @@ class TTSService:
                             # Register in cache
                             self.cache.set(chunk_key, generated_path)
                             chunk_paths.append(generated_path)
+                            logger.info(
+                                f"Generated chunk {i + 1}/{len(chunks)} and cached as {generated_path.name} (key {chunk_key[:8]})"
+                            )
 
                         except Exception as e:
-                            logger.error(f"Failed to generate chunk {i}: {e}")
+                            logger.error(f"Failed to generate chunk {i + 1}: {e}")
                             raise AudioGenerationError(f"Chunk generation failed: {e}") from e
             finally:
                 # Cleanup lock to prevent unbounded growth of the lock map.
