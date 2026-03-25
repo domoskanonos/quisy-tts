@@ -469,6 +469,7 @@ class TTSService:
 
         global_key = self.cache.get_key(text, params)
         logger.info(f"Streaming for key: {global_key[:8]}...")
+        logger.debug(f"Streaming global key full: {global_key}")
 
         # 1. Check global cache first
         if cached_path := self.cache.get(global_key):
@@ -483,6 +484,7 @@ class TTSService:
 
         # 2. Split and process chunks
         chunks = self.text_splitter.split(text, params.language or "german")
+        logger.info(f"Streaming will process {len(chunks)} chunks for key {global_key[:8]}")
 
         # We need to collect paths to potentially save global cache at the end?
         # Streaming is often for immediate playback, but if we can cache the result, great.
@@ -495,16 +497,26 @@ class TTSService:
 
             # Fast path
             chunk_path = self.cache.get(chunk_key)
-            if not chunk_path:
-                # Acquire per-chunk lock to prevent duplicate concurrent generation
+            if chunk_path:
+                logger.info(
+                    f"Stream: chunk cache hit for key {chunk_key[:8]} ({i + 1}/{len(chunks)}) -> {chunk_path.name}"
+                )
+                logger.debug(f"Stream chunk full key: {chunk_key}")
+            else:
+                logger.info(f"Stream: cache miss for chunk {i + 1}/{len(chunks)} (key {chunk_key[:8]}) - generating")
                 lock = self._get_lock(chunk_key)
                 async with lock:
                     # Re-check inside lock
                     chunk_path = self.cache.get(chunk_key)
-                    if not chunk_path:
+                    if chunk_path:
+                        logger.info(
+                            f"Stream: chunk cache hit inside lock for key {chunk_key[:8]} ({i + 1}/{len(chunks)}) -> {chunk_path.name}"
+                        )
+                    else:
                         # Generate and save chunk
                         output_path = settings.OUTPUT_DIR / f"cache_{chunk_key}.wav"
                         try:
+                            logger.debug(f"Stream: generating chunk full key: {chunk_key}")
                             result_path = await self.engine.generate_and_save(
                                 chunk_text,
                                 str(output_path),
@@ -512,11 +524,15 @@ class TTSService:
                             )
                             chunk_path = Path(result_path)
                             self.cache.set(chunk_key, chunk_path)
+                            logger.info(
+                                f"Stream: generated and cached chunk {i + 1}/{len(chunks)} -> {chunk_path.name} (key {chunk_key[:8]})"
+                            )
                         except Exception as e:
                             logger.error(f"Failed to generate chunk {i} for stream: {e}")
                             raise AudioGenerationError(f"Stream generation failed: {e}") from e
 
             # Stream the chunk file
+            logger.info(f"Streaming chunk {i + 1}/{len(chunks)} from {chunk_path.name}")
             with sf.SoundFile(str(chunk_path)) as f:
                 while True:
                     data = f.read(dtype="int16", frames=chunk_size // 2)
