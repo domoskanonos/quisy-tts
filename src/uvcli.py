@@ -28,6 +28,15 @@ except Exception:
     # python-dotenv is optional for runtime; env vars still work
     pass
 
+import sys
+from pathlib import Path
+
+# Ensure `src/` is on sys.path so `import api` works when this module
+# is executed as an installed script (the working directory may differ).
+_this_dir = Path(__file__).resolve().parent
+if str(_this_dir) not in sys.path:
+    sys.path.insert(0, str(_this_dir))
+
 from api import app
 
 
