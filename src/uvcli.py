@@ -57,8 +57,9 @@ def run() -> None:
     port = int(os.getenv("UV_PORT") or os.getenv("PORT") or 8000)
 
     reload_flag = _to_bool(os.getenv("UV_RELOAD"), True)
-    reload_dirs = _split_list(os.getenv("UV_RELOAD_DIRS"))
-    reload_excludes = _split_list(os.getenv("UV_RELOAD_EXCLUDES"))
+    # sensible defaults to avoid watching large output files
+    reload_dirs = _split_list(os.getenv("UV_RELOAD_DIRS")) or [str(_this_dir.parent)]
+    reload_excludes = _split_list(os.getenv("UV_RELOAD_EXCLUDES")) or ["output", "*.wav"]
     reload_delay = float(os.getenv("UV_RELOAD_DELAY") or 0.25)
     log_level = os.getenv("UV_LOG_LEVEL") or "info"
 
@@ -72,16 +73,31 @@ def run() -> None:
 
     # Pass the application as an import string so uvicorn's reloader can
     # import it in child processes: module:path (api.app:app)
-    uvicorn.run(
-        "api.app:app",
-        host=host,
-        port=port,
-        reload=reload_flag,
-        reload_dirs=reload_dirs,
-        reload_excludes=reload_excludes,
-        reload_delay=reload_delay,
-        log_level=log_level,
-    )
+    try:
+        uvicorn.run(
+            "api.app:app",
+            host=host,
+            port=port,
+            reload=reload_flag,
+            reload_dirs=reload_dirs,
+            reload_excludes=reload_excludes,
+            reload_delay=reload_delay,
+            log_level=log_level,
+        )
+    except OSError as e:
+        # Provide a more actionable error message for common Windows socket issues
+        print("ERROR: Failed to bind socket.")
+        print(f"  host={host} port={port}")
+        print(f"  reload={reload_flag} reload_dirs={reload_dirs} reload_excludes={reload_excludes}")
+        print(f"  PYTHONPATH={os.environ.get('PYTHONPATH')}")
+        print(
+            "Possible causes: port already in use, OS reserved port range, firewall/antivirus or insufficient privileges."
+        )
+        print("Useful checks (PowerShell):")
+        print("  netstat -ano | findstr :<PORT>")
+        print("  netsh interface ipv4 show excludedportrange protocol=tcp")
+        print("  Run PowerShell as Administrator and retry, or try a different port (>=1025)")
+        raise
 
 
 if __name__ == "__main__":
