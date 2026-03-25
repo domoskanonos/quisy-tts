@@ -41,19 +41,32 @@ class FileCacheService(CacheService):
         return lock
 
     def get_key(self, text: str, params: TTSParams) -> str:
-        """Generate a cache key from text and parameters."""
+        """Generate a stable cache key from text and parameters.
+
+        The key includes a normalized form of the text and all generation parameters
+        that can influence the produced audio (language, mode, model size, reference
+        audio, ref_text, instruct and speaker). The normalization trims and
+        collapses whitespace so minor formatting changes don't cause cache misses.
+
+        We use SHA-256 to avoid MD5 collisions and produce a compact hex digest.
+        """
+        # Normalize text: trim and collapse all whitespace to a single space
+        normalized_text = " ".join(text.split()) if text is not None else ""
+
         # Include all parameters that affect the output audio in the hash
-        content = (
-            f"{text}:"
-            f"{params.language}:"
-            f"{params.mode}:"
-            f"{params.model_size}:"
-            f"{params.reference_audio or ''}:"
-            f"{params.ref_text or ''}:"
-            f"{params.instruct or ''}:"
-            f"{params.speaker or ''}"
-        )
-        return hashlib.md5(content.encode()).hexdigest()
+        parts = [
+            normalized_text,
+            params.language or "",
+            params.mode or "",
+            params.model_size or "",
+            params.reference_audio or "",
+            params.ref_text or "",
+            params.instruct or "",
+            params.speaker or "",
+        ]
+
+        content = ":".join(parts)
+        return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
     def get(self, key: str) -> Path | None:
         """Retrieve cached audio by key."""

@@ -38,6 +38,15 @@
                     }
                 </button>
             </div>
+            <!-- Progress bar for reference generation -->
+            @if (isGenerating()) {
+            <div class="refgen-progress">
+                <div class="progress-bar-outer">
+                    <div class="progress-bar-inner" [style.width.%]="refGenProgress()"></div>
+                </div>
+                <div class="progress-text">{{ refGenMessage() }} - {{ refGenProgress() }}%</div>
+            </div>
+            }
         </div>
 
         <!-- Audio Player (Floating/Bottom) -->

@@ -86,10 +86,11 @@ class ProjectConfig:
 
             # collect keys from .env file if present
             env_file_path = ProjectSettings.model_config.get("env_file")
+            env_file_path_str = str(env_file_path) if env_file_path is not None else None
             env_file_keys: set[str] = set()
             try:
-                if env_file_path and Path(env_file_path).is_file():
-                    with open(env_file_path, "r", encoding="utf-8") as fh:
+                if env_file_path_str and Path(env_file_path_str).is_file():
+                    with open(env_file_path_str, "r", encoding="utf-8") as fh:
                         for line in fh:
                             line = line.strip()
                             if not line or line.startswith("#"):

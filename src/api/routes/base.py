@@ -1,7 +1,7 @@
 """Base mode (voice cloning) routes."""
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, JSONResponse, Response
 
 from api.dependencies import get_cleanup_service, get_tts_service, get_voice_service
 from config import ProjectConfig
@@ -28,7 +28,7 @@ async def generate_base_06b(
     service: TTSService = Depends(get_tts_service),
     cleanup: CleanupService = Depends(get_cleanup_service),
     voice_service: VoiceService = Depends(get_voice_service),
-) -> FileResponse:
+) -> Response:
     """Generate audio using base mode (voice cloning) with 0.6B model."""
     # If a reference_audio is supplied it must be a voice ID (filenames are no longer accepted)
     if request.reference_audio:
@@ -44,7 +44,7 @@ async def generate_base_17b(
     service: TTSService = Depends(get_tts_service),
     cleanup: CleanupService = Depends(get_cleanup_service),
     voice_service: VoiceService = Depends(get_voice_service),
-) -> FileResponse:
+) -> Response:
     """Generate audio using base mode (voice cloning) with 1.7B model."""
     if request.reference_audio:
         if voice_service.get_voice(request.reference_audio) is None:
@@ -58,9 +58,28 @@ async def _generate(
     service: TTSService,
     background_tasks: BackgroundTasks,
     cleanup: CleanupService,
-) -> FileResponse:
+) -> Response:
     """Internal handler for base mode generation."""
     try:
+        # If reference_audio is a voice ID and that voice lacks audio, generate it first
+        if request.reference_audio:
+            from services.voice_service import VoiceService
+
+            vs = VoiceService()
+            v = vs.get_voice(request.reference_audio)
+            if v and not v.get("audio_filename"):
+                # Do not block the request: start background generation and ask client to poll
+                logger.info(
+                    f"Reference audio missing for voice {request.reference_audio}; triggering background generation."
+                )
+                service.trigger_reference_audio_generation(request.reference_audio)
+                return JSONResponse(
+                    status_code=202,
+                    content={
+                        "status": "queued",
+                        "message": "Reference audio generation started in background. Poll /api/voices/{id}/ensure-audio/status",
+                    },
+                )
         result_path = await service.generate_audio(
             text=request.text,
             language=request.language,

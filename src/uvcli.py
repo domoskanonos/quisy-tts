@@ -15,7 +15,6 @@ Environment variables supported (defaults shown):
 from __future__ import annotations
 
 import os
-import typing
 
 import uvicorn
 
@@ -37,7 +36,6 @@ _this_dir = Path(__file__).resolve().parent
 if str(_this_dir) not in sys.path:
     sys.path.insert(0, str(_this_dir))
 
-from api import app
 
 
 def _to_bool(value: str | None, default: bool) -> bool:
@@ -84,7 +82,7 @@ def run() -> None:
             reload_delay=reload_delay,
             log_level=log_level,
         )
-    except OSError as e:
+    except OSError:
         # Provide a more actionable error message for common Windows socket issues
         print("ERROR: Failed to bind socket.")
         print(f"  host={host} port={port}")

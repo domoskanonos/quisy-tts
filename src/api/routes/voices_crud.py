@@ -13,6 +13,8 @@ from services.voice_service import VoiceService
 
 logger = ProjectConfig.get_logger()
 
+logger = ProjectConfig.get_logger()
+
 router = APIRouter(tags=["Voice Management"])
 
 # Singleton service instance
@@ -149,6 +151,13 @@ def get_audio(voice_id: str) -> FileResponse:
     )
 
 
+@router.get("/{voice_id}/ensure-audio/status", response_model=dict)
+def ensure_audio_status(voice_id: str, tts_service: TTSService = Depends(get_tts_service)) -> dict:
+    """Return background generation status for a voice."""
+    status = tts_service.get_reference_generation_status(voice_id)
+    return status
+
+
 # ─── Ensure Audio (Background Generation) ────────────────────────
 
 
@@ -188,8 +197,6 @@ async def _generate_preview_task(
             service.set_audio(voice_id, audio_data, f"preview_{voice_id}.wav")
 
             # Cleanup temp file from output dir if needed, or let cleanup service handle it
-            # But TTSService saves to OUTPUT_DIR. We copied it to VOICES_DIR via set_audio.
-            # So we can delete the temp one.
             try:
                 path.unlink()
             except Exception as e:
@@ -217,18 +224,12 @@ async def ensure_audio(
     if voice.get("audio_filename"):
         return {"status": "exists", "message": "Audio already exists"}
 
-    # Check requirements
-    if not voice.get("example_text"):
-        raise HTTPException(status_code=400, detail="Voice has no example text")
+    # Check requirements: we only auto-generate when an instruct is available
+    if not voice.get("instruct"):
+        raise HTTPException(
+            status_code=400, detail="Voice has no instruct text; automatic generation is disabled for this voice"
+        )
 
-    # Trigger background task
-    background_tasks.add_task(
-        _generate_preview_task,
-        voice_id=voice_id,
-        text=voice["example_text"],
-        language=voice.get("language", "german"),
-        instruct=voice.get("instruct"),
-        tts_service=tts_service,
-    )
-
+    # Trigger background generation via TTS service (idempotent)
+    tts_service.trigger_reference_audio_generation(voice_id)
     return {"status": "triggered", "message": "Generation started in background"}

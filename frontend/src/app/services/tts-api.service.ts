@@ -98,4 +98,8 @@ export class TtsApiService {
             {}
         );
     }
+
+    getEnsureAudioStatus(voiceId: string): Observable<any> {
+        return this.http.get<any>(`${this.baseUrl}/voices/${voiceId}/ensure-audio/status`);
+    }
 }

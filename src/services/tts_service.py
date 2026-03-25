@@ -9,9 +9,12 @@ import soundfile as sf
 
 from config import ProjectConfig
 from core import AudioGenerationError, CacheService, TTSEngine
+from core.exceptions import ReferenceAudioNotFoundError
+from services.voice_service import VoiceService
 from schemas import TTSParams
 from schemas.languages import resolve_language
 from services.text_splitter import get_text_splitter
+from api.websocket_status_manager import status_ws_manager
 
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
@@ -36,6 +39,196 @@ class TTSService:
         self.text_splitter = get_text_splitter()
         # locks keyed by chunk cache key to prevent duplicate concurrent generation
         self._locks: dict[str, asyncio.Lock] = {}
+        # reference audio generation tasks/status
+        self._ref_gen_tasks: dict[str, asyncio.Task] = {}
+        self._ref_gen_status: dict[str, dict] = {}
+
+    def trigger_reference_audio_generation(self, voice_id: str) -> None:
+        """Start background generation for a voice's reference audio.
+
+        If a generation is already running for the voice, this is a no-op.
+        The status can be queried via `get_reference_generation_status`.
+        """
+        # If already running, do nothing
+        task = self._ref_gen_tasks.get(voice_id)
+        if task and not task.done():
+            return
+
+        # Mark queued status and notify subscribers (fire-and-forget)
+        self._ref_gen_status[voice_id] = {"status": "pending", "message": "queued"}
+        try:
+            asyncio.create_task(
+                status_ws_manager.broadcast_to_voice(
+                    voice_id, {"type": "ref-gen", "voice_id": voice_id, "status": "queued", "message": "queued"}
+                )
+            )
+        except Exception:
+            # best-effort
+            pass
+
+        # Create and store task
+        t = asyncio.create_task(self._run_ref_gen_task(voice_id))
+        self._ref_gen_tasks[voice_id] = t
+
+    async def _run_ref_gen_task(self, voice_id: str) -> None:
+        """Internal coroutine run by background task to generate and persist audio."""
+        # Update running status and broadcast
+        self._ref_gen_status[voice_id] = {"status": "running", "message": "starting", "progress": 0}
+        try:
+            # notify start
+            try:
+                await status_ws_manager.broadcast_to_voice(
+                    voice_id,
+                    {
+                        "type": "ref-gen",
+                        "voice_id": voice_id,
+                        "status": "running",
+                        "progress": 0,
+                        "message": "starting",
+                    },
+                )
+            except Exception:
+                pass
+
+            await self._ensure_reference_audio_for_voice_id(voice_id)
+
+            self._ref_gen_status[voice_id] = {"status": "done", "message": "completed", "progress": 100}
+            try:
+                await status_ws_manager.broadcast_to_voice(
+                    voice_id,
+                    {
+                        "type": "ref-gen",
+                        "voice_id": voice_id,
+                        "status": "done",
+                        "progress": 100,
+                        "message": "completed",
+                    },
+                )
+            except Exception:
+                pass
+        except Exception as e:
+            self._ref_gen_status[voice_id] = {"status": "failed", "message": str(e)}
+            try:
+                await status_ws_manager.broadcast_to_voice(
+                    voice_id, {"type": "ref-gen", "voice_id": voice_id, "status": "failed", "message": str(e)}
+                )
+            except Exception:
+                pass
+
+    def get_reference_generation_status(self, voice_id: str) -> dict:
+        """Return the current background generation status for voice_id.
+
+        Possible statuses: pending/running/done/failed. If unknown, returns pending.
+        """
+        return self._ref_gen_status.get(voice_id, {"status": "pending", "message": "not_started"})
+
+    async def _ensure_reference_audio_for_voice_id(self, voice_id: str) -> None:
+        """Ensure a voice with id `voice_id` has an audio file. If missing,
+        synchronously generate it (voice_design) and persist it to the voices DB.
+
+        This blocks the calling request until generation completes so the
+        subsequent base cloning has a concrete reference audio available.
+        """
+        vs = VoiceService()
+        voice = vs.get_voice(voice_id)
+        if voice is None:
+            raise ReferenceAudioNotFoundError(f"Voice '{voice_id}' not found in database.")
+
+        if voice.get("audio_filename"):
+            # already has audio
+            return
+
+        # Need example_text to generate via voice_design
+        example_text = voice.get("example_text")
+        if not example_text:
+            raise ReferenceAudioNotFoundError(f"Voice '{voice_id}' has no example_text to generate audio from.")
+
+        # Prepare a temporary output path
+        tmp_filename = f"preview_{voice_id}.wav"
+        tmp_path = settings.OUTPUT_DIR / tmp_filename
+        tmp_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Use voice_design mode to synthesize an example audio
+        params = {
+            "language": voice.get("language", "german"),
+            "instruct": voice.get("instruct") or "A clear and natural voice.",
+            "mode": "voice_design",
+            "model_size": "1.7B",
+        }
+
+        try:
+            # engine expects TTSParams model; call engine.generate_and_save which accepts params via TTSParams in implementations
+            # We construct a minimal TTSParams instance via the internal model if needed. Simpler: call engine.generate_and_save directly
+            # Build a TTSParams-like object using the internal schema
+            from schemas.internal import TTSParams
+
+            gen_params = TTSParams(
+                language=params["language"],
+                instruct=params["instruct"],
+                mode=params["mode"],
+                model_size=params["model_size"],
+            )
+
+            logger.info(f"Automatic generation: starting reference audio generation for voice {voice_id}")
+            # Notify model loading stage
+            try:
+                await status_ws_manager.broadcast_to_voice(
+                    voice_id,
+                    {
+                        "type": "ref-gen",
+                        "voice_id": voice_id,
+                        "status": "running",
+                        "progress": 10,
+                        "message": "loading_model",
+                    },
+                )
+            except Exception:
+                pass
+
+            result_path = await self.engine.generate_and_save(example_text, str(tmp_path), gen_params)
+
+            # Notify synthesis finished, about to persist
+            try:
+                await status_ws_manager.broadcast_to_voice(
+                    voice_id,
+                    {
+                        "type": "ref-gen",
+                        "voice_id": voice_id,
+                        "status": "running",
+                        "progress": 70,
+                        "message": "synthesis_complete",
+                    },
+                )
+            except Exception:
+                pass
+
+            # Read bytes and persist via VoiceService.set_audio
+            audio_data = Path(result_path).read_bytes()
+            vs.set_audio(voice_id, audio_data, f"preview_{voice_id}.wav")
+            logger.info(f"Automatic generation: finished and persisted reference audio for voice {voice_id}")
+            try:
+                await status_ws_manager.broadcast_to_voice(
+                    voice_id,
+                    {
+                        "type": "ref-gen",
+                        "voice_id": voice_id,
+                        "status": "running",
+                        "progress": 90,
+                        "message": "persisted",
+                    },
+                )
+            except Exception:
+                pass
+
+            # Cleanup temporary file if it still exists
+            try:
+                if Path(result_path).exists():
+                    Path(result_path).unlink()
+            except Exception:
+                pass
+
+        except Exception as e:
+            raise AudioGenerationError(f"Failed to generate reference audio for voice '{voice_id}': {e}") from e
 
     def _get_lock(self, key: str) -> asyncio.Lock:
         """Return an asyncio.Lock for the given key, creating it if necessary.
