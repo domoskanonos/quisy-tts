@@ -11,3 +11,6 @@ __pycache__
 .mypy_cache
 .ruff_cache
 .pytest_cache
+
+# Ignore committed SQLite app DB created during tests/dev
+app/quisy-tts.db
