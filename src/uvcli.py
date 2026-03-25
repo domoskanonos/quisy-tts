@@ -62,8 +62,18 @@ def run() -> None:
     reload_delay = float(os.getenv("UV_RELOAD_DELAY") or 0.25)
     log_level = os.getenv("UV_LOG_LEVEL") or "info"
 
+    # Ensure child reload processes can import the application package by
+    # adding the `src/` directory to PYTHONPATH (uvicorn spawns subprocesses
+    # for reload/workers that inherit environment variables).
+    src_dir = str(_this_dir)
+    prev_py = os.environ.get("PYTHONPATH", "")
+    if src_dir not in prev_py.split(os.pathsep):
+        os.environ["PYTHONPATH"] = (prev_py + os.pathsep + src_dir).lstrip(os.pathsep)
+
+    # Pass the application as an import string so uvicorn's reloader can
+    # import it in child processes: module:path (api.app:app)
     uvicorn.run(
-        app,
+        "api.app:app",
         host=host,
         port=port,
         reload=reload_flag,
