@@ -37,7 +37,6 @@ if str(_this_dir) not in sys.path:
     sys.path.insert(0, str(_this_dir))
 
 
-
 def _to_bool(value: str | None, default: bool) -> bool:
     if value is None:
         return default

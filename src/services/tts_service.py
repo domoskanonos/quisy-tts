@@ -96,7 +96,6 @@ class TTSService:
                 )
             except Exception:
                 pass
-
             await self._ensure_reference_audio_for_voice_id(voice_id, force=force)
 
             self._ref_gen_status[voice_id] = {"status": "done", "message": "completed", "progress": 100}
@@ -113,6 +112,17 @@ class TTSService:
                 )
             except Exception:
                 pass
+        except asyncio.CancelledError:
+            # Task was cancelled (e.g., due to a forced restart). Record cancelled status
+            self._ref_gen_status[voice_id] = {"status": "cancelled", "message": "cancelled"}
+            try:
+                await status_ws_manager.broadcast_to_voice(
+                    voice_id, {"type": "ref-gen", "voice_id": voice_id, "status": "cancelled", "message": "cancelled"}
+                )
+            except Exception:
+                pass
+            # Re-raise so upstream asyncio sees the cancellation
+            raise
         except Exception as e:
             self._ref_gen_status[voice_id] = {"status": "failed", "message": str(e)}
             try:
@@ -362,6 +372,14 @@ class TTSService:
 
                         except Exception as e:
                             logger.error(f"Failed to generate chunk {i + 1}: {e}")
+                            # If generation was cancelled, remove any partial output file
+                            if isinstance(e, asyncio.CancelledError):
+                                try:
+                                    if output_path.exists():
+                                        output_path.unlink()
+                                except Exception:
+                                    pass
+                                raise
                             raise AudioGenerationError(f"Chunk generation failed: {e}") from e
             finally:
                 # Cleanup lock to prevent unbounded growth of the lock map.
