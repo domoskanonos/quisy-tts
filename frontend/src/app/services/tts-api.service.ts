@@ -88,6 +88,7 @@ export class TtsApiService {
     }
 
     getVoiceAudioUrl(voiceId: string): string {
+        // Add no-cache query param by default when used by player to avoid stale browser caching.
         return `${this.baseUrl}/voices/${voiceId}/audio`;
     }
 

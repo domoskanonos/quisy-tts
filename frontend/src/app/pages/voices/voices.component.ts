@@ -10,6 +10,7 @@ import { ButtonModule } from 'primeng/button';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageService, ConfirmationService } from 'primeng/api';
+import { StatusService } from '../../services/status.service';
 import { TtsApiService } from '../../services/tts-api.service';
 import { VoiceGenerationService } from '../../services/voice-generation.service';
 import { Voice } from '../../models/tts.models';
@@ -39,6 +40,7 @@ export class VoicesComponent implements OnInit {
     private readonly router = inject(Router);
     private readonly messageService = inject(MessageService);
     private readonly confirmService = inject(ConfirmationService);
+    private readonly statusSvc = inject(StatusService);
 
     voices = signal<Voice[]>([]);
     isLoading = signal(true);
@@ -193,24 +195,70 @@ export class VoicesComponent implements OnInit {
             this.messageService.add({ severity: 'warn', summary: 'Instruct fehlt', detail: 'Diese Stimme hat keinen Instruct-Text. Bitte bearbeite die Stimme zuerst.' });
             return;
         }
+        // If the user changed the text in the edit panel but didn't save, persist it first
+        const needsSave = this.editText.trim() !== (voice.example_text || '').trim() ||
+            this.editInstruct.trim() !== (voice.instruct || '').trim() ||
+            this.editName.trim() !== (voice.name || '').trim() ||
+            this.editLanguage !== (voice.language || 'german');
 
-        this.generatingVoiceId.set(voice.id);
-        this.messageService.add({ severity: 'info', summary: 'Generierung', detail: 'Erzeuge Beispiel-Audio...' });
+        const startGeneration = (v: Voice) => {
+            this.generatingVoiceId.set(v.id);
+            this.messageService.add({ severity: 'info', summary: 'Generierung', detail: 'Erzeuge Beispiel-Audio...' });
 
-        // Force regeneration when user explicitly requests preview generation
-        this.voiceGen.ensureVoiceAudio(voice, true).subscribe({
-            next: (updated: Voice) => {
-                this.generatingVoiceId.set(null);
-                const audio = new Audio(this.ttsApi.getVoiceAudioUrl(updated.id));
-                audio.play().catch(err => console.warn('Playback failed for uploaded audio, but generation succeeded', err));
-                this.loadVoices();
-                this.messageService.add({ severity: 'success', summary: 'Audio erstellt', detail: `Referenz-Audio für "${voice.name}" wurde generiert und gespeichert.` });
-            },
-            error: () => {
-                this.generatingVoiceId.set(null);
-                this.messageService.add({ severity: 'error', summary: 'Fehler', detail: 'Audio konnte nicht generiert werden. Ist das Backend erreichbar?' });
-            }
-        });
+            // Subscribe to status updates for progress UI
+            const statusSub = this.statusSvc.subscribeVoice(v.id).subscribe((ev: any) => {
+                if (!ev) return;
+                if (ev.status === 'running' || ev.status === 'queued') {
+                    // show ephemeral info
+                    this.messageService.add({ severity: 'info', summary: 'Generierung', detail: ev.message || 'Generierung läuft...' });
+                } else if (ev.status === 'progress') {
+                    this.messageService.add({ severity: 'info', summary: 'Fortschritt', detail: `Fortschritt: ${ev.progress || 0}%` });
+                } else if (ev.status === 'done') {
+                    // handled by ensureVoiceAudio completion
+                } else if (ev.status === 'failed' || ev.status === 'cancelled') {
+                    // show error
+                    this.messageService.add({ severity: 'error', summary: 'Fehler', detail: ev.message || 'Generierung fehlgeschlagen' });
+                }
+            });
+
+            // Force regeneration when user explicitly requests preview generation
+            this.voiceGen.ensureVoiceAudio(v, true).subscribe({
+                next: (updated: Voice) => {
+                    this.generatingVoiceId.set(null);
+                    try { statusSub.unsubscribe(); } catch (_) {}
+                    const audio = new Audio(this.ttsApi.getVoiceAudioUrl(updated.id) + '?t=' + Date.now());
+                    audio.play().catch(err => console.warn('Playback failed for uploaded audio, but generation succeeded', err));
+                    this.loadVoices();
+                    this.messageService.add({ severity: 'success', summary: 'Audio erstellt', detail: `Referenz-Audio für "${v.name}" wurde generiert und gespeichert.` });
+                },
+                error: () => {
+                    this.generatingVoiceId.set(null);
+                    try { statusSub.unsubscribe(); } catch (_) {}
+                    this.messageService.add({ severity: 'error', summary: 'Fehler', detail: 'Audio konnte nicht generiert werden. Ist das Backend erreichbar?' });
+                }
+            });
+        };
+
+        if (needsSave) {
+            // Persist the current edits first, then start generation with the updated voice
+            this.ttsApi.updateVoice(voice.id, {
+                name: this.editName,
+                example_text: this.editText,
+                instruct: this.editInstruct.trim() || null,
+                language: this.editLanguage,
+            }).subscribe({
+                next: (updated: Voice) => {
+                    // update local state and start generation
+                    this.editVoice = updated;
+                    startGeneration(updated);
+                },
+                error: () => {
+                    this.messageService.add({ severity: 'error', summary: 'Fehler', detail: 'Stimme konnte nicht gespeichert werden. Generierung abgebrochen.' });
+                }
+            });
+        } else {
+            startGeneration(voice);
+        }
     }
 
     saveEdit(): void {
