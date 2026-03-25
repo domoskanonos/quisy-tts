@@ -84,6 +84,10 @@
 
     i {
         font-size: 14px;
+        /* Ensure primeicons font is used even if globally overridden */
+        font-family: 'primeicons' !important;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
     }
 
     &:hover {
@@ -102,6 +106,7 @@
 
         i {
             font-size: 18px;
+            font-family: 'primeicons' !important;
         }
 
         &:hover {
