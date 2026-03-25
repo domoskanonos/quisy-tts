@@ -293,7 +293,8 @@ export class VoicesComponent implements OnInit {
         }
     }
 
-    private generateAndPlay(voice: Voice, force: boolean = false): void {
+    // make this method public because the template calls it via (auxclick)
+    public generateAndPlay(voice: Voice, force: boolean = false): void {
         if (this.generatingVoiceId()) return; // already generating
         if (!voice.instruct) {
             this.messageService.add({
