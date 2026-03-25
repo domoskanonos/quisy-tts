@@ -72,10 +72,36 @@ If you want to run without GPU in development, set `DEVICE=cpu`, but note that p
    uv run python scripts/download_models.py
    ```
 
-4. **Run the API**:
-   ```bash
-   uv run python src/main.py
-   ```
+4. **Run the API (development with hot reload)**:
+   You can now start the backend in dev mode via `uv` and enable hot reload.
+
+   - Using environment variables directly (PowerShell example):
+     ```powershell
+     $env:UV_HOST = '0.0.0.0'; $env:UV_PORT = '8050'; uv run start-dev
+     ```
+
+   - Or create a `.env` file in the project root and set overrides there. Supported variables:
+     - `UV_HOST` / `HOST` - bind address (default `127.0.0.1`)
+     - `UV_PORT` / `PORT` - port (default `8000`)
+     - `UV_RELOAD` - enable/disable reload (`true`/`false`, default `true`)
+     - `UV_RELOAD_DIRS` - comma-separated directories to watch for reloads
+     - `UV_RELOAD_EXCLUDES` - comma-separated glob patterns to ignore
+     - `UV_RELOAD_DELAY` - debounce delay in seconds for reloads (default `0.25`)
+     - `UV_LOG_LEVEL` - uvicorn log level (default `info`)
+
+     Example `.env`:
+     ```text
+     UV_HOST=0.0.0.0
+     UV_PORT=8050
+     UV_RELOAD=true
+     UV_RELOAD_DIRS=src,api
+     UV_LOG_LEVEL=debug
+     ```
+
+   - Then run:
+     ```bash
+     uv run start-dev
+     ```
 
 5. **Docker Usage**:
    We provide a pre-built Docker image.
