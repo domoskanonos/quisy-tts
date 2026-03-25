@@ -153,6 +153,8 @@ class TTSService:
 
         # Compute expected cache key for the voice's example_text + params
         example_text = voice.get("example_text")
+        # Diagnostic log: show the exact example_text read from DB when starting generation
+        logger.info(f"Ref-gen debug: voice {voice_id} example_text (db)={example_text!r}")
         if not example_text:
             raise ReferenceAudioNotFoundError(f"Voice '{voice_id}' has no example_text to generate audio from.")
 
@@ -165,6 +167,7 @@ class TTSService:
         )
 
         global_key = self.cache.get_key(example_text, gen_params)
+        logger.info(f"Ref-gen debug: voice {voice_id} computed global_key={global_key[:12]} for current example_text")
         short = global_key[:12]
         expected_voice_fn = f"voice_{voice_id}_{short}.wav"
 
