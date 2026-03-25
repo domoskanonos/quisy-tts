@@ -12,7 +12,6 @@ import asyncio
 import time
 from pathlib import Path
 
-import pytest
 from fastapi.testclient import TestClient
 
 # Ensure src is importable like other tests
@@ -31,7 +30,6 @@ os.environ.setdefault(
 
 from api import app
 from api.dependencies import get_tts_service
-from services.cache_service import FileCacheService
 from config import ProjectConfig
 
 

@@ -118,11 +118,7 @@
                     placeholder="A warm, friendly female voice with a calm tone..." class="dialog-input"></textarea>
             </div>
 
-            <div class="dialog-field">
-                <label class="dialog-label">System Prompt (Personality)</label>
-                <textarea pTextarea [(ngModel)]="newVoiceSystemPrompt" rows="4"
-                    placeholder="Beschreibe die Persönlichkeit dieser Stimme für LLM-Systemnachrichten..." class="dialog-input"></textarea>
-            </div>
+            <!-- system_prompt removed -->
 
             <div class="dialog-field">
                 <label class="dialog-label">Sprache</label>
@@ -190,10 +186,7 @@
                     <textarea pTextarea name="instruct" [(ngModel)]="editInstruct" rows="2" class="dialog-input"
                         placeholder="A warm, friendly female voice with a calm tone..."></textarea>
 
-                    <label class="dialog-label">System Prompt (Personality)</label>
-                    <textarea pTextarea name="system_prompt" [(ngModel)]="editSystemPrompt" rows="6"
-                        class="dialog-input" placeholder="Beschreibe die Persönlichkeit dieser Stimme für LLM-Systemnachrichten..."></textarea>
-                    <small class="help">Kurz: 1–3 Absätze. In der Sprache der Stimme verfassen. Max. 2000 Zeichen. {{ editSystemPrompt.length }}/2000</small>
+                    <!-- system_prompt removed -->
                 </div>
 
                 <div class="right-col">

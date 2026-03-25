@@ -7,7 +7,6 @@ from typing import Any
 import asyncio
 
 
-
 class TTSEngine(ABC):
     """Abstract interface for Text-to-Speech engines.
 

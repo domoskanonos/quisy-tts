@@ -49,13 +49,13 @@ export class VoicesComponent implements OnInit {
     newVoiceName = '';
     newVoiceText = '';
     newVoiceInstruct = '';
-    newVoiceSystemPrompt = '';
+    // system_prompt removed
     newVoiceLanguage = 'german';
     editVoice: Voice | null = null;
     editName = '';
     editText = '';
     editInstruct = '';
-    editSystemPrompt = '';
+    // system_prompt removed
     editLanguage = 'german';
     selectedAudioFile: File | null = null;
     isUploading = signal(false);
@@ -100,7 +100,7 @@ export class VoicesComponent implements OnInit {
         this.newVoiceName = '';
         this.newVoiceText = '';
         this.newVoiceInstruct = '';
-        this.newVoiceSystemPrompt = '';
+        // system_prompt removed
         this.newVoiceLanguage = 'german';
         this.selectedAudioFile = null;
         this.showCreateDialog.set(true);
@@ -175,7 +175,7 @@ export class VoicesComponent implements OnInit {
         this.editName = voice.name;
         this.editText = voice.example_text;
         this.editInstruct = voice.instruct || '';
-        this.editSystemPrompt = (voice as any).system_prompt || '';
+        // system_prompt removed
         this.editLanguage = voice.language || 'german';
         this.selectedAudioFile = null;
         this.showEditDialog.set(true);
