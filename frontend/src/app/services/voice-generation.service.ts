@@ -15,7 +15,7 @@ export class VoiceGenerationService {
      * Otherwise the method will generate an example audio via Voice Design and upload it, returning the
      * updated Voice from the backend.
      */
-    ensureVoiceAudio(voice: Voice): Observable<Voice> {
+    ensureVoiceAudio(voice: Voice, force: boolean = false): Observable<Voice> {
         // Centralize generation on the backend: trigger server-side generation and poll status
         if (voice.audio_filename) return of(voice);
 
@@ -24,7 +24,7 @@ export class VoiceGenerationService {
         }
 
         // Trigger backend generation and poll until done
-        this.ttsApi.ensureVoiceAudio(voice.id).subscribe({ next: () => {}, error: () => {} });
+        this.ttsApi.ensureVoiceAudio(voice.id, force).subscribe({ next: () => {}, error: () => {} });
         return this.ensureVoiceAudioById(voice.id);
     }
 
@@ -84,6 +84,5 @@ export class VoiceGenerationService {
                 const pollSub = polling$.subscribe({ next: v => { subscriber.next(v); subscriber.complete(); }, error: e => subscriber.error(e) });
                 return () => { wsSub.unsubscribe(); pollSub.unsubscribe(); };
             });
-        }
-    }
+}
 }

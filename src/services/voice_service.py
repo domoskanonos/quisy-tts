@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS voices (
     name TEXT NOT NULL,
     example_text TEXT NOT NULL,
     instruct TEXT,
+    system_prompt TEXT,
     language TEXT NOT NULL DEFAULT 'german',
     audio_filename TEXT,
     is_default INTEGER NOT NULL DEFAULT 0,
@@ -81,6 +82,15 @@ class VoiceService:
             conn.execute("ALTER TABLE voices ADD COLUMN language TEXT NOT NULL DEFAULT 'german'")
             conn.commit()
 
+        # Ensure system_prompt column exists
+        if "system_prompt" not in columns:
+            logger.info("Migrating voices table: adding 'system_prompt' column...")
+            try:
+                conn.execute("ALTER TABLE voices ADD COLUMN system_prompt TEXT")
+                conn.commit()
+            except Exception:
+                logger.warning("Failed to add 'system_prompt' column during migration; continuing.")
+
         # Normalize existing language values to canonical form (resolve_language)
         try:
             rows = conn.execute("SELECT id, language FROM voices").fetchall()
@@ -103,13 +113,14 @@ class VoiceService:
         for i, voice in enumerate(DEFAULT_VOICES):
             voice_id = f"default_{i + 1:03d}"
             conn.execute(
-                """INSERT INTO voices (id, name, example_text, instruct, language, audio_filename, is_default, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, NULL, 1, ?, ?)""",
+                """INSERT INTO voices (id, name, example_text, instruct, system_prompt, language, audio_filename, is_default, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, NULL, 1, ?, ?)""",
                 (
                     voice_id,
                     voice["name"],
                     voice["example_text"],
-                    voice["instruct"],
+                    voice.get("instruct"),
+                    voice.get("system_prompt"),
                     voice.get("language", "german"),
                     now,
                     now,
@@ -126,6 +137,7 @@ class VoiceService:
             "name": row["name"],
             "example_text": row["example_text"],
             "instruct": row["instruct"],
+            "system_prompt": row["system_prompt"] if "system_prompt" in row.keys() else None,
             "language": row["language"],
             "audio_filename": row["audio_filename"],
             "is_default": bool(row["is_default"]),
@@ -145,19 +157,20 @@ class VoiceService:
         """Return a single voice by ID, or None if not found."""
         with self._get_conn() as conn:
             row = conn.execute("SELECT * FROM voices WHERE id = ?", (voice_id,)).fetchone()
-        return self._row_to_dict(row) if row else None
+        return self._row_to_dict(row) if row is not None else None
 
     def get_voice_by_name(self, name: str) -> dict | None:
         """Return a single voice by name, or None if not found."""
         with self._get_conn() as conn:
             row = conn.execute("SELECT * FROM voices WHERE name = ?", (name,)).fetchone()
-        return self._row_to_dict(row) if row else None
+        return self._row_to_dict(row) if row is not None else None
 
     def create_voice(
         self,
         name: str,
         example_text: str,
         instruct: str | None = None,
+        system_prompt: str | None = None,
         language: str = "german",
     ) -> dict:
         """Create a new user voice."""
@@ -166,12 +179,13 @@ class VoiceService:
 
         with self._get_conn() as conn:
             conn.execute(
-                """INSERT INTO voices (id, name, example_text, instruct, language, audio_filename, is_default, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, NULL, 0, ?, ?)""",
-                (voice_id, name, example_text, instruct, language, now, now),
+                """INSERT INTO voices (id, name, example_text, instruct, system_prompt, language, audio_filename, is_default, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, NULL, 0, ?, ?)""",
+                (voice_id, name, example_text, instruct, system_prompt, language, now, now),
             )
 
         logger.info(f"Voice created: {voice_id} ({name})")
+        # get_voice may return None according to typing, but in normal flow it exists
         return self.get_voice(voice_id)  # type: ignore[return-value]
 
     def update_voice(
@@ -181,6 +195,7 @@ class VoiceService:
         example_text: str | None = None,
         instruct: str | None = None,
         language: str | None = None,
+        system_prompt: str | None = None,
     ) -> dict | None:
         """Update voice metadata. Returns updated voice or None if not found."""
         voice = self.get_voice(voice_id)
@@ -203,6 +218,9 @@ class VoiceService:
         if language is not None:
             updates.append("language = ?")
             params.append(language)
+        if system_prompt is not None:
+            updates.append("system_prompt = ?")
+            params.append(system_prompt)
 
         if not updates:
             return voice
@@ -242,34 +260,50 @@ class VoiceService:
         logger.info(f"Voice deleted: {voice_id}")
         return True
 
-    def set_audio(self, voice_id: str, audio_data: bytes, original_filename: str) -> dict | None:
+    def set_audio(
+        self, voice_id: str, audio_data: bytes, original_filename: str, audio_filename: str | None = None
+    ) -> dict | None:
         """Save or replace the audio file for a voice."""
         voice = self.get_voice(voice_id)
         if voice is None:
             return None
 
-        # Remove old audio file if exists
-        old_filename = voice.get("audio_filename")
-        if old_filename:
-            old_path = self._voices_dir / old_filename
-            if old_path.exists():
-                old_path.unlink()
+        # Remove old generated audio files for this voice (keep user uploads if they don't match prefix)
+        try:
+            for p in list(self._voices_dir.glob(f"voice_{voice_id}_*.wav")):
+                # Only remove files that look like auto-generated (have a short hex suffix)
+                name = p.name
+                parts = name.rsplit("_", 2)
+                if len(parts) >= 2 and parts[-1].lower().endswith(".wav"):
+                    # e.g. voice_<id>_<short>.wav -> keep
+                    try:
+                        p.unlink()
+                        logger.info(f"Removed old generated audio file: {p.name}")
+                    except Exception:
+                        logger.debug(f"Failed to remove old generated audio file: {p}")
+        except Exception:
+            # ignore if glob/read fails
+            pass
 
-        # Determine extension from original filename
-        ext = Path(original_filename).suffix or ".wav"
-        audio_filename = f"voice_{voice_id}{ext}"
-        audio_path = self._voices_dir / audio_filename
+        # Determine filename to use
+        if audio_filename:
+            final_filename = audio_filename
+        else:
+            # Determine extension from original filename
+            ext = Path(original_filename).suffix or ".wav"
+            final_filename = f"voice_{voice_id}{ext}"
 
+        audio_path = self._voices_dir / final_filename
         audio_path.write_bytes(audio_data)
 
         now = datetime.now(UTC).isoformat()
         with self._get_conn() as conn:
             conn.execute(
                 "UPDATE voices SET audio_filename = ?, updated_at = ? WHERE id = ?",
-                (audio_filename, now, voice_id),
+                (final_filename, now, voice_id),
             )
 
-        logger.info(f"Audio saved for voice {voice_id}: {audio_filename}")
+        logger.info(f"Audio saved for voice {voice_id}: {final_filename}")
         return self.get_voice(voice_id)
 
     def get_audio_path(self, voice_id: str) -> Path | None:

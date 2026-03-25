@@ -92,11 +92,9 @@ export class TtsApiService {
     }
 
     // ─── Background Generation ──────────────────────────────────
-    ensureVoiceAudio(voiceId: string): Observable<{ status: string; message: string }> {
-        return this.http.post<{ status: string; message: string }>(
-            `${this.baseUrl}/voices/${voiceId}/ensure-audio`,
-            {}
-        );
+    ensureVoiceAudio(voiceId: string, force: boolean = false): Observable<{ status: string; message: string }> {
+        const url = `${this.baseUrl}/voices/${voiceId}/ensure-audio${force ? '?force=true' : ''}`;
+        return this.http.post<{ status: string; message: string }>(url, {});
     }
 
     getEnsureAudioStatus(voiceId: string): Observable<any> {

@@ -43,16 +43,23 @@ class TTSService:
         self._ref_gen_tasks: dict[str, asyncio.Task] = {}
         self._ref_gen_status: dict[str, dict] = {}
 
-    def trigger_reference_audio_generation(self, voice_id: str) -> None:
+    def trigger_reference_audio_generation(self, voice_id: str, force: bool = False) -> None:
         """Start background generation for a voice's reference audio.
 
         If a generation is already running for the voice, this is a no-op.
         The status can be queried via `get_reference_generation_status`.
         """
-        # If already running, do nothing
+        # If already running:
         task = self._ref_gen_tasks.get(voice_id)
         if task and not task.done():
-            return
+            if force:
+                # Cancel existing task and start a new forced generation
+                try:
+                    task.cancel()
+                except Exception:
+                    pass
+            else:
+                return
 
         # Mark queued status and notify subscribers (fire-and-forget)
         self._ref_gen_status[voice_id] = {"status": "pending", "message": "queued"}
@@ -67,10 +74,10 @@ class TTSService:
             pass
 
         # Create and store task
-        t = asyncio.create_task(self._run_ref_gen_task(voice_id))
+        t = asyncio.create_task(self._run_ref_gen_task(voice_id, force=force))
         self._ref_gen_tasks[voice_id] = t
 
-    async def _run_ref_gen_task(self, voice_id: str) -> None:
+    async def _run_ref_gen_task(self, voice_id: str, force: bool = False) -> None:
         """Internal coroutine run by background task to generate and persist audio."""
         # Update running status and broadcast
         self._ref_gen_status[voice_id] = {"status": "running", "message": "starting", "progress": 0}
@@ -90,7 +97,7 @@ class TTSService:
             except Exception:
                 pass
 
-            await self._ensure_reference_audio_for_voice_id(voice_id)
+            await self._ensure_reference_audio_for_voice_id(voice_id, force=force)
 
             self._ref_gen_status[voice_id] = {"status": "done", "message": "completed", "progress": 100}
             try:
@@ -122,7 +129,7 @@ class TTSService:
         """
         return self._ref_gen_status.get(voice_id, {"status": "pending", "message": "not_started"})
 
-    async def _ensure_reference_audio_for_voice_id(self, voice_id: str) -> None:
+    async def _ensure_reference_audio_for_voice_id(self, voice_id: str, force: bool = False) -> None:
         """Ensure a voice with id `voice_id` has an audio file. If missing,
         synchronously generate it (voice_design) and persist it to the voices DB.
 
@@ -134,43 +141,34 @@ class TTSService:
         if voice is None:
             raise ReferenceAudioNotFoundError(f"Voice '{voice_id}' not found in database.")
 
-        if voice.get("audio_filename"):
-            # already has audio
-            return
-
-        # Need example_text to generate via voice_design
+        # Compute expected cache key for the voice's example_text + params
         example_text = voice.get("example_text")
         if not example_text:
             raise ReferenceAudioNotFoundError(f"Voice '{voice_id}' has no example_text to generate audio from.")
 
-        # Prepare a temporary output path
-        tmp_filename = f"preview_{voice_id}.wav"
-        tmp_path = settings.OUTPUT_DIR / tmp_filename
-        tmp_path.parent.mkdir(parents=True, exist_ok=True)
+        # Build params for voice_design generation
+        gen_params = TTSParams(
+            language=voice.get("language", "german"),
+            instruct=voice.get("instruct") or "A clear and natural voice.",
+            mode="voice_design",
+            model_size="1.7B",
+        )
 
-        # Use voice_design mode to synthesize an example audio
-        params = {
-            "language": voice.get("language", "german"),
-            "instruct": voice.get("instruct") or "A clear and natural voice.",
-            "mode": "voice_design",
-            "model_size": "1.7B",
-        }
+        global_key = self.cache.get_key(example_text, gen_params)
+        short = global_key[:12]
+        expected_voice_fn = f"voice_{voice_id}_{short}.wav"
 
+        # If existing audio matches expected and not forcing, skip generation
+        existing_audio = voice.get("audio_filename")
+        if existing_audio and (global_key in existing_audio or short in existing_audio) and not force:
+            logger.info(f"Reference audio for voice {voice_id} is up-to-date (key {short}). Skipping generation.")
+            return
+
+        # Need example_text to generate via voice_design (already checked above)
+
+        # Prepare to generate via existing pipeline (generate_audio) which will store chunk cache files
         try:
-            # engine expects TTSParams model; call engine.generate_and_save which accepts params via TTSParams in implementations
-            # We construct a minimal TTSParams instance via the internal model if needed. Simpler: call engine.generate_and_save directly
-            # Build a TTSParams-like object using the internal schema
-            from schemas.internal import TTSParams
-
-            gen_params = TTSParams(
-                language=params["language"],
-                instruct=params["instruct"],
-                mode=params["mode"],
-                model_size=params["model_size"],
-            )
-
-            logger.info(f"Automatic generation: starting reference audio generation for voice {voice_id}")
-            # Notify model loading stage
+            logger.info(f"Automatic generation: starting reference audio generation for voice {voice_id} (key {short})")
             try:
                 await status_ws_manager.broadcast_to_voice(
                     voice_id,
@@ -185,27 +183,26 @@ class TTSService:
             except Exception:
                 pass
 
-            result_path = await self.engine.generate_and_save(example_text, str(tmp_path), gen_params)
+            # Use TTSService.generate_audio to leverage existing cache key generation and chunking.
+            generated_path = await self.generate_audio(
+                text=example_text,
+                language=gen_params.language,
+                mode=gen_params.mode,
+                model_size=gen_params.model_size,
+                instruct=gen_params.instruct,
+            )
 
-            # Notify synthesis finished, about to persist
-            try:
-                await status_ws_manager.broadcast_to_voice(
-                    voice_id,
-                    {
-                        "type": "ref-gen",
-                        "voice_id": voice_id,
-                        "status": "running",
-                        "progress": 70,
-                        "message": "synthesis_complete",
-                    },
-                )
-            except Exception:
-                pass
+            # generated_path is the cached global audio (cache_{global_key}.wav) or combined file.
+            # Copy it into voices dir with a deterministic name containing the short key.
+            target_path = vs._voices_dir / expected_voice_fn
+            target_path.write_bytes(Path(generated_path).read_bytes())
 
-            # Read bytes and persist via VoiceService.set_audio
-            audio_data = Path(result_path).read_bytes()
-            vs.set_audio(voice_id, audio_data, f"preview_{voice_id}.wav")
-            logger.info(f"Automatic generation: finished and persisted reference audio for voice {voice_id}")
+            # Persist via DB using set_audio override (new signature supports explicit filename)
+            vs.set_audio(voice_id, target_path.read_bytes(), target_path.name, audio_filename=expected_voice_fn)
+
+            logger.info(
+                f"Automatic generation: finished and persisted reference audio for voice {voice_id} as {expected_voice_fn}"
+            )
             try:
                 await status_ws_manager.broadcast_to_voice(
                     voice_id,
@@ -217,13 +214,6 @@ class TTSService:
                         "message": "persisted",
                     },
                 )
-            except Exception:
-                pass
-
-            # Cleanup temporary file if it still exists
-            try:
-                if Path(result_path).exists():
-                    Path(result_path).unlink()
             except Exception:
                 pass
 

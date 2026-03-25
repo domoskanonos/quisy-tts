@@ -6,6 +6,7 @@ import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
+import { ButtonModule } from 'primeng/button';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageService, ConfirmationService } from 'primeng/api';
@@ -24,6 +25,7 @@ import { Voice } from '../../models/tts.models';
         SelectModule,
         InputTextModule,
         TextareaModule,
+        ButtonModule,
         ToastModule,
         ConfirmDialogModule,
     ],
@@ -32,7 +34,7 @@ import { Voice } from '../../models/tts.models';
     styleUrl: './voices.component.scss',
 })
 export class VoicesComponent implements OnInit {
-    private readonly ttsApi = inject(TtsApiService);
+    public readonly ttsApi = inject(TtsApiService);
     private readonly voiceGen = inject(VoiceGenerationService);
     private readonly router = inject(Router);
     private readonly messageService = inject(MessageService);
@@ -47,11 +49,13 @@ export class VoicesComponent implements OnInit {
     newVoiceName = '';
     newVoiceText = '';
     newVoiceInstruct = '';
+    newVoiceSystemPrompt = '';
     newVoiceLanguage = 'german';
     editVoice: Voice | null = null;
     editName = '';
     editText = '';
     editInstruct = '';
+    editSystemPrompt = '';
     editLanguage = 'german';
     selectedAudioFile: File | null = null;
     isUploading = signal(false);
@@ -96,6 +100,7 @@ export class VoicesComponent implements OnInit {
         this.newVoiceName = '';
         this.newVoiceText = '';
         this.newVoiceInstruct = '';
+        this.newVoiceSystemPrompt = '';
         this.newVoiceLanguage = 'german';
         this.selectedAudioFile = null;
         this.showCreateDialog.set(true);
@@ -115,6 +120,7 @@ export class VoicesComponent implements OnInit {
             name: this.newVoiceName,
             example_text: this.newVoiceText,
             instruct: this.newVoiceInstruct.trim() || null,
+            system_prompt: this.newVoiceSystemPrompt.trim() || null,
             language: this.newVoiceLanguage,
         }).subscribe({
             next: voice => {
@@ -169,9 +175,43 @@ export class VoicesComponent implements OnInit {
         this.editName = voice.name;
         this.editText = voice.example_text;
         this.editInstruct = voice.instruct || '';
+        this.editSystemPrompt = (voice as any).system_prompt || '';
         this.editLanguage = voice.language || 'german';
         this.selectedAudioFile = null;
         this.showEditDialog.set(true);
+    }
+
+    closeEditPanel(): void {
+        this.showEditDialog.set(false);
+        this.selectedAudioFile = null;
+    }
+
+    generatePreview(): void {
+        if (!this.editVoice) return;
+        const voice = this.editVoice;
+        if (this.generatingVoiceId()) return;
+        if (!voice.instruct) {
+            this.messageService.add({ severity: 'warn', summary: 'Instruct fehlt', detail: 'Diese Stimme hat keinen Instruct-Text. Bitte bearbeite die Stimme zuerst.' });
+            return;
+        }
+
+        this.generatingVoiceId.set(voice.id);
+        this.messageService.add({ severity: 'info', summary: 'Generierung', detail: 'Erzeuge Beispiel-Audio...' });
+
+        // Force regeneration when user explicitly requests preview generation
+        this.voiceGen.ensureVoiceAudio(voice, true).subscribe({
+            next: (updated: Voice) => {
+                this.generatingVoiceId.set(null);
+                const audio = new Audio(this.ttsApi.getVoiceAudioUrl(updated.id));
+                audio.play().catch(err => console.warn('Playback failed for uploaded audio, but generation succeeded', err));
+                this.loadVoices();
+                this.messageService.add({ severity: 'success', summary: 'Audio erstellt', detail: `Referenz-Audio für "${voice.name}" wurde generiert und gespeichert.` });
+            },
+            error: () => {
+                this.generatingVoiceId.set(null);
+                this.messageService.add({ severity: 'error', summary: 'Fehler', detail: 'Audio konnte nicht generiert werden. Ist das Backend erreichbar?' });
+            }
+        });
     }
 
     saveEdit(): void {
@@ -181,6 +221,7 @@ export class VoicesComponent implements OnInit {
             name: this.editName,
             example_text: this.editText,
             instruct: this.editInstruct.trim() || null,
+            system_prompt: this.editSystemPrompt.trim() || null,
             language: this.editLanguage,
         }).subscribe({
             next: () => {
@@ -245,7 +286,7 @@ export class VoicesComponent implements OnInit {
 
     playOrGenerate(voice: Voice): void {
         if (voice.audio_filename) {
-            // Audio exists → play directly
+            // Audio exists → offer to regenerate if user holds modifier (Shift) or always play
             const audio = new Audio(this.ttsApi.getVoiceAudioUrl(voice.id));
             audio.play();
         } else {
@@ -254,7 +295,7 @@ export class VoicesComponent implements OnInit {
         }
     }
 
-    private generateAndPlay(voice: Voice): void {
+    private generateAndPlay(voice: Voice, force: boolean = false): void {
         if (this.generatingVoiceId()) return; // already generating
         if (!voice.instruct) {
             this.messageService.add({
@@ -270,7 +311,7 @@ export class VoicesComponent implements OnInit {
         this.messageService.add({ severity: 'info', summary: 'Generierung', detail: 'Erzeuge Beispiel-Audio...' });
 
         // Use unified generation service which handles generation + upload
-        this.voiceGen.ensureVoiceAudio(voice).subscribe({
+        this.voiceGen.ensureVoiceAudio(voice, force).subscribe({
             next: (updated: Voice) => {
                 this.generatingVoiceId.set(null);
                 // Play the newly uploaded audio; if cross-origin or auth prevents playing the direct URL,

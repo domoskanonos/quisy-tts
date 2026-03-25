@@ -64,6 +64,7 @@ def create_voice(data: VoiceCreate) -> dict:
         name=data.name,
         example_text=data.example_text,
         instruct=data.instruct,
+        system_prompt=data.system_prompt,
         language=data.language,
     )
     return voice
@@ -81,6 +82,7 @@ def update_voice(voice_id: str, data: VoiceUpdate) -> dict:
         name=data.name,
         example_text=data.example_text,
         instruct=data.instruct,
+        system_prompt=data.system_prompt,
         language=data.language,
     )
     if voice is None:
@@ -212,6 +214,7 @@ async def _generate_preview_task(
 async def ensure_audio(
     voice_id: str,
     background_tasks: BackgroundTasks,
+    force: bool = False,
     tts_service: TTSService = Depends(get_tts_service),
 ) -> dict[str, str]:
     """Trigger background audio generation if missing."""
@@ -231,5 +234,5 @@ async def ensure_audio(
         )
 
     # Trigger background generation via TTS service (idempotent)
-    tts_service.trigger_reference_audio_generation(voice_id)
+    tts_service.trigger_reference_audio_generation(voice_id, force=force)
     return {"status": "triggered", "message": "Generation started in background"}

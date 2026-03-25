@@ -331,3 +331,13 @@ body {
 .p-tabview .p-tabview-panels {
   background: transparent !important;
 }
+
+/* Ensure PrimeNG overlays render above our custom side-panel */
+.p-dropdown-panel,
+.p-select-panel,
+.p-overlaypanel,
+.p-overlay,
+.p-autocomplete-panel,
+.p-calendar {
+    z-index: 3000 !important;
+}

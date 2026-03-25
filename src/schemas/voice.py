@@ -41,6 +41,14 @@ class VoiceCreate(BaseModel):
         description="Instruct text describing the voice style for Qwen TTS.",
         json_schema_extra={"example": "A calm, professional male voice with a warm tone."},
     )
+    system_prompt: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="System prompt describing the voice's personality for LLM-driven text generation.",
+        json_schema_extra={
+            "example": "You are a warm, witty podcast host. Speak conversationally and ask engaging questions."
+        },
+    )
     language: str = Field(
         default="german",
         description="Language of the voice (e.g. german, english).",
@@ -68,6 +76,11 @@ class VoiceUpdate(BaseModel):
         max_length=500,
         description="New instruct text for voice style.",
     )
+    system_prompt: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="System prompt to update the voice's personality.",
+    )
     language: str | None = Field(
         default=None,
         description="New language for the voice.",
@@ -81,6 +94,7 @@ class VoiceResponse(BaseModel):
     name: str
     example_text: str
     instruct: str | None = None
+    system_prompt: str | None = None
     language: str = "german"
     audio_filename: str | None = None
     is_default: bool = False

@@ -194,7 +194,7 @@ export class SynthesisComponent implements OnInit {
             });
 
             // Trigger the backend generation (fire-and-forget)
-            this.voiceGen.ensureVoiceAudio(this.selectedVoice).subscribe({ next: () => {}, error: () => {} });
+            this.voiceGen.ensureVoiceAudio(this.selectedVoice, false).subscribe({ next: () => {}, error: () => {} });
         } catch (e) {
             // Fallback to previous polling approach
             this.voiceGen.ensureVoiceAudio(this.selectedVoice).subscribe({
