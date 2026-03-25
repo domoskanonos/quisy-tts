@@ -222,7 +222,10 @@ async def ensure_audio(
     if not voice:
         raise HTTPException(status_code=404, detail="Voice not found")
 
-    if voice.get("audio_filename"):
+    # If audio already exists and caller did not request a forced regeneration,
+    # return early to avoid unnecessary work. If `force` is True we proceed
+    # to trigger a regeneration even when an audio file is present.
+    if voice.get("audio_filename") and not force:
         return {"status": "exists", "message": "Audio already exists"}
 
     # Check requirements: we only auto-generate when an instruct is available
