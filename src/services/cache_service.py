@@ -1,6 +1,8 @@
 """File-based cache service implementation."""
 
 import hashlib
+import time
+from datetime import datetime, timedelta
 import shutil
 from pathlib import Path
 
@@ -82,3 +84,39 @@ class FileCacheService(CacheService):
         if path != cache_path and path.exists():
             shutil.copy2(path, cache_path)
             logger.info(f"Cached audio with key: {key[:8]}...")
+
+    def cleanup_old_files(self, directory: Path | None = None, max_age_hours: int = 24 * 30) -> int:
+        """Remove files older than `max_age_hours` from the cache directory.
+
+        Args:
+            directory: Optional directory to clean. Defaults to the configured cache dir.
+            max_age_hours: Files older than this (hours) will be removed. Default is 30 days.
+
+        Returns:
+            Number of files removed.
+        """
+        target_dir = directory or self.cache_dir
+        if not target_dir.exists():
+            logger.info(f"Cache cleanup: directory does not exist: {target_dir}")
+            return 0
+
+        cutoff = time.time() - (max_age_hours * 3600)
+        removed = 0
+
+        for p in target_dir.iterdir():
+            try:
+                if not p.is_file():
+                    continue
+                # Only act on cache files by convention (prefix), but be conservative
+                if not p.name.startswith("cache_"):
+                    continue
+
+                mtime = p.stat().st_mtime
+                if mtime < cutoff:
+                    p.unlink()
+                    removed += 1
+                    logger.info(f"Cache cleanup: removed old file {p.name}")
+            except Exception as e:
+                logger.warning(f"Cache cleanup: failed to remove {p}: {e}")
+        logger.info(f"Cache cleanup: removed {removed} files from {target_dir}")
+        return removed
