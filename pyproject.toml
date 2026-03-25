@@ -96,3 +96,8 @@ explicit = true
 [tool.uv.sources]
 torch = { index = "pytorch-cu128" }
 torchaudio = { index = "pytorch-cu128" }
+
+
+[tool.uv.scripts.start-dev]
+module = "src.uvcli:run"
+description = "Start backend in dev mode with hot reload (uvicorn reload=True). Use env UV_HOST/UV_PORT to override host/port."
