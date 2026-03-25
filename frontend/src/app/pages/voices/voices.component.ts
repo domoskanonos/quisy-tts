@@ -62,6 +62,7 @@ export class VoicesComponent implements OnInit {
     selectedAudioFile: File | null = null;
     isUploading = signal(false);
     generatingVoiceId = signal<string | null>(null);
+    generationProgress = signal<number | null>(null);
 
     readonly languageOptions = [
         { value: 'german', label: 'Deutsch', flag: '🇩🇪' },
@@ -208,15 +209,16 @@ export class VoicesComponent implements OnInit {
             // Subscribe to status updates for progress UI
             const statusSub = this.statusSvc.subscribeVoice(v.id).subscribe((ev: any) => {
                 if (!ev) return;
-                if (ev.status === 'running' || ev.status === 'queued') {
-                    // show ephemeral info
-                    this.messageService.add({ severity: 'info', summary: 'Generierung', detail: ev.message || 'Generierung läuft...' });
+                if (ev.status === 'queued') {
+                    this.generationProgress.set(0);
+                } else if (ev.status === 'running') {
+                    this.generationProgress.set(ev.progress ?? 0);
                 } else if (ev.status === 'progress') {
-                    this.messageService.add({ severity: 'info', summary: 'Fortschritt', detail: `Fortschritt: ${ev.progress || 0}%` });
+                    this.generationProgress.set(ev.progress ?? this.generationProgress() ?? 0);
                 } else if (ev.status === 'done') {
-                    // handled by ensureVoiceAudio completion
+                    this.generationProgress.set(null);
                 } else if (ev.status === 'failed' || ev.status === 'cancelled') {
-                    // show error
+                    this.generationProgress.set(null);
                     this.messageService.add({ severity: 'error', summary: 'Fehler', detail: ev.message || 'Generierung fehlgeschlagen' });
                 }
             });

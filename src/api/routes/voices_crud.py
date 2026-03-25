@@ -148,6 +148,10 @@ def get_audio(voice_id: str) -> FileResponse:
         path=str(audio_path),
         media_type="audio/wav",
         filename=audio_path.name,
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+        },
     )
 
 

@@ -208,10 +208,16 @@
                         <audio controls [src]="ttsApi.getVoiceAudioUrl(editVoice.id)"></audio>
                     </div>
 
-                    <div class="panel-actions">
+                <div class="panel-actions">
+                    <div class="generate-row">
                         <button pButton type="button" class="try-btn" (click)="generatePreview()"
                             [disabled]="generatingVoiceId() !== null">Referenz‑Audio generieren</button>
+                        <div class="progress-shell" *ngIf="generationProgress() !== null">
+                            <div class="progress-bar" [style.width.%]="generationProgress() || 0"></div>
+                            <div class="progress-label">{{ generationProgress() || 0 }}%</div>
+                        </div>
                     </div>
+                </div>
                 </div>
 
                 <div class="full-width actions">
