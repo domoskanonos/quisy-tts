@@ -120,7 +120,6 @@ export class VoicesComponent implements OnInit {
             name: this.newVoiceName,
             example_text: this.newVoiceText,
             instruct: this.newVoiceInstruct.trim() || null,
-            system_prompt: this.newVoiceSystemPrompt.trim() || null,
             language: this.newVoiceLanguage,
         }).subscribe({
             next: voice => {
@@ -221,7 +220,6 @@ export class VoicesComponent implements OnInit {
             name: this.editName,
             example_text: this.editText,
             instruct: this.editInstruct.trim() || null,
-            system_prompt: this.editSystemPrompt.trim() || null,
             language: this.editLanguage,
         }).subscribe({
             next: () => {
