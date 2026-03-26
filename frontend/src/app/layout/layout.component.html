@@ -1,4 +1,4 @@
-<a class="skip-link" href="#main-content">Zum Inhalt springen</a>
+<a class="skip-link" href="#main-content" aria-label="Zum Hauptinhalt springen">Zum Inhalt springen</a>
 <div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed()">
   <!-- Sidebar -->
   <aside class="sidebar" role="navigation" aria-label="Hauptnavigation">
@@ -38,7 +38,7 @@
   </aside>
 
   <!-- Main Content -->
-  <main id="main-content" class="main-content" role="main">
+  <main id="main-content" class="main-content" role="main" tabindex="-1">
     <div class="content-wrapper">
       <router-outlet />
     </div>
