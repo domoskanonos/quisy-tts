@@ -40,7 +40,7 @@
         &.active {
             opacity: 1;
             background: var(--brand-accent);
-            box-shadow: 0 0 8px rgba(139, 92, 246, 0.4);
+            box-shadow: 0 0 8px rgb(139 92 246 / 40%);
         }
     }
 
@@ -84,8 +84,9 @@
 
     i {
         font-size: 14px;
+
         /* Ensure primeicons font is used even if globally overridden */
-        font-family: 'primeicons' !important;
+        font-family: primeicons !important;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
     }
@@ -101,21 +102,21 @@
         height: 48px;
         background: var(--brand-gradient);
         border: none;
-        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        box-shadow: 0 4px 12px rgb(139 92 246 / 30%);
 
         i {
             font-size: 18px;
-            font-family: 'primeicons' !important;
+            font-family: primeicons !important;
         }
 
         &:hover {
-            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+            box-shadow: 0 6px 16px rgb(139 92 246 / 40%);
             transform: translateY(-2px) scale(1.05);
         }
     }
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
     .player-container {
         flex-direction: column;
         gap: 16px;

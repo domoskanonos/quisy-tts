@@ -1,0 +1,65 @@
+// ─── PrimeNG Overrides ──────────────────────────────────────────
+.p-inputtextarea,
+.p-inputtext {
+  background: var(--surface-card) !important;
+  border-color: var(--surface-border) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+
+  &:focus {
+    border-color: var(--brand-primary) !important;
+    box-shadow: 0 0 0 2px rgb(139 92 246 / 20%) !important;
+  }
+}
+
+.p-dropdown {
+  background: var(--surface-card) !important;
+  border-color: var(--surface-border) !important;
+  color: var(--text-color) !important;
+}
+
+.p-selectbutton .p-button {
+  background: var(--surface-card) !important;
+  border-color: var(--surface-border) !important;
+  color: var(--text-color-secondary) !important;
+
+  &.p-highlight {
+    background: var(--brand-primary) !important;
+    border-color: var(--brand-primary) !important;
+    color: #fff !important;
+  }
+}
+
+.p-tabview .p-tabview-nav {
+  background: transparent !important;
+  border-bottom-color: var(--surface-border) !important;
+
+  li {
+    .p-tabview-nav-link {
+      color: var(--text-color-secondary) !important;
+
+      &:hover {
+        color: var(--text-color) !important;
+      }
+    }
+
+    &.p-highlight .p-tabview-nav-link {
+      color: var(--brand-primary) !important;
+      border-bottom-color: var(--brand-primary) !important;
+    }
+  }
+}
+
+.p-tabview .p-tabview-panels {
+  background: transparent !important;
+}
+
+/* Ensure PrimeNG overlays render above our custom side-panel */
+.p-dropdown-panel,
+.p-select-panel,
+.p-overlaypanel,
+.p-overlay,
+.p-autocomplete-panel,
+.p-calendar {
+    z-index: 3000 !important;
+}

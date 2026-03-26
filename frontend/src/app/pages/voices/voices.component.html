@@ -224,7 +224,7 @@
                     <div class="generate-row">
                         <button pButton type="button" class="try-btn" (click)="generatePreview()"
                             [disabled]="generatingVoiceId() !== null">Referenz‑Audio generieren</button>
-                        <div class="progress-shell" *ngIf="generationProgress() !== null">
+                        <div class="progress-shell" *ngIf="generationProgress() !== null" aria-live="polite">
                             <div class="progress-bar" [style.width.%]="generationProgress() || 0"></div>
                             <div class="progress-label">{{ generationProgress() || 0 }}%</div>
                         </div>

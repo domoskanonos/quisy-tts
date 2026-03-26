@@ -40,7 +40,7 @@
             </div>
             <!-- Progress bar for reference generation -->
             @if (isGenerating()) {
-            <div class="refgen-progress">
+            <div class="refgen-progress" aria-live="polite">
                 <div class="progress-bar-outer">
                     <div class="progress-bar-inner" [style.width.%]="refGenProgress()"></div>
                 </div>

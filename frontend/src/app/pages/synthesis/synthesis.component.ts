@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, effect, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, effect, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TabsModule } from 'primeng/tabs';
@@ -18,6 +18,7 @@ import { VoiceGenerationService } from '../../services/voice-generation.service'
 @Component({
     selector: 'app-synthesis',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         CommonModule,
         FormsModule,

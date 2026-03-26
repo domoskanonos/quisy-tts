@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, effect, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, effect, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
@@ -12,6 +12,7 @@ import { Voice } from '../../models/tts.models';
 @Component({
     selector: 'app-settings',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [CommonModule, FormsModule, SelectModule, CardModule, ToastModule],
     templateUrl: './settings.component.html',
     styleUrl: './settings.component.scss'

@@ -1,10 +1,11 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AudioPlayerService } from '../../services/audio-player.service';
 
 @Component({
     selector: 'app-audio-player',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [CommonModule],
     templateUrl: './audio-player.component.html',
     styleUrls: ['./audio-player.component.scss']
