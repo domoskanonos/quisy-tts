@@ -1,3 +1,7 @@
+@use "styles/utilities" as *;
+@use "styles/animations" as *;
+@use "styles/primeng-overrides" as *;
+
 // ─── CSS Custom Properties ──────────────────────────────────────
 @import "primeicons/primeicons.css";
 
@@ -160,6 +164,5 @@ body {
 }
 
 // ─── Imports: Partials ──────────────────────────────────────────
-@import "styles/utilities";
-@import "styles/animations";
-@import "styles/primeng-overrides";
+// (Sass modules are loaded at the top of the file to satisfy Dart Sass
+// ordering requirements.)

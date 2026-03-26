@@ -83,7 +83,6 @@ class VoiceService:
 
             if count == 0:
                 self._seed_defaults(conn)
-                logger.info(f"Seeded {len(DEFAULT_VOICES)} default voices into SQLite.")
 
     def _migrate(self, conn: sqlite3.Connection) -> None:
         """Run schema migrations for existing databases."""
@@ -163,6 +162,14 @@ class VoiceService:
                     now,
                 ),
             )
+
+        # Log how many defaults were seeded (DEFAULT_VOICES is available here
+        # because we imported it lazily above).
+        try:
+            logger.info(f"Seeded {len(DEFAULT_VOICES)} default voices into SQLite.")
+        except Exception:
+            # Logging should never break DB initialization
+            pass
 
     # ─── Helper ──────────────────────────────────────────────────
 

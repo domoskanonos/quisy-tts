@@ -2,15 +2,16 @@ import sys
 import time
 from pathlib import Path
 
-
 # Add src to path
 sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
+
+import asyncio
 
 from engine.qwen import QwenTextToSpeech
 from schemas import TTSParams
 
 
-def benchmark() -> None:
+async def benchmark() -> None:
     print("Initializing Engine...")
     engine = QwenTextToSpeech()
 
@@ -22,10 +23,10 @@ def benchmark() -> None:
 
     # Warmup
     # print("Warming up...")
-    # engine.generate_audio("Hallo", params)
+    # await engine.generate_audio("Hallo", params)
 
     start = time.time()
-    waveform, sr = engine.generate_audio(text, params)
+    waveform, sr = await engine.generate_audio(text, params)
     duration = time.time() - start
 
     print(f"Generation took: {duration:.4f}s")
@@ -35,4 +36,4 @@ def benchmark() -> None:
 
 
 if __name__ == "__main__":
-    benchmark()
+    asyncio.run(benchmark())
