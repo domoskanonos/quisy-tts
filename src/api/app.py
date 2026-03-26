@@ -171,8 +171,13 @@ api_router.include_router(info.router)
 api_router.include_router(base.router, prefix="/generate/base")
 api_router.include_router(voice_design.router, prefix="/generate/voice-design")
 api_router.include_router(custom_voice.router, prefix="/generate/custom-voice")
-api_router.include_router(voices_crud.router, prefix="/voices")
+# Register search routes before the CRUD router. The CRUD router contains
+# a parameterized route `/{voice_id}` which would greedily match static
+# subpaths like `/terms` or `/search` if registered earlier. Registering
+# the search router first ensures the more specific static paths are
+# matched correctly.
 api_router.include_router(voices_search.router, prefix="/voices")
+api_router.include_router(voices_crud.router, prefix="/voices")
 api_router.include_router(websocket.router)
 
 app.include_router(api_router, prefix="/api")
