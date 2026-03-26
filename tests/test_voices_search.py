@@ -6,12 +6,13 @@ from pathlib import Path
 import sys
 
 # Prepare a lightweight 'services' package and ensure default_voices is importable
-pkg_mod = importlib.util.module_from_spec(importlib.util.spec_from_loader("services", loader=None))
+pkg_mod = importlib.util.module_from_spec(importlib.util.spec_from_loader("services", loader=None))  # type: ignore[arg-type]
 sys.modules["services"] = pkg_mod
 dv_path = Path(__file__).resolve().parents[1] / "src" / "services" / "default_voices.py"
-dv_spec = importlib.util.spec_from_file_location("services.default_voices", str(dv_path))
-dv_mod = importlib.util.module_from_spec(dv_spec)
-dv_spec.loader.exec_module(dv_mod)  # type: ignore
+dv_spec = importlib.util.spec_from_file_location("services.default_voices", str(dv_path))  # type: ignore[arg-type]
+assert dv_spec is not None and dv_spec.loader is not None
+dv_mod = importlib.util.module_from_spec(dv_spec)  # type: ignore[arg-type]
+dv_spec.loader.exec_module(dv_mod)  # type: ignore[attr-defined]
 sys.modules["services.default_voices"] = dv_mod
 setattr(pkg_mod, "default_voices", dv_mod)
 
@@ -67,7 +68,6 @@ def test_get_top_instruct_terms_and_search(tmp_path, monkeypatch):
     from src.config import ProjectConfig
 
     # Ensure VoiceService uses our temporary DB path
-    from importlib import reload
 
     settings = ProjectConfig.get_settings()
     monkeypatch.setattr(settings, "RESOURCES_DIR", tmp_path)

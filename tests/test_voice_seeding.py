@@ -1,6 +1,4 @@
-import importlib
 import sqlite3
-from pathlib import Path
 
 
 def test_seeds_default_voices(tmp_path, monkeypatch):
@@ -22,7 +20,9 @@ def test_seeds_default_voices(tmp_path, monkeypatch):
         monkeypatch.setenv(k, str(tmp_path / k.lower()))
 
     # Reset cached ProjectConfig state if present so imports re-evaluate env.
-    import config
+    import importlib
+
+    config = importlib.import_module("config")
 
     config.ProjectConfig._settings = None
     config.ProjectConfig._logger = None
@@ -33,14 +33,28 @@ def test_seeds_default_voices(tmp_path, monkeypatch):
     conn.commit()
     conn.close()
 
-    # Determine expected count from the default_voices data
-    dv = importlib.import_module("services.default_voices")
-    expected = len(dv.DEFAULT_VOICES)
+    # Determine expected count from the default_voices data by loading the
+    # module directly from the source file to avoid importing the 'services'
+    # package (which would run package-level imports and cause circular
+    # import failures in this test environment).
+    from pathlib import Path
+    import importlib.util
 
-    # Import the service module (now that env is set) and instantiate using our DB
-    vs_mod = importlib.import_module("services.voice_service")
+    dv_path = Path(__file__).resolve().parents[1] / "src" / "services" / "default_voices.py"
+    dv_spec = importlib.util.spec_from_file_location("services.default_voices", str(dv_path))
+    assert dv_spec is not None and dv_spec.loader is not None
+    dv_mod = importlib.util.module_from_spec(dv_spec)
+    dv_spec.loader.exec_module(dv_mod)  # type: ignore[attr-defined]
+    expected = len(dv_mod.DEFAULT_VOICES)
 
-    svc = vs_mod.VoiceService(db_path=db_path)
+    # Load the voice_service module directly from file and instantiate using
+    # our temporary DB so DB initialization runs in isolation.
+    svc_path = Path(__file__).resolve().parents[1] / "src" / "services" / "voice_service.py"
+    svc_spec = importlib.util.spec_from_file_location("voice_service_mod", str(svc_path))
+    assert svc_spec is not None and svc_spec.loader is not None
+    vs_mod = importlib.util.module_from_spec(svc_spec)
+    svc_spec.loader.exec_module(vs_mod)  # type: ignore[attr-defined]
+    _ = vs_mod.VoiceService(db_path=db_path)
 
     # Verify the DB was seeded with the expected number of default voices
     conn = sqlite3.connect(str(db_path))

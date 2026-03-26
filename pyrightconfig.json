@@ -1,0 +1,10 @@
+{
+  "typeCheckingMode": "strict",
+  "reportUnnecessaryTypeIgnoreComment": true,
+  "reportMissingTypeStubs": false,
+  "reportUntypedFunctionDecorator": true,
+  "pythonVersion": "3.12",
+  "reportMissingImports": false,
+  "include": ["src", "tests"],
+  "exclude": ["**/node_modules", "**/.venv", "**/__pycache__", "scripts"]
+}

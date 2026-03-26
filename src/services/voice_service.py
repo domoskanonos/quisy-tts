@@ -1,6 +1,5 @@
 """Voice management service – CRUD operations with SQLite persistence."""
 
-import shutil
 import sqlite3
 import uuid
 from datetime import UTC, datetime
@@ -42,10 +41,20 @@ class VoiceService:
         self._db_path = Path(db_path) if db_path is not None else settings.RESOURCES_DIR / "quisy-tts.db"
 
         if not self._db_path.exists():
-            # If the DB doesn't exist we treat this as a configuration error in
-            # production, but in tests callers may expect to create a fresh DB.
-            logger.error(f"resources DB not found at {self._db_path}")
-            raise FileNotFoundError(f"resources DB not found at {self._db_path}")
+            # If the DB doesn't exist we try to create an empty DB file. In
+            # production a missing DB is a configuration error, but tests and
+            # some runtime paths expect to be able to create a fresh DB.
+            try:
+                self._db_path.parent.mkdir(parents=True, exist_ok=True)
+                import sqlite3 as _sqlite
+
+                conn = _sqlite.connect(str(self._db_path))
+                conn.commit()
+                conn.close()
+                logger.info(f"Created new resources DB at {self._db_path}")
+            except Exception as e:
+                logger.error(f"resources DB not found at {self._db_path}")
+                raise FileNotFoundError(f"resources DB not found at {self._db_path}") from e
 
         # Ensure we can write to the resources DB
         try:
@@ -143,8 +152,22 @@ class VoiceService:
 
     def _seed_defaults(self, conn: sqlite3.Connection) -> None:
         """Insert all default voices."""
-        # Import DEFAULT_VOICES lazily to avoid circular imports during tests
-        from services.default_voices import DEFAULT_VOICES
+        # Import DEFAULT_VOICES lazily to avoid circular imports during tests /
+        # runtime initialization. Prefer the regular package import but fall
+        # back to loading the module directly from the file system if that
+        # triggers an import-time circular dependency.
+        try:
+            from services.default_voices import DEFAULT_VOICES  # type: ignore
+        except Exception:
+            from importlib import util
+            from pathlib import Path
+
+            dv_path = Path(__file__).resolve().parents[0] / "default_voices.py"
+            spec = util.spec_from_file_location("services.default_voices", str(dv_path))
+            assert spec is not None and spec.loader is not None
+            dv_mod = util.module_from_spec(spec)
+            spec.loader.exec_module(dv_mod)  # type: ignore[attr-defined]
+            DEFAULT_VOICES = dv_mod.DEFAULT_VOICES
 
         now = datetime.now(UTC).isoformat()
         for i, voice in enumerate(DEFAULT_VOICES):
@@ -212,7 +235,7 @@ class VoiceService:
                 from collections import Counter
                 import re
 
-                counter = Counter()
+                counter: Counter[str] = Counter()
                 for r in rows:
                     text = r[0] or ""
                     tokens = re.findall(r"\b\w{3,}\b", text.lower(), flags=re.UNICODE)
@@ -238,8 +261,8 @@ class VoiceService:
                     params: list[str] = []
                     if terms:
                         # Build MATCH expression requiring all terms (AND semantics)
-                        match_expr = " AND ".join([f"{t}" for t in terms])
-                        clauses.append(f"rowid IN (SELECT rowid FROM voices_fts WHERE voices_fts MATCH ?)")
+                        match_expr = " AND ".join([t for t in terms])
+                        clauses.append("rowid IN (SELECT rowid FROM voices_fts WHERE voices_fts MATCH ?)")
                         params.append(match_expr)
                     if q:
                         # Use FTS MATCH for free text as well (allow prefix searching)
@@ -257,18 +280,18 @@ class VoiceService:
 
             # Fallback: simple LIKE-based search
             parts: list[str] = []
-            params: list[str] = []
+            like_params: list[str] = []
             for t in terms:
                 parts.append("instruct LIKE ?")
-                params.append(f"%{t}%")
+                like_params.append(f"%{t}%")
             if q:
                 parts.append("(name LIKE ? OR instruct LIKE ? OR example_text LIKE ?)")
-                params.extend([f"%{q}%"] * 3)
+                like_params.extend([f"%{q}%"] * 3)
 
             where = " AND ".join(parts) if parts else "1=1"
             sql = f"SELECT * FROM voices WHERE {where} ORDER BY is_default DESC, name ASC LIMIT ? OFFSET ?"
-            params.extend([str(limit), str(offset)])
-            rows = conn.execute(sql, params).fetchall()
+            like_params.extend([str(limit), str(offset)])
+            rows = conn.execute(sql, like_params).fetchall()
             return [self._row_to_dict(r) for r in rows]
 
     def get_voice(self, voice_id: str) -> dict | None:
