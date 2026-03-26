@@ -34,8 +34,8 @@
     width: var(--sidebar-width);
     min-width: var(--sidebar-width);
     height: 100%;
+    /* Glass background with optional backdrop blur. Keep single backdrop-filter call. */
     background: var(--glass-bg);
-    backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     border-right: 1px solid var(--glass-border);
     display: flex;

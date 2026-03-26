@@ -1,8 +1,8 @@
 <div class="player-container glass-card" *ngIf="audioUrl()">
     <!-- Waveform Visualizer -->
-    <div class="waveform-container" (click)="togglePlay()">
+    <div class="waveform-container" (click)="togglePlay()" role="button" tabindex="0" aria-label="Audio abspielen/pausieren">
         <div class="waveform-bar" *ngFor="let val of waveformData(); let i = index" [style.height.%]="val * 100"
-            [class.active]="(i / waveformData().length) * duration() <= currentTime()">
+            [class.active]="(i / waveformData().length) * duration() <= currentTime()" aria-hidden="true">
         </div>
     </div>
 
