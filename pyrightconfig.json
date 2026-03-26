@@ -6,5 +6,11 @@
   "pythonVersion": "3.12",
   "reportMissingImports": false,
   "include": ["src", "tests"],
-  "exclude": ["**/node_modules", "**/.venv", "**/__pycache__", "scripts"]
+  "exclude": ["**/node_modules", "**/.venv", "**/__pycache__", "scripts"],
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": ["src"]
+    }
+  ]
 }
