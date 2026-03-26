@@ -1,0 +1,787 @@
+{
+  "testEngine": {
+    "name": "axe-core",
+    "version": "4.8.0"
+  },
+  "testRunner": {
+    "name": "axe"
+  },
+  "testEnvironment": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.6 Safari/537.36",
+    "windowWidth": 1280,
+    "windowHeight": 720,
+    "orientationAngle": 0,
+    "orientationType": "landscape-primary"
+  },
+  "timestamp": "2026-03-26T12:02:43.649Z",
+  "url": "http://localhost:4200/ui/synthesis",
+  "toolOptions": {
+    "runOnly": {
+      "type": "tag",
+      "values": [
+        "wcag2aa",
+        "wcag21aa"
+      ]
+    },
+    "reporter": "v1"
+  },
+  "inapplicable": [
+    {
+      "id": "autocomplete-valid",
+      "impact": null,
+      "tags": [
+        "cat.forms",
+        "wcag21aa",
+        "wcag135",
+        "EN-301-549",
+        "EN-9.1.3.5",
+        "ACT"
+      ],
+      "description": "Ensure the autocomplete attribute is correct and suitable for the form field",
+      "help": "autocomplete attribute must be used correctly",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.8/autocomplete-valid?application=axeAPI",
+      "nodes": []
+    },
+    {
+      "id": "valid-lang",
+      "impact": null,
+      "tags": [
+        "cat.language",
+        "wcag2aa",
+        "wcag312",
+        "TTv5",
+        "TT11.b",
+        "EN-301-549",
+        "EN-9.3.1.2",
+        "ACT"
+      ],
+      "description": "Ensures lang attributes have valid values",
+      "help": "lang attribute must have a valid value",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.8/valid-lang?application=axeAPI",
+      "nodes": []
+    }
+  ],
+  "passes": [
+    {
+      "id": "avoid-inline-spacing",
+      "impact": null,
+      "tags": [
+        "cat.structure",
+        "wcag21aa",
+        "wcag1412",
+        "EN-301-549",
+        "EN-9.1.4.12",
+        "ACT"
+      ],
+      "description": "Ensure that text spacing set through style attributes can be adjusted with custom stylesheets",
+      "help": "Inline text spacing must be adjustable with custom stylesheets",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.8/avoid-inline-spacing?application=axeAPI",
+      "nodes": [
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "important-letter-spacing",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
+            },
+            {
+              "id": "important-word-spacing",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
+            },
+            {
+              "id": "important-line-height",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
+            }
+          ],
+          "none": [],
+          "impact": null,
+          "html": "<p-select _ngcontent-ng-c3346569839=\"\" optionlabel=\"name\" filterby=\"name\" placeholder=\"Sprecher wählen\" class=\"full-width-select p-component p-inputwrapper p-select ng-untouched ng-pristine ng-valid p-inputwrapper-filled\" id=\"pn_id_2\" data-p=\"\" pc3=\"\" data-pc-section=\"root\" data-pc-name=\"select\" style=\"width: 100%;\">",
+          "target": [
+            "#pn_id_2"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "important-letter-spacing",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
+            },
+            {
+              "id": "important-word-spacing",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
+            },
+            {
+              "id": "important-line-height",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
+            }
+          ],
+          "none": [],
+          "impact": null,
+          "html": "<p-select _ngcontent-ng-c3346569839=\"\" optionlabel=\"label\" optionvalue=\"value\" id=\"pn_id_3\" data-p=\"\" class=\"p-component p-inputwrapper p-select ng-untouched ng-pristine ng-valid p-inputwrapper-filled\" pc4=\"\" data-pc-section=\"root\" data-pc-name=\"select\" style=\"width: 100%;\">",
+          "target": [
+            "#pn_id_3"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "color-contrast",
+      "impact": "serious",
+      "tags": [
+        "cat.color",
+        "wcag2aa",
+        "wcag143",
+        "TTv5",
+        "TT13.c",
+        "EN-301-549",
+        "EN-9.1.4.3",
+        "ACT"
+      ],
+      "description": "Ensures the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.8/color-contrast?application=axeAPI",
+      "nodes": [
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "fgColor": "#9a8cb0",
+                "bgColor": "#1a1229",
+                "contrastRatio": 5.8,
+                "fontSize": "10.5pt (14px)",
+                "fontWeight": "normal",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element has sufficient color contrast of 5.8"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<span _ngcontent-ng-c95433378=\"\" class=\"logo-tts\">TTS</span>",
+          "target": [
+            ".logo-tts"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "fgColor": "#a78bf9",
+                "bgColor": "#2b1d48",
+                "contrastRatio": 5.61,
+                "fontSize": "10.5pt (14px)",
+                "fontWeight": "normal",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element has sufficient color contrast of 5.61"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<span _ngcontent-ng-c95433378=\"\" class=\"nav-label\">Speech Synthesis</span>",
+          "target": [
+            ".active > .nav-label"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "fgColor": "#9a8cb0",
+                "bgColor": "#1a1229",
+                "contrastRatio": 5.8,
+                "fontSize": "10.5pt (14px)",
+                "fontWeight": "normal",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element has sufficient color contrast of 5.8"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<span _ngcontent-ng-c95433378=\"\" class=\"nav-label\">Voice Library</span>",
+          "target": [
+            "a[title=\"Voice Library\"] > .nav-label"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "fgColor": "#9a8cb0",
+                "bgColor": "#1a1229",
+                "contrastRatio": 5.8,
+                "fontSize": "10.5pt (14px)",
+                "fontWeight": "normal",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element has sufficient color contrast of 5.8"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<span _ngcontent-ng-c95433378=\"\" class=\"nav-label\">Status</span>",
+          "target": [
+            "a[title=\"Status\"] > .nav-label"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "fgColor": "#9a8cb0",
+                "bgColor": "#1a1229",
+                "contrastRatio": 5.8,
+                "fontSize": "10.5pt (14px)",
+                "fontWeight": "normal",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element has sufficient color contrast of 5.8"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<span _ngcontent-ng-c95433378=\"\" class=\"nav-label\">Einstellungen</span>",
+          "target": [
+            "a[title=\"Einstellungen\"] > .nav-label"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "fgColor": "#e8e0f0",
+                "bgColor": "#1e1530",
+                "contrastRatio": 13.56,
+                "fontSize": "12.0pt (16px)",
+                "fontWeight": "normal",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element has sufficient color contrast of 13.56"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<textarea _ngcontent-ng-c3346569839=\"\" ptextarea=\"\" placeholder=\"Gib hier deinen Text ein...\" class=\"main-textarea ng-untouched ng-pristine ng-valid p-component p-textarea\" pc2=\"\" data-pc-section=\"root\" data-pc-name=\"textarea\">            </textarea>",
+          "target": [
+            "textarea"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "fgColor": "#e8e0f0",
+                "bgColor": "#09090b",
+                "contrastRatio": 15.49,
+                "fontSize": "10.5pt (14px)",
+                "fontWeight": "normal",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element has sufficient color contrast of 15.49"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<span _ngcontent-ng-c3346569839=\"\">Alexander – Motivational Speaker</span>",
+          "target": [
+            ".voice-item > span"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "fgColor": "#9a8cb0",
+                "bgColor": "#1a1025",
+                "contrastRatio": 5.89,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element has sufficient color contrast of 5.89"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<span _ngcontent-ng-c3346569839=\"\" class=\"detail-label\">Sprache:</span>",
+          "target": [
+            ".detail-label"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "fgColor": "#e8e0f0",
+                "bgColor": "#1a1025",
+                "contrastRatio": 14.28,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element has sufficient color contrast of 14.28"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<span _ngcontent-ng-c3346569839=\"\" class=\"detail-value\">german</span>",
+          "target": [
+            ".detail-value"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "fgColor": "#e8e0f0",
+                "bgColor": "#231636",
+                "contrastRatio": 13.19,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element has sufficient color contrast of 13.19"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<span _ngcontent-ng-c3346569839=\"\">Beispiel anhören</span>",
+          "target": [
+            ".btn-secondary > span"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "fgColor": "#9a8cb0",
+                "bgColor": "#1a1025",
+                "contrastRatio": 5.89,
+                "fontSize": "9.0pt (12px)",
+                "fontWeight": "normal",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element has sufficient color contrast of 5.89"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<p _ngcontent-ng-c3346569839=\"\">A powerful, inspiring male motivational speaker voice. Commanding presence with passionate conviction.</p>",
+          "target": [
+            ".instruct-preview > p"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "fgColor": "#ffffff",
+                "bgColor": "#09090b",
+                "contrastRatio": 19.89,
+                "fontSize": "10.5pt (14px)",
+                "fontWeight": "normal",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element has sufficient color contrast of 19.89"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<span role=\"combobox\" class=\"p-select-label\" aria-disabled=\"false\" aria-haspopup=\"listbox\" aria-expanded=\"false\" tabindex=\"0\" data-p=\"\" data-pc-section=\"label\" autofocus=\"true\" pc10=\"\" pc11=\"\" aria-label=\"High Quality (1.7B)\">",
+          "target": [
+            "span[pc10=\"\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "meta-viewport",
+      "impact": null,
+      "tags": [
+        "cat.sensory-and-visual-cues",
+        "wcag2aa",
+        "wcag144",
+        "EN-301-549",
+        "EN-9.1.4.4",
+        "ACT"
+      ],
+      "description": "Ensures <meta name=\"viewport\"> does not disable text scaling and zooming",
+      "help": "Zooming and scaling must not be disabled",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.8/meta-viewport?application=axeAPI",
+      "nodes": [
+        {
+          "any": [
+            {
+              "id": "meta-viewport",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "<meta> tag does not disable zooming on mobile devices"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
+          "target": [
+            "meta[name=\"viewport\"]"
+          ]
+        }
+      ]
+    }
+  ],
+  "incomplete": [
+    {
+      "id": "color-contrast",
+      "impact": "serious",
+      "tags": [
+        "cat.color",
+        "wcag2aa",
+        "wcag143",
+        "TTv5",
+        "TT13.c",
+        "EN-301-549",
+        "EN-9.1.4.3",
+        "ACT"
+      ],
+      "description": "Ensures the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.8/color-contrast?application=axeAPI",
+      "nodes": [
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "15.0pt (20px)",
+                "fontWeight": "bold",
+                "messageKey": "bgGradient",
+                "expectedContrastRatio": "3:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<span _ngcontent-ng-c95433378=\"\" class=\"text-gradient\">Quisy</span>",
+                  "target": [
+                    ".text-gradient"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element's background color could not be determined due to a background gradient"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span _ngcontent-ng-c95433378=\"\" class=\"text-gradient\">Quisy</span>",
+          "target": [
+            ".text-gradient"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "21.0pt (28px)",
+                "fontWeight": "bold",
+                "messageKey": "bgGradient",
+                "expectedContrastRatio": "3:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<main _ngcontent-ng-c95433378=\"\" id=\"main-content\" role=\"main\" tabindex=\"-1\" class=\"main-content\">",
+                  "target": [
+                    "#main-content"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element's background color could not be determined due to a background gradient"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<h1 _ngcontent-ng-c3346569839=\"\"><i _ngcontent-ng-c3346569839=\"\" class=\"pi pi-microphone\"></i> Speech Synthesis </h1>",
+          "target": [
+            "h1"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "11.3pt (15px)",
+                "fontWeight": "normal",
+                "messageKey": "bgGradient",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<main _ngcontent-ng-c95433378=\"\" id=\"main-content\" role=\"main\" tabindex=\"-1\" class=\"main-content\">",
+                  "target": [
+                    "#main-content"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element's background color could not be determined due to a background gradient"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<p _ngcontent-ng-c3346569839=\"\" class=\"subtitle\">Erstelle natürliche Sprachausgaben</p>",
+          "target": [
+            ".subtitle"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "13.5pt (18px)",
+                "fontWeight": "normal",
+                "messageKey": "bgGradient",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<aside _ngcontent-ng-c3346569839=\"\" class=\"settings-sidebar glass-card\">",
+                  "target": [
+                    ".settings-sidebar"
+                  ]
+                },
+                {
+                  "html": "<main _ngcontent-ng-c95433378=\"\" id=\"main-content\" role=\"main\" tabindex=\"-1\" class=\"main-content\">",
+                  "target": [
+                    "#main-content"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element's background color could not be determined due to a background gradient"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<h2 _ngcontent-ng-c3346569839=\"\" class=\"sidebar-title\">Einstellungen</h2>",
+          "target": [
+            "h2"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "bgGradient",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<aside _ngcontent-ng-c3346569839=\"\" class=\"settings-sidebar glass-card\">",
+                  "target": [
+                    ".settings-sidebar"
+                  ]
+                },
+                {
+                  "html": "<main _ngcontent-ng-c95433378=\"\" id=\"main-content\" role=\"main\" tabindex=\"-1\" class=\"main-content\">",
+                  "target": [
+                    "#main-content"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element's background color could not be determined due to a background gradient"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<label _ngcontent-ng-c3346569839=\"\" class=\"setting-label\">Sprecher</label>",
+          "target": [
+            ".setting-group:nth-child(2) > label"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "bgGradient",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<aside _ngcontent-ng-c3346569839=\"\" class=\"settings-sidebar glass-card\">",
+                  "target": [
+                    ".settings-sidebar"
+                  ]
+                },
+                {
+                  "html": "<main _ngcontent-ng-c95433378=\"\" id=\"main-content\" role=\"main\" tabindex=\"-1\" class=\"main-content\">",
+                  "target": [
+                    "#main-content"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element's background color could not be determined due to a background gradient"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<label _ngcontent-ng-c3346569839=\"\" class=\"setting-label\">Modell</label>",
+          "target": [
+            ".setting-group:nth-child(4) > label"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+        }
+      ]
+    }
+  ],
+  "violations": [
+    {
+      "id": "color-contrast",
+      "impact": "serious",
+      "tags": [
+        "cat.color",
+        "wcag2aa",
+        "wcag143",
+        "TTv5",
+        "TT13.c",
+        "EN-301-549",
+        "EN-9.1.4.3",
+        "ACT"
+      ],
+      "description": "Ensures the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.8/color-contrast?application=axeAPI",
+      "nodes": [
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "fgColor": "#6b5d80",
+                "bgColor": "#1a1025",
+                "contrastRatio": 3.05,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": null,
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div _ngcontent-ng-c3346569839=\"\" class=\"editor-footer\">",
+                  "target": [
+                    ".editor-footer"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element has insufficient color contrast of 3.05 (foreground color: #6b5d80, background color: #1a1025, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span _ngcontent-ng-c3346569839=\"\" class=\"char-count\">0 Zeichen</span>",
+          "target": [
+            ".char-count"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.05 (foreground color: #6b5d80, background color: #1a1025, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1"
+        }
+      ]
+    }
+  ]
+}

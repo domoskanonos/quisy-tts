@@ -74,7 +74,8 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     command: 'npm run start',
-    url: 'http://localhost:4200',
+    // Wait for the app base path (/ui) to be available so Playwright doesn't hit the dev-server root
+    url: 'http://localhost:4200/ui',
     reuseExistingServer: !process.env.CI,
   },
 });
