@@ -15,7 +15,7 @@ class ProjectSettings(BaseSettings):
     PROJECT_NAME: str = "quisy-tts"
     LOG_LEVEL: str = "INFO"
     HOST: str = "0.0.0.0"
-    PORT: int = 8000
+    PORT: int = 8045
 
     # TTS Settings
     DOWNLOAD_MODELS: str = (

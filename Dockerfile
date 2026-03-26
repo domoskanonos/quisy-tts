@@ -85,7 +85,7 @@ COPY .env.example .env
 COPY --from=frontend-builder /app/dist/frontend/browser src/static/ui
 
 # Expose API port
-EXPOSE 8000
+EXPOSE 8045
 
 # Run commands
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8045"]

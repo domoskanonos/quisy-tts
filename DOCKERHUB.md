@@ -29,7 +29,7 @@ The easiest way to run Cosmo TTS is using Docker. We provide a pre-built image o
 - [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
 
 ```bash
-docker run -d --gpus all -p 8000:8000 --name quisy-tts domoskanonos/quisy-tts:latest
+docker run -d --gpus all -p 8045:8045 --name quisy-tts domoskanonos/quisy-tts:latest
 ```
 
 ### 2. Run with Docker Compose
@@ -41,7 +41,7 @@ services:
   tts:
     image: domoskanonos/quisy-tts:latest
     ports:
-      - "8000:8000"
+      - "8045:8045"
     volumes:
       - ./voices:/app/voices
     deploy:
@@ -83,7 +83,7 @@ Configure the engine using environment variables:
 ### Text-to-Speech (Simple)
 
 ```bash
-curl -X POST "http://localhost:8000/v1/audio/speech" \
+curl -X POST "http://localhost:8045/v1/audio/speech" \
   -H "Content-Type: application/json" \
   -d '{
     "input": "Hello, world! This is Cosmo TTS speaking.",
@@ -95,7 +95,7 @@ curl -X POST "http://localhost:8000/v1/audio/speech" \
 ### Voice Cloning
 
 ```bash
-curl -X POST "http://localhost:8000/v1/audio/speech" \
+curl -X POST "http://localhost:8045/v1/audio/speech" \
   -H "Content-Type: application/json" \
   -d '{
     "input": "This voice is cloned from the reference audio.",

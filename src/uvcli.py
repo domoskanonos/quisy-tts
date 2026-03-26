@@ -4,7 +4,7 @@ Loads optional `.env` variables (via python-dotenv) and starts uvicorn.
 
 Environment variables supported (defaults shown):
 - UV_HOST (falls back to HOST) -> 127.0.0.1
-- UV_PORT (falls back to PORT) -> 8000
+- UV_PORT (falls back to PORT) -> 8045
 - UV_RELOAD -> true/false (default: true)
 - UV_RELOAD_DIRS -> comma-separated dirs to watch (optional)
 - UV_RELOAD_EXCLUDES -> comma-separated glob patterns to ignore (optional)
@@ -51,7 +51,7 @@ def _split_list(value: str | None) -> list[str] | None:
 
 def run() -> None:
     host = os.getenv("UV_HOST") or os.getenv("HOST") or "127.0.0.1"
-    port = int(os.getenv("UV_PORT") or os.getenv("PORT") or 8000)
+    port = int(os.getenv("UV_PORT") or os.getenv("PORT") or 8045)
 
     reload_flag = _to_bool(os.getenv("UV_RELOAD"), True)
     # sensible defaults to avoid watching large output files

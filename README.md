@@ -64,7 +64,7 @@ If you want to run without GPU in development, set `DEVICE=cpu`, but note that p
    LOG_LEVEL=INFO
    DEVICE=cuda
    HOST=0.0.0.0
-   PORT=8000
+   PORT=8045
    ```
 
 3. **Download Models**:
@@ -82,7 +82,7 @@ If you want to run without GPU in development, set `DEVICE=cpu`, but note that p
 
    - Or create a `.env` file in the project root and set overrides there. Supported variables:
      - `UV_HOST` / `HOST` - bind address (default `127.0.0.1`)
-     - `UV_PORT` / `PORT` - port (default `8000`)
+     - `UV_PORT` / `PORT` - port (default `8045`)
      - `UV_RELOAD` - enable/disable reload (`true`/`false`, default `true`)
      - `UV_RELOAD_DIRS` - comma-separated directories to watch for reloads
      - `UV_RELOAD_EXCLUDES` - comma-separated glob patterns to ignore
@@ -110,13 +110,13 @@ If you want to run without GPU in development, set `DEVICE=cpu`, but note that p
       ```json
       {
         "/api": {
-          "target": "http://localhost:8000",
+          "target": "http://localhost:8045",
           "secure": false,
           "changeOrigin": true,
           "logLevel": "debug"
         },
         "/ws": {
-          "target": "ws://localhost:8000",
+          "target": "ws://localhost:8045",
           "ws": true,
           "secure": false,
           "changeOrigin": true,
@@ -148,7 +148,7 @@ If you want to run without GPU in development, set `DEVICE=cpu`, but note that p
 
    **Run (GPU Recommended):**
    ```bash
-   docker run -d --gpus all -p 8000:8000 --name quisy-tts \
+   docker run -d --gpus all -p 8045:8045 --name quisy-tts \
      -v ${PWD}/models:/app/models \
      -v ${PWD}/output:/app/output \
      domoskanonos/quisy-tts:latest
@@ -166,7 +166,7 @@ All settings are managed via Pydantic and can be overridden by environment varia
 | `LOG_LEVEL` | Logging verbosity | `INFO` |
 | `DEVICE` | Computation device (`cuda` or `cpu`) | `cuda` |
 | `HOST` | API listening host | `0.0.0.0` |
-| `PORT` | API listening port | `8000` |
+| `PORT` | API listening port | `8045` |
 | `MODELS_DIR` | Directory to store model checkpoints | `models` |
 | `VOICES_DIR` | Directory for reference audio files | `voices` |
 | `OUTPUT_DIR` | Directory for generated audio files | `output` |
@@ -212,9 +212,9 @@ Real-time streaming endpoint:
 
 FastAPI automatically generates interactive documentation for the API:
 
-- **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs) - Test the API directly from your browser.
-- **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc) - Clean, searchable documentation.
-- **OpenAPI JSON**: [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
+- **Swagger UI**: [http://localhost:8045/docs](http://localhost:8045/docs) - Test the API directly from your browser.
+- **ReDoc**: [http://localhost:8045/redoc](http://localhost:8045/redoc) - Clean, searchable documentation.
+- **OpenAPI JSON**: [http://localhost:8045/openapi.json](http://localhost:8045/openapi.json)
 
 
 ## 🛠 Development
