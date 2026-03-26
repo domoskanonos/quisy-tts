@@ -63,6 +63,11 @@ export class VoicesComponent implements OnInit {
     isUploading = signal(false);
     generatingVoiceId = signal<string | null>(null);
     generationProgress = signal<number | null>(null);
+    // Search UI state
+    terms: { term: string; count: number }[] = [];
+    selectedTerms = new Set<string>();
+    searchQuery = '';
+    searchResultsLoading = signal(false);
 
     readonly languageOptions = [
         { value: 'german', label: 'Deutsch', flag: '🇩🇪' },
@@ -81,6 +86,39 @@ export class VoicesComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadVoices();
+        this.loadTerms();
+    }
+
+    loadTerms(): void {
+        this.ttsApi.getTerms().subscribe({
+            next: (res) => {
+                this.terms = res.terms || [];
+            },
+            error: () => (this.terms = []),
+        });
+    }
+
+    toggleTerm(term: string): void {
+        if (this.selectedTerms.has(term)) this.selectedTerms.delete(term);
+        else this.selectedTerms.add(term);
+        this.performSearch();
+    }
+
+    clearTerms(): void {
+        this.selectedTerms.clear();
+        this.performSearch();
+    }
+
+    performSearch(): void {
+        this.searchResultsLoading.set(true);
+        const termsParam = Array.from(this.selectedTerms);
+        this.ttsApi.searchVoices(this.searchQuery || undefined, termsParam).subscribe({
+            next: (res) => {
+                this.voices.set(res.voices || []);
+                this.searchResultsLoading.set(false);
+            },
+            error: () => this.searchResultsLoading.set(false),
+        });
     }
 
     loadVoices(): void {

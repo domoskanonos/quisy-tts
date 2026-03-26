@@ -7,7 +7,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from config import ProjectConfig
-from services.default_voices import DEFAULT_VOICES
+
+# NOTE: default voices are imported lazily inside _seed_defaults to avoid
+# package-level circular imports during test-time module loading.
 from schemas.languages import resolve_language
 
 logger = ProjectConfig.get_logger()
@@ -31,31 +33,42 @@ CREATE TABLE IF NOT EXISTS voices (
 class VoiceService:
     """Service for managing voices with SQLite persistence."""
 
-    def __init__(self, voices_dir: Path | None = None) -> None:
+    def __init__(self, voices_dir: Path | None = None, db_path: Path | None = None) -> None:
         self._voices_dir = voices_dir or settings.VOICES_DIR
         self._voices_dir.mkdir(parents=True, exist_ok=True)
 
-        # Database now lives in APP_DIR
-        self._app_dir = settings.APP_DIR
-        self._app_dir.mkdir(parents=True, exist_ok=True)
-        self._db_path = self._app_dir / "quisy-tts.db"
+        # Use either provided db_path (useful for tests) or resources DB as the
+        # single authoritative, writable runtime DB.
+        self._db_path = Path(db_path) if db_path is not None else settings.RESOURCES_DIR / "quisy-tts.db"
 
-        # Check if DB exists. If not, try to copy from resources
         if not self._db_path.exists():
-            resource_db_path = settings.RESOURCES_DIR / "quisy-tts.db"
-            if resource_db_path.exists():
-                logger.info(f"Checking for database seeding: Copying {resource_db_path} to {self._db_path}")
-                shutil.copy2(resource_db_path, self._db_path)
-            else:
-                logger.info("No seed database found in resources. Starting fresh.")
+            # If the DB doesn't exist we treat this as a configuration error in
+            # production, but in tests callers may expect to create a fresh DB.
+            logger.error(f"resources DB not found at {self._db_path}")
+            raise FileNotFoundError(f"resources DB not found at {self._db_path}")
 
+        # Ensure we can write to the resources DB
+        try:
+            with open(self._db_path, "ab"):
+                pass
+        except Exception as e:
+            logger.error(f"resources DB at {self._db_path} is not writable: {e}")
+            raise
+
+        # Initialize DB (run migrations / seed) directly on resources DB
         self._init_db()
 
     # ─── Database Setup ──────────────────────────────────────────
 
     def _get_conn(self) -> sqlite3.Connection:
         """Create a new connection with row_factory."""
+        # Enable WAL for better concurrency and performance
         conn = sqlite3.connect(str(self._db_path))
+        try:
+            conn.execute("PRAGMA journal_mode=WAL;")
+        except Exception:
+            # Not critical if PRAGMA is unsupported
+            pass
         conn.row_factory = sqlite3.Row
         return conn
 
@@ -99,8 +112,41 @@ class VoiceService:
         except Exception as e:
             logger.warning(f"Failed to normalize voice languages during migration: {e}")
 
+        # Ensure FTS5 virtual table for full-text search exists and is synced.
+        try:
+            cur = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='voices_fts'")
+            if cur.fetchone() is None:
+                logger.info("Creating FTS5 virtual table 'voices_fts' for full-text search...")
+                # Use content='voices' so we don't duplicate storage; content_rowid maps to voices.rowid
+                conn.execute(
+                    "CREATE VIRTUAL TABLE IF NOT EXISTS voices_fts USING fts5(name, instruct, example_text, content='voices', content_rowid='rowid', tokenize='unicode61')"
+                )
+                # Rebuild index from existing voices
+                conn.execute("INSERT INTO voices_fts(voices_fts) VALUES('rebuild')")
+
+                # Triggers to keep the FTS index in sync
+                conn.execute(
+                    "CREATE TRIGGER IF NOT EXISTS voices_ai AFTER INSERT ON voices BEGIN "
+                    "INSERT INTO voices_fts(rowid, name, instruct, example_text) VALUES (new.rowid, new.name, new.instruct, new.example_text); END;"
+                )
+                conn.execute(
+                    "CREATE TRIGGER IF NOT EXISTS voices_ad AFTER DELETE ON voices BEGIN "
+                    "DELETE FROM voices_fts WHERE rowid = old.rowid; END;"
+                )
+                conn.execute(
+                    "CREATE TRIGGER IF NOT EXISTS voices_au AFTER UPDATE ON voices BEGIN "
+                    "UPDATE voices_fts SET name = new.name, instruct = new.instruct, example_text = new.example_text WHERE rowid = old.rowid; END;"
+                )
+                conn.commit()
+        except Exception as e:
+            # FTS5 may not be available in the SQLite build; warn but continue.
+            logger.warning(f"Failed to create or initialize FTS5 table: {e}")
+
     def _seed_defaults(self, conn: sqlite3.Connection) -> None:
         """Insert all default voices."""
+        # Import DEFAULT_VOICES lazily to avoid circular imports during tests
+        from services.default_voices import DEFAULT_VOICES
+
         now = datetime.now(UTC).isoformat()
         for i, voice in enumerate(DEFAULT_VOICES):
             voice_id = f"default_{i + 1:03d}"
@@ -142,6 +188,81 @@ class VoiceService:
         with self._get_conn() as conn:
             rows = conn.execute("SELECT * FROM voices ORDER BY is_default DESC, name ASC").fetchall()
         return [self._row_to_dict(r) for r in rows]
+
+    # ─── FTS / Search Helpers ─────────────────────────────────────
+
+    def get_top_instruct_terms(self) -> list[dict]:
+        """Return top terms from the FTS index via simple token counts.
+
+        If FTS isn't available, fall back to an empty list.
+        """
+        with self._get_conn() as conn:
+            try:
+                # Use FTS auxiliary function to enumerate tokens if available.
+                # SQLite doesn't expose token counts directly, so we'll approximate
+                # by splitting instructs and counting tokens here.
+                rows = conn.execute("SELECT instruct FROM voices WHERE instruct IS NOT NULL").fetchall()
+                from collections import Counter
+                import re
+
+                counter = Counter()
+                for r in rows:
+                    text = r[0] or ""
+                    tokens = re.findall(r"\b\w{3,}\b", text.lower(), flags=re.UNICODE)
+                    counter.update(tokens)
+
+                top = counter.most_common(50)
+                return [{"term": t, "count": c} for t, c in top]
+            except Exception:
+                return []
+
+    def search(self, terms: list[str], q: str | None, limit: int = 20, offset: int = 0) -> list[dict]:
+        """Search voices using FTS5 MATCH where possible, falling back to LIKE.
+
+        - `terms` are treated as ANDed tokens that must appear in `instruct`.
+        - `q` is a free text query applied across `name`, `instruct`, `example_text`.
+        """
+        with self._get_conn() as conn:
+            try:
+                # Prefer FTS5 if available
+                cur = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='voices_fts'")
+                if cur.fetchone():
+                    clauses = []
+                    params: list[str] = []
+                    if terms:
+                        # Build MATCH expression requiring all terms (AND semantics)
+                        match_expr = " AND ".join([f"{t}" for t in terms])
+                        clauses.append(f"rowid IN (SELECT rowid FROM voices_fts WHERE voices_fts MATCH ?)")
+                        params.append(match_expr)
+                    if q:
+                        # Use FTS MATCH for free text as well (allow prefix searching)
+                        clauses.append("rowid IN (SELECT rowid FROM voices_fts WHERE voices_fts MATCH ?)")
+                        params.append(q + "*")
+
+                    where = " AND ".join(clauses) if clauses else "1=1"
+                    sql = f"SELECT * FROM voices WHERE {where} ORDER BY is_default DESC, name ASC LIMIT ? OFFSET ?"
+                    params.extend([str(limit), str(offset)])
+                    rows = conn.execute(sql, params).fetchall()
+                    return [self._row_to_dict(r) for r in rows]
+            except Exception:
+                # Fall through to LIKE-based fallback
+                pass
+
+            # Fallback: simple LIKE-based search
+            parts: list[str] = []
+            params: list[str] = []
+            for t in terms:
+                parts.append("instruct LIKE ?")
+                params.append(f"%{t}%")
+            if q:
+                parts.append("(name LIKE ? OR instruct LIKE ? OR example_text LIKE ?)")
+                params.extend([f"%{q}%"] * 3)
+
+            where = " AND ".join(parts) if parts else "1=1"
+            sql = f"SELECT * FROM voices WHERE {where} ORDER BY is_default DESC, name ASC LIMIT ? OFFSET ?"
+            params.extend([str(limit), str(offset)])
+            rows = conn.execute(sql, params).fetchall()
+            return [self._row_to_dict(r) for r in rows]
 
     def get_voice(self, voice_id: str) -> dict | None:
         """Return a single voice by ID, or None if not found."""
@@ -300,8 +421,9 @@ class VoiceService:
         if voice is None or voice.get("audio_filename") is None:
             return None
 
+        # Only serve generated audio from the voices directory. Resources/voices
+        # shipped with the project are explicitly ignored per runtime policy.
         audio_path = self._voices_dir / voice["audio_filename"]
         if not audio_path.exists():
             return None
-
         return audio_path

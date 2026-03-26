@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from api.routes import base, custom_voice, info, voice_design, voices_crud, websocket
+from api.routes import base, custom_voice, info, voice_design, voices_crud, websocket, voices_search
 from config import ProjectConfig
 
 logger = ProjectConfig.get_logger()
@@ -176,6 +176,7 @@ api_router.include_router(base.router, prefix="/generate/base")
 api_router.include_router(voice_design.router, prefix="/generate/voice-design")
 api_router.include_router(custom_voice.router, prefix="/generate/custom-voice")
 api_router.include_router(voices_crud.router, prefix="/voices")
+api_router.include_router(voices_search.router, prefix="/voices")
 api_router.include_router(websocket.router)
 
 app.include_router(api_router, prefix="/api")

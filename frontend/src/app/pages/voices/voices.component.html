@@ -21,6 +21,18 @@
     <!-- Custom Voices Section -->
     @if (voices().length > 0) {
     <div class="section">
+        <div class="search-panel">
+            <div class="chips">
+                <span *ngFor="let t of terms" class="chip" [class.selected]="selectedTerms.has(t.term)" (click)="toggleTerm(t.term)">
+                    {{ t.term }} <small class="chip-count">{{ t.count }}</small>
+                </span>
+            </div>
+            <div class="search-input">
+                <input pInputText [(ngModel)]="searchQuery" placeholder="Freie Suche..." (keyup.enter)="performSearch()" />
+                <button pButton type="button" class="btn-small" (click)="performSearch()">Suchen</button>
+                <button pButton type="button" class="btn-small" (click)="clearTerms()">Clear</button>
+            </div>
+        </div>
         <h2 class="section-title">
             <i class="pi pi-star"></i>
             Stimmen

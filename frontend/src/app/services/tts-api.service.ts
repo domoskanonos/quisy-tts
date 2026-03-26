@@ -88,8 +88,23 @@ export class TtsApiService {
     }
 
     getVoiceAudioUrl(voiceId: string): string {
-        // Add no-cache query param by default when used by player to avoid stale browser caching.
+        // Return the audio endpoint; callers append a cache-buster when playing.
         return `${this.baseUrl}/voices/${voiceId}/audio`;
+    }
+
+    // ─── Search / Terms API helpers ─────────────────────────────
+    getTerms(): Observable<{ terms: { term: string; count: number }[] }> {
+        return this.http.get<{ terms: { term: string; count: number }[] }>(this.baseUrl + '/voices/terms');
+    }
+
+    searchVoices(q?: string, terms?: string[], limit = 20, offset = 0): Observable<{ total: number; voices: Voice[] }> {
+        let params = new URLSearchParams();
+        if (q) params.set('q', q);
+        if (terms && terms.length) params.set('terms', terms.join(','));
+        params.set('limit', String(limit));
+        params.set('offset', String(offset));
+        const url = this.baseUrl + '/voices/search' + (params.toString() ? `?${params.toString()}` : '');
+        return this.http.get<{ total: number; voices: Voice[] }>(url);
     }
 
     // ─── Background Generation ──────────────────────────────────
