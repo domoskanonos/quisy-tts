@@ -1,9 +1,15 @@
 # CHANGELOG
 
 
+## v0.17.0 (2026-03-27)
+
+
 ## v0.16.0 (2026-03-27)
 
 ### Features
+
+- Pre-install spaCy and download language models for improved NLP support
+  ([`ccc0c54`](https://github.com/domoskanonos/quisy-tts/commit/ccc0c544ddae169c0d14db68ebf2bbee5de0babb))
 
 - Pre-install spaCy language models for improved NLP capabilities
   ([`88f5165`](https://github.com/domoskanonos/quisy-tts/commit/88f5165278964a92240acc8f8692fd023cbf9737))
