@@ -203,8 +203,7 @@ if static_dir.exists():
     app.mount("/ui", StaticFiles(directory=static_dir, html=True), name="ui")
 
 # Mount MCP server
-mcp.init_app(app)
-app.mount("/mcp", mcp.app)
+app.mount("/mcp", mcp.http_app())
 
 
 @app.exception_handler(404)

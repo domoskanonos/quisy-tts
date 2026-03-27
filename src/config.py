@@ -18,7 +18,9 @@ class ProjectSettings(BaseSettings):
     PORT: int = 8045
 
     # Base directory for all data
-    BASE_DATA_DIR: Path = Path("data")
+    # Resolved to absolute path at project root
+    BASE_DIR: Path = Path(__file__).resolve().parent.parent
+    BASE_DATA_DIR: Path = BASE_DIR / "data"
 
     # TTS Settings
     DOWNLOAD_MODELS: str = (
@@ -33,7 +35,7 @@ class ProjectSettings(BaseSettings):
     VOICES_DIR: Path = BASE_DATA_DIR / "voices"
     OUTPUT_DIR: Path = BASE_DATA_DIR / "output"
     APP_DIR: Path = BASE_DATA_DIR / "app_data"
-    RESOURCES_DIR: Path = Path("resources")
+    RESOURCES_DIR: Path = BASE_DIR / "resources"
     DEFAULT_LANGUAGE: str = "de"
     # When set, this should be a voice `id` existing in the SQLite voices
     # database (e.g. the seeded ids `default_001`, ...). If provided, the

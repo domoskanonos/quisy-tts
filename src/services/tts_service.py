@@ -17,7 +17,12 @@ from services.text_splitter import get_text_splitter
 from api.websocket_status_manager import status_ws_manager
 
 logger = ProjectConfig.get_logger()
-settings = ProjectConfig.get_settings()
+
+
+# settings = ProjectConfig.get_settings()  <-- Was removed, but let's re-add as a property or use the class method directly.
+# Let's keep it but use the method to access it.
+def _get_settings():
+    return ProjectConfig.get_settings()
 
 
 class TTSService:
@@ -356,7 +361,7 @@ class TTSService:
                         logger.info(f"Generating chunk {i + 1}/{len(chunks)} for key: {chunk_key[:8]}...")
                         logger.debug(f"Generating chunk full key: {chunk_key}")
                         filename = f"cache_{chunk_key}.wav"
-                        output_path = settings.OUTPUT_DIR / filename
+                        output_path = ProjectConfig.get_settings().OUTPUT_DIR / filename
 
                         try:
                             result_path = await self.engine.generate_and_save(
@@ -428,7 +433,7 @@ class TTSService:
 
             # Save to global cache path
             global_filename = f"cache_{global_key}.wav"
-            global_path = settings.OUTPUT_DIR / global_filename
+            global_path = ProjectConfig.get_settings().OUTPUT_DIR / global_filename
 
             sf.write(str(global_path), final_audio, sample_rate)
 
@@ -525,7 +530,7 @@ class TTSService:
                         )
                     else:
                         # Generate and save chunk
-                        output_path = settings.OUTPUT_DIR / f"cache_{chunk_key}.wav"
+                        output_path = ProjectConfig.get_settings().OUTPUT_DIR / f"cache_{chunk_key}.wav"
                         try:
                             logger.debug(f"Stream: generating chunk full key: {chunk_key}")
                             result_path = await self.engine.generate_and_save(

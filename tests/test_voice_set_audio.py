@@ -10,22 +10,7 @@ import sys
 from pathlib import Path
 
 
-def _prepare_env(tmp_path: Path) -> None:
-    # Set minimal env vars BEFORE importing project code so ProjectConfig picks them up
-    os.environ.setdefault("MODELS_DIR", str(tmp_path / "models"))
-    os.environ.setdefault("VOICES_DIR", str(tmp_path / "voices"))
-    os.environ.setdefault("OUTPUT_DIR", str(tmp_path / "output"))
-    os.environ.setdefault("APP_DIR", str(tmp_path / "app"))
-    os.environ.setdefault("RESOURCES_DIR", str(tmp_path / "resources"))
-    os.environ.setdefault(
-        "DOWNLOAD_MODELS",
-        "Qwen/Qwen3-TTS-12Hz-1.7B-Base,Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign,Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
-    )
-
-
 def test_set_audio_removes_old_generated_files_but_preserves_user_upload(tmp_path: Path) -> None:
-    _prepare_env(tmp_path)
-
     # Load voice_service module by file path to avoid importing the `services`
     # package which can trigger circular imports during test initialization.
     src_root = Path(__file__).resolve().parent.parent / "src"
@@ -92,7 +77,6 @@ def test_set_audio_removes_old_generated_files_but_preserves_user_upload(tmp_pat
 
 
 def test_upload_replaces_generated_files_and_writes_user_filename(tmp_path: Path) -> None:
-    _prepare_env(tmp_path)
     src_root = Path(__file__).resolve().parent.parent / "src"
     voice_service_path = src_root / "services" / "voice_service.py"
     import importlib.util

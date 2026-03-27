@@ -12,7 +12,7 @@ from config import ProjectConfig
 from schemas.languages import resolve_language
 
 logger = ProjectConfig.get_logger()
-settings = ProjectConfig.get_settings()
+
 
 _CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS voices (
@@ -33,7 +33,9 @@ class VoiceService:
     """Service for managing voices with SQLite persistence."""
 
     def __init__(self, voices_dir: Path | None = None, db_path: Path | None = None) -> None:
+        settings = ProjectConfig.get_settings()
         self._voices_dir = voices_dir or settings.VOICES_DIR
+        print(f"DEBUG: VoiceService init. voices_dir={self._voices_dir}, CWD={Path.cwd()}")
         self._voices_dir.mkdir(parents=True, exist_ok=True)
 
         # Use either provided db_path (useful for tests) or resources DB as the

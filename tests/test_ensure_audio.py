@@ -17,17 +17,6 @@ from fastapi.testclient import TestClient
 # Ensure src is importable like other tests
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-# Minimal env vars for ProjectConfig
-os.environ.setdefault("MODELS_DIR", "models")
-os.environ.setdefault("VOICES_DIR", "voices")
-os.environ.setdefault("OUTPUT_DIR", "output")
-os.environ.setdefault("APP_DIR", "app_data")
-os.environ.setdefault("RESOURCES_DIR", "resources")
-os.environ.setdefault(
-    "DOWNLOAD_MODELS",
-    "Qwen/Qwen3-TTS-12Hz-1.7B-Base,Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign,Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
-)
-
 from api import app
 from api.dependencies import get_tts_service
 from config import ProjectConfig
