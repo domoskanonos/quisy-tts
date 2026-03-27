@@ -156,6 +156,32 @@ If you want to run without GPU in development, set `DEVICE=cpu`, but note that p
 
 ---
 
+## 🤖 MCP Server (Model Context Protocol)
+
+Quisy TTS includes a built-in MCP server that allows LLMs to interact with TTS features directly using natural language.
+
+### Usage
+
+The MCP server is hosted at `/mcp` on your running Quisy TTS instance. 
+
+#### Local Development
+1. Ensure your API server is running (see [Quick Start](#🚀-quick-start)).
+2. Configure your MCP client (e.g., Claude Desktop, Cursor) to connect to:
+   - **Transport**: SSE (Server-Sent Events)
+   - **URL**: `http://localhost:8045/mcp/sse`
+
+#### Docker Usage
+If running via Docker, ensure the container port is exposed:
+```bash
+docker run -d --gpus all -p 8045:8045 --name quisy-tts \
+  -v ${PWD}/models:/app/models \
+  -v ${PWD}/output:/app/output \
+  domoskanonos/quisy-tts:latest
+```
+Then configure your MCP client to use `http://localhost:8045/mcp/sse`.
+
+---
+
 ## ⚙️ Configuration
 
 All settings are managed via Pydantic and can be overridden by environment variables:

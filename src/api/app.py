@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from api.routes import base, custom_voice, info, voice_design, voices_crud, voices_search, websocket
 from config import ProjectConfig
+from mcp_server import mcp
 
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
@@ -200,6 +201,10 @@ async def root_redirect() -> RedirectResponse:
 # Mount static files (will serve index.html for /ui)
 if static_dir.exists():
     app.mount("/ui", StaticFiles(directory=static_dir, html=True), name="ui")
+
+# Mount MCP server
+mcp.init_app(app)
+app.mount("/mcp", mcp.app)
 
 
 @app.exception_handler(404)
