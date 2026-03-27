@@ -1,6 +1,134 @@
 # CHANGELOG
 
 
+## v0.15.0 (2026-03-27)
+
+### Bug Fixes
+
+- Add type annotations for FastAPI and APIRouter instances for clarity
+  ([`a34e2a1`](https://github.com/domoskanonos/quisy-tts/commit/a34e2a188ed996ce153dcfb8d38509f3c3126231))
+
+- Disable reportUntypedFunctionDecorator for better type checking configuration
+  ([`df3fa70`](https://github.com/domoskanonos/quisy-tts/commit/df3fa70e5abb81c4e581e563c906a4ee602c0e3f))
+
+- Ruff format and mypy issues in tests
+  ([`675985a`](https://github.com/domoskanonos/quisy-tts/commit/675985a909a181fdd3f16ab57391972e63433258))
+
+- Update directory paths in ProjectSettings to use BASE_DATA_DIR for better organization
+  ([`2cd5690`](https://github.com/domoskanonos/quisy-tts/commit/2cd5690f9e94089b9c122265158b47c5a9540d80))
+
+- **api**: Respect force flag for ensure-audio endpoint when audio exists
+  ([`cc0118e`](https://github.com/domoskanonos/quisy-tts/commit/cc0118e78877bfa8523d607cbd5d5d12ce86af57))
+
+- **frontend**: Auto-save edits before generating and add cache-busting on playback; subscribe to
+  status events
+  ([`f1a1df1`](https://github.com/domoskanonos/quisy-tts/commit/f1a1df196cc89b0e424c52188f2ea1c41cd820a6))
+
+- **frontend**: Import primeicons and scope icon font for player buttons
+  ([`34ebe1c`](https://github.com/domoskanonos/quisy-tts/commit/34ebe1cfc01a3046fc30ffdbf1cbe7aae6549207))
+
+- **frontend**: Make generateAndPlay public for template usage
+  ([`bea4d02`](https://github.com/domoskanonos/quisy-tts/commit/bea4d0217e0f60f31bf6d16bf69a372a2c6b15cc))
+
+- **frontend**: Remove system_prompt usage and add DOM lib + typed error handler
+  ([`d76590c`](https://github.com/domoskanonos/quisy-tts/commit/d76590cb8090a3e5039f8b05aaa72334e8ff4aa1))
+
+- **frontend**: Respect force flag and always trigger regeneration when requested
+  ([`ce30513`](https://github.com/domoskanonos/quisy-tts/commit/ce30513c14214e722ad3b3bec8feb8030d723a04))
+
+### Chores
+
+- Add .env for local test runs
+  ([`918581a`](https://github.com/domoskanonos/quisy-tts/commit/918581a5f644b65a0fcc544817a05d8566948ea8))
+
+- Ignore local app SQLite DB (app/quisy-tts.db)
+  ([`89debd1`](https://github.com/domoskanonos/quisy-tts/commit/89debd11973f9f5562b860c1d1e358a49d5b8337))
+
+- Run ruff format and fix mypy test issues; add tests for tts cancellation and set_audio
+  ([`111e999`](https://github.com/domoskanonos/quisy-tts/commit/111e999193f9e64490d358fd9dc7c8c7a8759ad7))
+
+- Update `quisy-tts` version in lockfile and add local frontend API proxy configuration.
+  ([`4485d07`](https://github.com/domoskanonos/quisy-tts/commit/4485d079de6adbbcc8d39dbce69d0dd2d6c102e7))
+
+- **debug**: Log DB example_text and computed cache key during ref-gen
+  ([`ec9fe4a`](https://github.com/domoskanonos/quisy-tts/commit/ec9fe4a4f9bad8ea55ddbc7a541bd7fea3bf2db4))
+
+- **log**: Add informative cache & chunk generation logs
+  ([`8026b1e`](https://github.com/domoskanonos/quisy-tts/commit/8026b1e143caf652b0e0fd31fea72811a643ef30))
+
+### Features
+
+- Enhance CI pipeline with Pyright checks, improve VoiceService DB handling, and update tests for
+  circular imports
+  ([`c66aaab`](https://github.com/domoskanonos/quisy-tts/commit/c66aaabfefb341df2e315d3b4c1e9712239a89a3))
+
+- Implement initial Angular frontend application for Quisy TTS, including core UI components,
+  styling, linting, and Playwright tests.
+  ([`37ef1ae`](https://github.com/domoskanonos/quisy-tts/commit/37ef1ae954c0ecdef560b0dbfeeeb75877c76d82))
+
+- Implement voice management system with CRUD API, default voices, and integrated frontend
+  components.
+  ([`b3700a3`](https://github.com/domoskanonos/quisy-tts/commit/b3700a34d3076fe11a243a5f775a68fc3709b7b8))
+
+- Implement voice management with CRUD API, services, and frontend components, alongside TTS
+  cancellation and refined audio file handling.
+  ([`abdab22`](https://github.com/domoskanonos/quisy-tts/commit/abdab22265661ec5f35ca46ef99028338c36e83e))
+
+- Msus so sein
+  ([`be9efa7`](https://github.com/domoskanonos/quisy-tts/commit/be9efa7f94209aba3e6caaa2506a315b6757012f))
+
+- Refactor type checking configurations, enhance error handling in voice creation, and improve
+  module imports for better compatibility
+  ([`3217bd5`](https://github.com/domoskanonos/quisy-tts/commit/3217bd572a50ca84fc835d05fe70ad7729e7f019))
+
+- Remove unused imports in various scripts for cleaner code
+  ([`efbda3e`](https://github.com/domoskanonos/quisy-tts/commit/efbda3e7be7489cac02b4370d9299f7fa93cd96e))
+
+- Reorganize API route registration to prevent shadowing of static paths and add tests for reserved
+  keywords handling
+  ([`1178c89`](https://github.com/domoskanonos/quisy-tts/commit/1178c89fc8de88df982c0a7a50b7f4c51a6152d1))
+
+- Replace grep-based search with a portable Python script and add VSCode workspace configuration
+  ([`d94c5f9`](https://github.com/domoskanonos/quisy-tts/commit/d94c5f9ea2d04c01a3267737e27ce61359dbc273))
+
+- Standardize API port to 8045, introduce Pydantic-based configuration, and enhance development with
+  a frontend proxy and Uvicorn CLI.
+  ([`77a7e17`](https://github.com/domoskanonos/quisy-tts/commit/77a7e17607f89c8ea8fd5dde410d3a54e636817a))
+
+- Update .gitignore, refactor styles.scss to use Sass modules, and modify benchmark script for async
+  execution
+  ([`7c97ec6`](https://github.com/domoskanonos/quisy-tts/commit/7c97ec6ca6e019b8be3e550670604c84c03e9141))
+
+- Update Pyright configuration, enhance DummyEngine for audio generation, and remove obsolete
+  verify_modes test
+  ([`dd2b756`](https://github.com/domoskanonos/quisy-tts/commit/dd2b75689cab02e126539c5dc1d148cd684d18d6))
+
+- **cache**: Cleanup job to remove cache files older than X days; add script
+  ([`58d4450`](https://github.com/domoskanonos/quisy-tts/commit/58d44503c0ae261652e2f468deb0bff115c7ab6f))
+
+- **cache**: Stable SHA256 cache key including speaker and params
+  ([`5b9a40d`](https://github.com/domoskanonos/quisy-tts/commit/5b9a40df0e5225ce366a658f00b22b956e31ae20))
+
+- **demo**: Add demo script; log streaming chunk/cache events
+  ([`480cd5d`](https://github.com/domoskanonos/quisy-tts/commit/480cd5dd05cbb777c5630319f365d1f832b05b3d))
+
+- **frontend**: Add progress bar for reference-generation; server: set no-cache headers for audio
+  responses
+  ([`97d2856`](https://github.com/domoskanonos/quisy-tts/commit/97d2856a8fe6d716685c3851adff7b202ad5a4b7))
+
+- **frontend**: Use Google Roboto (preconnect + stylesheet); a11y: add roles/aria to layout;
+  reduced-motion support
+  ([`3c8875d`](https://github.com/domoskanonos/quisy-tts/commit/3c8875dfb7ea166d145e5f4be287b7f57a618f93))
+
+### Testing
+
+- **playwright**: Use correct base URL /ui for dev server and tests
+  ([`c2fbdcf`](https://github.com/domoskanonos/quisy-tts/commit/c2fbdcff0d5f1633c490ce293eb705b9cfba4f7c))
+
+- **ui**: Add screenshots and axe scans; stabilize playwright server url to /ui
+  ([`9e1c56e`](https://github.com/domoskanonos/quisy-tts/commit/9e1c56e075c70bb250a07d0ab12aea617e76e1e0))
+
+
 ## v0.14.0 (2026-03-24)
 
 ### Features
@@ -15,6 +143,10 @@
 
 - Implement Qwen3-TTS engine with asynchronous model loading and audio post-processing utilities.
   ([`3dafec2`](https://github.com/domoskanonos/quisy-tts/commit/3dafec23fc6d48cc5d1a029362349157de782cd0))
+
+- Implement Qwen3-TTS engine with custom voice API routes, update project configuration, and add VS
+  Code settings.
+  ([`26e7e9d`](https://github.com/domoskanonos/quisy-tts/commit/26e7e9d38b471cae3b362868c6e43923cdb0dbb7))
 
 - Implement TTS service with caching, text splitting, and Qwen engine integration, alongside new
   core interfaces and concurrency tests.
