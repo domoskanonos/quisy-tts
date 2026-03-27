@@ -45,7 +45,6 @@ class DummyEngine(TTSEngine):
         sr = 24000
         t = np.linspace(0, 0.01, int(sr * 0.01), endpoint=False)
         data = 0.1 * np.sin(2 * np.pi * 440 * t).astype(np.float32)
-        from typing import cast
 
         p = Path(output_path)
         p.parent.mkdir(parents=True, exist_ok=True)

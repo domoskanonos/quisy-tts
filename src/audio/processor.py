@@ -2,9 +2,8 @@ import subprocess
 import time
 
 import soundfile as sf
-from typing import Any
-
 from typing import Any, Optional
+from config import ProjectConfig
 
 # Import torch lazily in functions that need it to allow running tests without
 # an installed torch wheel in lightweight environments
@@ -15,8 +14,6 @@ try:
     torch = _torch
 except ImportError:
     pass
-
-from config import ProjectConfig
 
 
 logger = ProjectConfig.get_logger()

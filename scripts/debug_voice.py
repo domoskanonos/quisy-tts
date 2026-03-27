@@ -1,5 +1,4 @@
 import sqlite3
-import pprint
 
 conn = sqlite3.connect("resources/quisy-tts.db")
 conn.row_factory = sqlite3.Row
