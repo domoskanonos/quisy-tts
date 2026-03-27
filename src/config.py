@@ -17,6 +17,9 @@ class ProjectSettings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8045
 
+    # Base directory for all data
+    BASE_DATA_DIR: Path = Path("data")
+
     # TTS Settings
     DOWNLOAD_MODELS: str = (
         "Qwen/Qwen3-TTS-12Hz-1.7B-Base,"
@@ -26,10 +29,10 @@ class ProjectSettings(BaseSettings):
         "Qwen/Qwen3-TTS-12Hz-0.6B-VoiceDesign,"
         "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice"
     )
-    MODELS_DIR: Path = Path("models")
-    VOICES_DIR: Path = Path("voices")
-    OUTPUT_DIR: Path = Path("output")
-    APP_DIR: Path = Path("app_data")
+    MODELS_DIR: Path = BASE_DATA_DIR / "models"
+    VOICES_DIR: Path = BASE_DATA_DIR / "voices"
+    OUTPUT_DIR: Path = BASE_DATA_DIR / "output"
+    APP_DIR: Path = BASE_DATA_DIR / "app_data"
     RESOURCES_DIR: Path = Path("resources")
     DEFAULT_LANGUAGE: str = "de"
     # When set, this should be a voice `id` existing in the SQLite voices
@@ -58,11 +61,6 @@ class _RequiredEnv:
     """
 
     VARS = [
-        "MODELS_DIR",
-        "VOICES_DIR",
-        "OUTPUT_DIR",
-        "APP_DIR",
-        "RESOURCES_DIR",
         "DOWNLOAD_MODELS",
     ]
 
@@ -104,7 +102,7 @@ class ProjectConfig:
                 env_file_keys = set()
 
             for key in _RequiredEnv.VARS:
-                if key in os.environ or key in env_file_keys:
+                if key in os.environ or key in env_file_keys or getattr(cls._settings, key, None):
                     continue
                 missing.append(key)
 

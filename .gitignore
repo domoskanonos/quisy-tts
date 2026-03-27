@@ -1,8 +1,4 @@
-/output
-/temp
-/voices
-/app_data
-
+data
 .venv
 .env
 __pycache__
@@ -10,6 +6,3 @@ __pycache__
 .mypy_cache
 .ruff_cache
 .pytest_cache
-
-# Ignore committed SQLite app DB created during tests/dev
-app/quisy-tts.db
