@@ -45,14 +45,14 @@ def test_set_audio_removes_old_generated_files_but_preserves_user_upload(tmp_pat
     assert spec_def is not None
     def_mod = importlib.util.module_from_spec(spec_def)
     assert spec_def.loader is not None
-    spec_def.loader.exec_module(def_mod)  # type: ignore[arg-unreachable]
+    spec_def.loader.exec_module(def_mod)
     sys.modules["services.default_voices"] = def_mod
 
     spec = importlib.util.spec_from_file_location("voice_service_mod", str(voice_service_path))
     assert spec is not None
     vs_mod = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
-    spec.loader.exec_module(vs_mod)  # type: ignore[arg-unreachable]
+    spec.loader.exec_module(vs_mod)
     VoiceService = vs_mod.VoiceService
 
     vs = VoiceService(voices_dir=Path(os.environ["VOICES_DIR"]))
@@ -101,7 +101,7 @@ def test_upload_replaces_generated_files_and_writes_user_filename(tmp_path: Path
     assert spec is not None
     vs_mod = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
-    spec.loader.exec_module(vs_mod)  # type: ignore[arg-unreachable]
+    spec.loader.exec_module(vs_mod)
     VoiceService = vs_mod.VoiceService
 
     vs = VoiceService(voices_dir=Path(os.environ["VOICES_DIR"]))

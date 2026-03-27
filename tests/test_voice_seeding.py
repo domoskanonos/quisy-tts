@@ -44,7 +44,7 @@ def test_seeds_default_voices(tmp_path, monkeypatch):
     dv_spec = importlib.util.spec_from_file_location("services.default_voices", str(dv_path))
     assert dv_spec is not None and dv_spec.loader is not None
     dv_mod = importlib.util.module_from_spec(dv_spec)
-    dv_spec.loader.exec_module(dv_mod)  # type: ignore[attr-defined]
+    dv_spec.loader.exec_module(dv_mod)
     expected = len(dv_mod.DEFAULT_VOICES)
 
     # Load the voice_service module directly from file and instantiate using
@@ -53,7 +53,7 @@ def test_seeds_default_voices(tmp_path, monkeypatch):
     svc_spec = importlib.util.spec_from_file_location("voice_service_mod", str(svc_path))
     assert svc_spec is not None and svc_spec.loader is not None
     vs_mod = importlib.util.module_from_spec(svc_spec)
-    svc_spec.loader.exec_module(vs_mod)  # type: ignore[attr-defined]
+    svc_spec.loader.exec_module(vs_mod)
     _ = vs_mod.VoiceService(db_path=db_path)
 
     # Verify the DB was seeded with the expected number of default voices

@@ -4,12 +4,17 @@ import time
 import soundfile as sf
 from typing import Any
 
+from typing import Any, Optional
+
 # Import torch lazily in functions that need it to allow running tests without
 # an installed torch wheel in lightweight environments
+torch: Optional[Any] = None
 try:
-    import torch  # type: ignore
-except Exception:
-    torch = None  # type: ignore
+    import torch as _torch
+
+    torch = _torch
+except ImportError:
+    pass
 
 from config import ProjectConfig
 

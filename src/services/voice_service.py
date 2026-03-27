@@ -157,17 +157,21 @@ class VoiceService:
         # back to loading the module directly from the file system if that
         # triggers an import-time circular dependency.
         try:
-            from services.default_voices import DEFAULT_VOICES  # type: ignore
+            import services.default_voices
+
+            DEFAULT_VOICES = services.default_voices.DEFAULT_VOICES
         except Exception:
             from importlib import util
             from pathlib import Path
 
             dv_path = Path(__file__).resolve().parents[0] / "default_voices.py"
             spec = util.spec_from_file_location("services.default_voices", str(dv_path))
-            assert spec is not None and spec.loader is not None
-            dv_mod = util.module_from_spec(spec)
-            spec.loader.exec_module(dv_mod)  # type: ignore[attr-defined]
-            DEFAULT_VOICES = dv_mod.DEFAULT_VOICES
+            if spec and spec.loader:
+                dv_mod = util.module_from_spec(spec)
+                spec.loader.exec_module(dv_mod)
+                DEFAULT_VOICES = dv_mod.DEFAULT_VOICES
+            else:
+                raise ImportError("Could not load default_voices")
 
         now = datetime.now(UTC).isoformat()
         for i, voice in enumerate(DEFAULT_VOICES):
@@ -313,7 +317,7 @@ class VoiceService:
         instruct: str | None = None,
         # system_prompt: removed
         language: str = "german",
-    ) -> dict:
+    ) -> dict | None:
         """Create a new user voice."""
         voice_id = uuid.uuid4().hex[:12]
         now = datetime.now(UTC).isoformat()
@@ -327,7 +331,7 @@ class VoiceService:
 
         logger.info(f"Voice created: {voice_id} ({name})")
         # get_voice may return None according to typing, but in normal flow it exists
-        return self.get_voice(voice_id)  # type: ignore[return-value]
+        return self.get_voice(voice_id)
 
     def update_voice(
         self,

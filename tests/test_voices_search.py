@@ -6,13 +6,15 @@ from pathlib import Path
 import sys
 
 # Prepare a lightweight 'services' package and ensure default_voices is importable
-pkg_mod = importlib.util.module_from_spec(importlib.util.spec_from_loader("services", loader=None))  # type: ignore[arg-type]
+spec = importlib.util.spec_from_loader("services", loader=None)
+assert spec is not None
+pkg_mod = importlib.util.module_from_spec(spec)
 sys.modules["services"] = pkg_mod
 dv_path = Path(__file__).resolve().parents[1] / "src" / "services" / "default_voices.py"
-dv_spec = importlib.util.spec_from_file_location("services.default_voices", str(dv_path))  # type: ignore[arg-type]
+dv_spec = importlib.util.spec_from_file_location("services.default_voices", str(dv_path))
 assert dv_spec is not None and dv_spec.loader is not None
-dv_mod = importlib.util.module_from_spec(dv_spec)  # type: ignore[arg-type]
-dv_spec.loader.exec_module(dv_mod)  # type: ignore[attr-defined]
+dv_mod = importlib.util.module_from_spec(dv_spec)
+dv_spec.loader.exec_module(dv_mod)
 sys.modules["services.default_voices"] = dv_mod
 setattr(pkg_mod, "default_voices", dv_mod)
 
@@ -23,7 +25,7 @@ def _load_voice_service_module():
     if spec is None or spec.loader is None:
         raise RuntimeError("Failed to load voice_service module spec")
     mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)  # type: ignore
+    spec.loader.exec_module(mod)
     return mod
 
 

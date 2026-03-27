@@ -69,6 +69,8 @@ def create_voice(data: VoiceCreate) -> dict:
         instruct=data.instruct,
         language=data.language,
     )
+    if voice is None:
+        raise HTTPException(status_code=500, detail="Voice creation failed")
     return voice
 
 
