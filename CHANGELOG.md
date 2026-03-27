@@ -1,6 +1,22 @@
 # CHANGELOG
 
 
+## v0.16.0 (2026-03-27)
+
+### Features
+
+- Pre-install spaCy language models for improved NLP capabilities
+  ([`88f5165`](https://github.com/domoskanonos/quisy-tts/commit/88f5165278964a92240acc8f8692fd023cbf9737))
+
+- Update project configuration and dependencies for improved structure and functionality
+  ([`6f138f0`](https://github.com/domoskanonos/quisy-tts/commit/6f138f02d98321c997764cd88f25a4bfdfa80eb7))
+
+### Refactoring
+
+- Remove unused import in test_tts_cancellation.py
+  ([`d8a0d55`](https://github.com/domoskanonos/quisy-tts/commit/d8a0d55b1103f27b0cb4e48318efc085f1231520))
+
+
 ## v0.15.0 (2026-03-27)
 
 ### Bug Fixes
@@ -57,6 +73,16 @@
   ([`8026b1e`](https://github.com/domoskanonos/quisy-tts/commit/8026b1e143caf652b0e0fd31fea72811a643ef30))
 
 ### Features
+
+- Add MCP server implementation with audio generation tools
+  ([`9dec7d9`](https://github.com/domoskanonos/quisy-tts/commit/9dec7d938c49e8b5b7702c9de0db5ad33f006f9c))
+
+- Implemented `generate_base_06b` and `generate_base_17b` for audio generation using voice cloning
+  with 0.6B and 1.7B models respectively. - Added `generate_voice_design_17b` for generating audio
+  based on natural language voice descriptions. - Created `generate_custom_voice_06b` and
+  `generate_custom_voice_17b` for audio generation using specific speakers with 0.6B and 1.7B
+  models. - Introduced `list_voices` function to list all available voices and their IDs for use in
+  custom or base modes. - Integrated TTS and voice services for audio generation functionality.
 
 - Enhance CI pipeline with Pyright checks, improve VoiceService DB handling, and update tests for
   circular imports
