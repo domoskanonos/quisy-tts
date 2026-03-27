@@ -1,10 +1,11 @@
-from pathlib import Path
 import sys
+from pathlib import Path
 
 
 def _client():
     sys.path.insert(0, str(Path("src").resolve()))
     from fastapi.testclient import TestClient
+
     from api.app import app
 
     return TestClient(app)
