@@ -6,7 +6,6 @@ cancellation and verify the running task is cancelled and a new forced
 generation is started.
 """
 
-import os
 import sys
 import asyncio
 from pathlib import Path
