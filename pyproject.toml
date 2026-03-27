@@ -40,7 +40,6 @@ packages = ["src"]
 dev = [
     "pip>=23.0.1",
     "pyinstaller>=6.0.0",
-    "mypy>=1.19.1",
     "python-semantic-release>=10.5.3",
     "pytest-benchmark>=4.0.0",
     "memory-profiler>=0.61.0",

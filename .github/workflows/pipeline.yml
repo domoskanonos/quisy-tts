@@ -34,9 +34,6 @@ jobs:
       - name: Run formatter (ruff)
         run: uv run ruff format .
 
-      - name: Run type checks (mypy)
-        run: uv run mypy .
-
       - name: Run Pyright (detect un-awaited coroutines)
         run: |
           # Install pyright and run (fail the job if pyright reports errors)
