@@ -457,7 +457,11 @@ class VoiceService:
 
         # Only serve generated audio from the voices directory. Resources/voices
         # shipped with the project are explicitly ignored per runtime policy.
-        audio_path = self._voices_dir / voice["audio_filename"]
+        filename = voice["audio_filename"]
+        if not filename:
+            return None
+
+        audio_path = self._voices_dir / filename
         if not audio_path.exists():
             return None
         return audio_path
