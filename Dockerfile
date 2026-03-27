@@ -52,6 +52,10 @@ COPY README.md .
 # Install project
 RUN uv sync --frozen --no-dev --extra gpu
 
+# Pre-install spaCy models
+RUN .venv/bin/python -m spacy download de_core_news_sm && \
+    .venv/bin/python -m spacy download en_core_web_sm
+
 # Stage 3: Runtime (uses NVIDIA runtime image for GPU inference)
 FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04 AS runtime
 
