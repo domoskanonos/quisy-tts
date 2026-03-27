@@ -11,6 +11,7 @@ from pathlib import Path
 
 
 def test_set_audio_removes_old_generated_files_but_preserves_user_upload(tmp_path: Path) -> None:
+    os.environ["VOICES_DIR"] = str(tmp_path / "voices")
     # Load voice_service module by file path to avoid importing the `services`
     # package which can trigger circular imports during test initialization.
     src_root = Path(__file__).resolve().parent.parent / "src"
@@ -77,6 +78,7 @@ def test_set_audio_removes_old_generated_files_but_preserves_user_upload(tmp_pat
 
 
 def test_upload_replaces_generated_files_and_writes_user_filename(tmp_path: Path) -> None:
+    os.environ["VOICES_DIR"] = str(tmp_path / "voices")
     src_root = Path(__file__).resolve().parent.parent / "src"
     voice_service_path = src_root / "services" / "voice_service.py"
     import importlib.util

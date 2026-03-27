@@ -166,6 +166,12 @@ class ProjectConfig:
         return cls._settings
 
     @classmethod
+    def reset(cls) -> None:
+        """Resets the configuration, forcing re-initialization on next get_settings()."""
+        cls._settings = None
+        cls._logger = None
+
+    @classmethod
     def get_logger(cls) -> logging.Logger:
         """Returns the central logger, initializing it if necessary."""
         if cls._logger is None:

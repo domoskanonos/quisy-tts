@@ -85,49 +85,62 @@ def mock_system_dependencies(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", side_effect)
 
+    @pytest.fixture(autouse=True)
+    def setup_test_env(tmp_path, monkeypatch):
+        """Setup test environment and patch ProjectConfig settings."""
+        # Reset configuration to ensure we don't use stale settings from previous
+        # tests or module-level initialization.
+        from config import ProjectConfig
 
-@pytest.fixture(autouse=True)
-def setup_test_env(tmp_path, monkeypatch):
-    """Setup test environment and patch ProjectConfig settings."""
-    # Define paths
-    models_dir = tmp_path / "models"
-    voices_dir = tmp_path / "voices"
-    output_dir = tmp_path / "output"
-    app_dir = tmp_path / "app_data"
-    resources_dir = tmp_path / "resources"
+        ProjectConfig.reset()
 
-    # Create directories
-    for p in [models_dir, voices_dir, output_dir, app_dir, resources_dir]:
-        p.mkdir(parents=True, exist_ok=True)
+        # Define paths
+        models_dir = tmp_path / "models"
+        voices_dir = tmp_path / "voices"
+        output_dir = tmp_path / "output"
+        app_dir = tmp_path / "app_data"
+        resources_dir = tmp_path / "resources"
 
-    # Set environment variables
-    monkeypatch.setenv("MODELS_DIR", str(models_dir))
-    monkeypatch.setenv("VOICES_DIR", str(voices_dir))
-    monkeypatch.setenv("OUTPUT_DIR", str(output_dir))
-    monkeypatch.setenv("APP_DIR", str(app_dir))
-    monkeypatch.setenv("RESOURCES_DIR", str(resources_dir))
-    monkeypatch.setenv(
-        "DOWNLOAD_MODELS",
-        "Qwen/Qwen3-TTS-12Hz-1.7B-Base,Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign,Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
-    )
+        # Create directories
+        for p in [models_dir, voices_dir, output_dir, app_dir, resources_dir]:
+            p.mkdir(parents=True, exist_ok=True)
 
-    # Patch ProjectConfig.get_settings
-    from config import ProjectConfig, ProjectSettings
+        # Set environment variables
+        monkeypatch.setenv("MODELS_DIR", str(models_dir))
+        monkeypatch.setenv("VOICES_DIR", str(voices_dir))
+        monkeypatch.setenv("OUTPUT_DIR", str(output_dir))
+        monkeypatch.setenv("APP_DIR", str(app_dir))
+        monkeypatch.setenv("RESOURCES_DIR", str(resources_dir))
+        monkeypatch.setenv(
+            "DOWNLOAD_MODELS",
+            "Qwen/Qwen3-TTS-12Hz-1.7B-Base,Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign,Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+        )
 
-    settings = ProjectSettings(
-        MODELS_DIR=models_dir,
-        VOICES_DIR=voices_dir,
-        OUTPUT_DIR=output_dir,
-        APP_DIR=app_dir,
-        RESOURCES_DIR=resources_dir,
-        DOWNLOAD_MODELS="Qwen/Qwen3-TTS-12Hz-1.7B-Base,Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign,Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
-    )
+        # Patch ProjectConfig.get_settings
+        from config import ProjectConfig, ProjectSettings
 
-    def mock_get_settings():
-        return settings
+        settings = ProjectSettings(
+            MODELS_DIR=models_dir,
+            VOICES_DIR=voices_dir,
+            OUTPUT_DIR=output_dir,
+            APP_DIR=app_dir,
+            RESOURCES_DIR=resources_dir,
+            DOWNLOAD_MODELS="Qwen/Qwen3-TTS-12Hz-1.7B-Base,Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign,Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+        )
 
-    # We must patch get_settings on the class
-    monkeypatch.setattr("config.ProjectConfig.get_settings", mock_get_settings)
-    # Ensure the class-level singleton is updated
-    ProjectConfig._settings = settings
-    ProjectConfig._logger = None
+        def mock_get_settings():
+            return settings
+
+        # We must patch get_settings on the class
+        monkeypatch.setattr("config.ProjectConfig.get_settings", mock_get_settings)
+
+        # Update the class attribute directly
+        ProjectConfig._settings = settings
+        ProjectConfig._logger = None
+
+        # Also make sure the environment variables are set
+        monkeypatch.setenv("MODELS_DIR", str(models_dir))
+        monkeypatch.setenv("VOICES_DIR", str(voices_dir))
+        monkeypatch.setenv("OUTPUT_DIR", str(output_dir))
+        monkeypatch.setenv("APP_DIR", str(app_dir))
+        monkeypatch.setenv("RESOURCES_DIR", str(resources_dir))
