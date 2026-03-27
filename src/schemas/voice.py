@@ -41,6 +41,7 @@ class VoiceCreate(BaseModel):
         description="Instruct text describing the voice style for Qwen TTS.",
         json_schema_extra={"example": "A calm, professional male voice with a warm tone."},
     )
+    # system_prompt removed: not needed for the TTS-only workflow
     language: str = Field(
         default="german",
         description="Language of the voice (e.g. german, english).",
@@ -68,6 +69,7 @@ class VoiceUpdate(BaseModel):
         max_length=500,
         description="New instruct text for voice style.",
     )
+    # system_prompt removed: not needed for the TTS-only workflow
     language: str | None = Field(
         default=None,
         description="New language for the voice.",
@@ -81,6 +83,7 @@ class VoiceResponse(BaseModel):
     name: str
     example_text: str
     instruct: str | None = None
+    # system_prompt removed: not needed for the TTS-only workflow
     language: str = "german"
     audio_filename: str | None = None
     is_default: bool = False

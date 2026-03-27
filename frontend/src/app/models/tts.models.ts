@@ -63,6 +63,7 @@ export interface Voice {
   name: string;
   example_text: string;
   instruct: string | null;
+  // system_prompt removed for TTS-only workflow
   language: string;
   audio_filename: string | null;
   is_default: boolean;
@@ -79,6 +80,7 @@ export interface VoiceCreateRequest {
   name: string;
   example_text: string;
   instruct?: string | null;
+  // system_prompt removed for TTS-only workflow
   language?: string;
 }
 
@@ -86,5 +88,6 @@ export interface VoiceUpdateRequest {
   name?: string;
   example_text?: string;
   instruct?: string | null;
+  // system_prompt removed for TTS-only workflow
   language?: string;
 }

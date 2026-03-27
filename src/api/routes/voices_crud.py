@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, Path, Body, File
 from fastapi.responses import FileResponse
 
 from api.dependencies import get_tts_service
@@ -10,6 +10,8 @@ from config import ProjectConfig
 from schemas.voice import VoiceCreate, VoiceListResponse, VoiceResponse, VoiceUpdate
 from services import TTSService
 from services.voice_service import VoiceService
+
+logger = ProjectConfig.get_logger()
 
 logger = ProjectConfig.get_logger()
 
@@ -42,8 +44,11 @@ def list_voices() -> dict[str, Any]:
 
 
 @router.get("/{voice_id}", response_model=VoiceResponse)
-def get_voice(voice_id: str) -> dict:
+def get_voice(voice_id: str = Path(..., pattern=r"^[a-z0-9_-]+$")) -> dict:
     """Get a single voice by ID."""
+    # Protect reserved static subpaths from being interpreted as voice IDs.
+    if voice_id in {"terms", "search"}:
+        raise HTTPException(status_code=404, detail=f"Voice {voice_id} not found")
     service = _get_service()
     voice = service.get_voice(voice_id)
     if voice is None:
@@ -64,6 +69,8 @@ def create_voice(data: VoiceCreate) -> dict:
         instruct=data.instruct,
         language=data.language,
     )
+    if voice is None:
+        raise HTTPException(status_code=500, detail="Voice creation failed")
     return voice
 
 
@@ -71,8 +78,10 @@ def create_voice(data: VoiceCreate) -> dict:
 
 
 @router.put("/{voice_id}", response_model=VoiceResponse)
-def update_voice(voice_id: str, data: VoiceUpdate) -> dict:
+def update_voice(data: VoiceUpdate = Body(...), voice_id: str = Path(..., pattern=r"^[a-z0-9_-]+$")) -> dict:
     """Update voice metadata."""
+    if voice_id in {"terms", "search"}:
+        raise HTTPException(status_code=404, detail=f"Voice {voice_id} not found")
     service = _get_service()
     voice = service.update_voice(
         voice_id=voice_id,
@@ -90,8 +99,10 @@ def update_voice(voice_id: str, data: VoiceUpdate) -> dict:
 
 
 @router.delete("/{voice_id}", status_code=204)
-def delete_voice(voice_id: str) -> None:
+def delete_voice(voice_id: str = Path(..., pattern=r"^[a-z0-9_-]+$")) -> None:
     """Delete a voice and its associated audio file."""
+    if voice_id in {"terms", "search"}:
+        raise HTTPException(status_code=404, detail=f"Voice {voice_id} not found")
     service = _get_service()
 
     # Check if it's a default voice
@@ -110,8 +121,10 @@ def delete_voice(voice_id: str) -> None:
 
 
 @router.post("/{voice_id}/audio", response_model=VoiceResponse)
-async def upload_audio(voice_id: str, file: UploadFile) -> dict:
+async def upload_audio(file: UploadFile = File(...), voice_id: str = Path(..., pattern=r"^[a-z0-9_-]+$")) -> dict:
     """Upload or replace the audio file for a voice."""
+    if voice_id in {"terms", "search"}:
+        raise HTTPException(status_code=404, detail=f"Voice {voice_id} not found")
     if file.content_type and not file.content_type.startswith("audio/"):
         raise HTTPException(status_code=400, detail="Only audio files are allowed")
 
@@ -135,8 +148,10 @@ async def upload_audio(voice_id: str, file: UploadFile) -> dict:
 
 
 @router.get("/{voice_id}/audio", response_model=None)
-def get_audio(voice_id: str) -> FileResponse:
+def get_audio(voice_id: str = Path(..., pattern=r"^[a-z0-9_-]+$")) -> FileResponse:
     """Stream the audio file for a voice."""
+    if voice_id in {"terms", "search"}:
+        raise HTTPException(status_code=404, detail="Audio not found for this voice")
     service = _get_service()
     audio_path = service.get_audio_path(voice_id)
     if audio_path is None:
@@ -145,8 +160,22 @@ def get_audio(voice_id: str) -> FileResponse:
     return FileResponse(
         path=str(audio_path),
         media_type="audio/wav",
-        filename=audio_path.name,
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+        },
     )
+
+
+@router.get("/{voice_id}/ensure-audio/status", response_model=dict)
+def ensure_audio_status(
+    voice_id: str = Path(..., pattern=r"^[a-z0-9_-]+$"), tts_service: TTSService = Depends(get_tts_service)
+) -> dict:
+    """Return background generation status for a voice."""
+    if voice_id in {"terms", "search"}:
+        raise HTTPException(status_code=404, detail=f"Voice {voice_id} not found")
+    status = tts_service.get_reference_generation_status(voice_id)
+    return status
 
 
 # ─── Ensure Audio (Background Generation) ────────────────────────
@@ -188,8 +217,6 @@ async def _generate_preview_task(
             service.set_audio(voice_id, audio_data, f"preview_{voice_id}.wav")
 
             # Cleanup temp file from output dir if needed, or let cleanup service handle it
-            # But TTSService saves to OUTPUT_DIR. We copied it to VOICES_DIR via set_audio.
-            # So we can delete the temp one.
             try:
                 path.unlink()
             except Exception as e:
@@ -203,32 +230,32 @@ async def _generate_preview_task(
 
 @router.post("/{voice_id}/ensure-audio", status_code=202)
 async def ensure_audio(
-    voice_id: str,
     background_tasks: BackgroundTasks,
+    voice_id: str = Path(..., pattern=r"^[a-z0-9_-]+$"),
+    force: bool = False,
     tts_service: TTSService = Depends(get_tts_service),
 ) -> dict[str, str]:
     """Trigger background audio generation if missing."""
+    if voice_id in {"terms", "search"}:
+        raise HTTPException(status_code=404, detail=f"Voice {voice_id} not found")
     service = _get_service()
     voice = service.get_voice(voice_id)
 
     if not voice:
         raise HTTPException(status_code=404, detail="Voice not found")
 
-    if voice.get("audio_filename"):
+    # If audio already exists and caller did not request a forced regeneration,
+    # return early to avoid unnecessary work. If `force` is True we proceed
+    # to trigger a regeneration even when an audio file is present.
+    if voice.get("audio_filename") and not force:
         return {"status": "exists", "message": "Audio already exists"}
 
-    # Check requirements
-    if not voice.get("example_text"):
-        raise HTTPException(status_code=400, detail="Voice has no example text")
+    # Check requirements: we only auto-generate when an instruct is available
+    if not voice.get("instruct"):
+        raise HTTPException(
+            status_code=400, detail="Voice has no instruct text; automatic generation is disabled for this voice"
+        )
 
-    # Trigger background task
-    background_tasks.add_task(
-        _generate_preview_task,
-        voice_id=voice_id,
-        text=voice["example_text"],
-        language=voice.get("language", "german"),
-        instruct=voice.get("instruct"),
-        tts_service=tts_service,
-    )
-
+    # Trigger background generation via TTS service (idempotent)
+    tts_service.trigger_reference_audio_generation(voice_id, force=force)
     return {"status": "triggered", "message": "Generation started in background"}

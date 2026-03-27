@@ -21,6 +21,18 @@
     <!-- Custom Voices Section -->
     @if (voices().length > 0) {
     <div class="section">
+        <div class="search-panel">
+            <div class="chips">
+                <span *ngFor="let t of terms" class="chip" [class.selected]="selectedTerms.has(t.term)" (click)="toggleTerm(t.term)">
+                    {{ t.term }} <small class="chip-count">{{ t.count }}</small>
+                </span>
+            </div>
+            <div class="search-input">
+                <input pInputText [(ngModel)]="searchQuery" placeholder="Freie Suche..." (keyup.enter)="performSearch()" />
+                <button pButton type="button" class="btn-small" (click)="performSearch()">Suchen</button>
+                <button pButton type="button" class="btn-small" (click)="clearTerms()">Clear</button>
+            </div>
+        </div>
         <h2 class="section-title">
             <i class="pi pi-star"></i>
             Stimmen
@@ -63,7 +75,8 @@
                     <button class="action-btn play"
                         [title]="voice.audio_filename ? 'Abspielen' : 'Generieren & Abspielen'"
                         [disabled]="generatingVoiceId() !== null && generatingVoiceId() !== voice.id"
-                        (click)="playOrGenerate(voice); $event.stopPropagation()">
+                        (click)="playOrGenerate(voice); $event.stopPropagation()"
+                        (auxclick)="generateAndPlay(voice, true); $event.stopPropagation()">
                         @if (generatingVoiceId() === voice.id) {
                         <i class="pi pi-spinner animate-spin"></i>
                         } @else {
@@ -117,6 +130,8 @@
                     placeholder="A warm, friendly female voice with a calm tone..." class="dialog-input"></textarea>
             </div>
 
+            <!-- system_prompt removed -->
+
             <div class="dialog-field">
                 <label class="dialog-label">Sprache</label>
                 <p-select [(ngModel)]="newVoiceLanguage" [options]="languageOptions" optionLabel="label"
@@ -163,69 +178,69 @@
         </ng-template>
     </p-dialog>
 
-    <!-- Edit Dialog -->
-    <p-dialog header="Stimme bearbeiten" [(visible)]="showEditDialog" [modal]="true" [style]="{ width: '500px' }"
-        [draggable]="false" [resizable]="false">
-        <div class="dialog-content">
-            <div class="dialog-field">
-                <label class="dialog-label">Name</label>
-                <input pInputText [(ngModel)]="editName" class="dialog-input" />
+    <!-- Edit Side Panel -->
+    <div class="side-panel" *ngIf="showEditDialog()" (click)="$event.stopPropagation()">
+        <div class="edit-voice-panel">
+            <div class="panel-header">
+                <h2>{{ editVoice ? 'Stimme bearbeiten' : 'Neue Stimme' }}</h2>
+                <button class="close-icon" (click)="showEditDialog.set(false)"><i class="pi pi-times"></i></button>
             </div>
+        
+            <form class="edit-grid" (ngSubmit)="saveEdit()" aria-label="Stimme bearbeiten">
+                <div class="left-col">
+                    <label class="dialog-label">Name</label>
+                    <input pInputText name="name" [(ngModel)]="editName" class="dialog-input" required />
 
-            <div class="dialog-field">
-                <label class="dialog-label">Beispielsatz</label>
-                <textarea pTextarea [(ngModel)]="editText" rows="3" class="dialog-input"></textarea>
-            </div>
+                    <label class="dialog-label">Beispielsatz</label>
+                    <textarea pTextarea name="example_text" [(ngModel)]="editText" rows="3" class="dialog-input"></textarea>
 
-            <div class="dialog-field">
-                <label class="dialog-label">Instruct (Voice Style)</label>
-                <textarea pTextarea [(ngModel)]="editInstruct" rows="2"
-                    placeholder="A warm, friendly female voice with a calm tone..." class="dialog-input"></textarea>
-            </div>
+                    <label class="dialog-label">Instruct (Voice Style)</label>
+                    <textarea pTextarea name="instruct" [(ngModel)]="editInstruct" rows="2" class="dialog-input"
+                        placeholder="A warm, friendly female voice with a calm tone..."></textarea>
 
-            <div class="dialog-field">
-                <label class="dialog-label">Sprache</label>
-                <p-select [(ngModel)]="editLanguage" [options]="languageOptions" optionLabel="label" optionValue="value"
-                    appendTo="body" [style]="{'width': '100%'}">
-                    <ng-template let-lang pTemplate="selectedItem">
-                        <div class="flex align-items-center gap-2">
-                            <span>{{ lang.flag }} {{ lang.label }}</span>
-                        </div>
-                    </ng-template>
-                    <ng-template let-lang pTemplate="item">
-                        <div class="flex align-items-center gap-2">
-                            <span>{{ lang.flag }} {{ lang.label }}</span>
-                        </div>
-                    </ng-template>
-                </p-select>
-            </div>
-
-            <div class="dialog-field">
-                <label class="dialog-label">Audio-Datei ersetzen (optional)</label>
-                <div class="file-upload">
-                    <input type="file" accept="audio/*" (change)="onFileSelected($event)" id="audioFileEdit"
-                        class="file-input" />
-                    <label for="audioFileEdit" class="file-label">
-                        <i class="pi pi-upload"></i>
-                        {{ selectedAudioFile ? selectedAudioFile.name : 'Neue WAV-Datei auswählen' }}
-                    </label>
+                    <!-- system_prompt removed -->
                 </div>
-            </div>
-        </div>
 
-        <ng-template #footer>
-            <div class="dialog-footer">
-                <button class="cancel-btn" (click)="showEditDialog.set(false)">Abbrechen</button>
-                <button class="btn-gradient" (click)="saveEdit()"
-                    [disabled]="!editName.trim() || !editText.trim() || isUploading()">
-                    @if (isUploading()) {
-                    <i class="pi pi-spinner animate-spin"></i>
-                    } @else {
-                    <i class="pi pi-check"></i>
-                    }
-                    <span>Speichern</span>
-                </button>
-            </div>
-        </ng-template>
-    </p-dialog>
+                <div class="right-col">
+                    <label class="dialog-label">Sprache</label>
+                    <p-select name="language" [(ngModel)]="editLanguage" [options]="languageOptions" optionLabel="label"
+                        optionValue="value" appendTo="body" [style]="{'width': '100%'}"></p-select>
+
+                    <label class="dialog-label">Audio (WAV)</label>
+                    <div class="file-upload">
+                        <input type="file" accept="audio/*" (change)="onFileSelected($event)" id="audioFileEdit"
+                            class="file-input" />
+                        <label for="audioFileEdit" class="file-label">
+                            <i class="pi pi-upload"></i>
+                            {{ selectedAudioFile ? selectedAudioFile.name : 'Neue WAV-Datei auswählen' }}
+                        </label>
+                    </div>
+
+                    <div class="audio-preview" *ngIf="editVoice && editVoice.audio_filename">
+                        <audio controls [src]="ttsApi.getVoiceAudioUrl(editVoice.id)"></audio>
+                    </div>
+
+                <div class="panel-actions">
+                    <div class="generate-row">
+                        <button pButton type="button" class="try-btn" (click)="generatePreview()"
+                            [disabled]="generatingVoiceId() !== null">Referenz‑Audio generieren</button>
+                        <div class="progress-shell" *ngIf="generationProgress() !== null" aria-live="polite">
+                            <div class="progress-bar" [style.width.%]="generationProgress() || 0"></div>
+                            <div class="progress-label">{{ generationProgress() || 0 }}%</div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+
+                <div class="full-width actions">
+                    <button type="button" class="cancel-btn" (click)="showEditDialog.set(false)">Abbrechen</button>
+                    <button type="submit" class="btn-gradient" [disabled]="!editName.trim() || !editText.trim() || isUploading()">
+                        <i *ngIf="isUploading()" class="pi pi-spinner animate-spin"></i>
+                        <i *ngIf="!isUploading()" class="pi pi-check"></i>
+                        <span>Speichern</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>

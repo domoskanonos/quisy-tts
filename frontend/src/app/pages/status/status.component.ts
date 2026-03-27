@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TtsApiService } from '../../services/tts-api.service';
 import { ApiStatus } from '../../models/tts.models';
@@ -6,6 +6,7 @@ import { ApiStatus } from '../../models/tts.models';
 @Component({
     selector: 'app-status',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [CommonModule],
     templateUrl: './status.component.html',
     styleUrl: './status.component.scss',

@@ -38,18 +38,18 @@ def mock_system_dependencies(monkeypatch):
 
     # Import torch if available, otherwise create a lightweight stub so tests
     # can run without the actual torch dependency.
+    import importlib
+
     try:
-        import torch  # type: ignore
-    except Exception:
+        torch = importlib.import_module("torch")
+        sys.modules["torch"] = torch
+    except ImportError:
         # Use our local shim if available (for lightweight test envs)
         try:
             # Prefer a local shim if present (torch.py in repo root)
-            import importlib
-
-            torch_shim = importlib.import_module("torch")
-            torch = torch_shim
-            sys.modules["torch"] = torch_shim
-        except Exception:
+            torch = importlib.import_module("torch")
+            sys.modules["torch"] = torch
+        except ImportError:
             import types
 
             torch = types.ModuleType("torch")
@@ -63,7 +63,7 @@ def mock_system_dependencies(monkeypatch):
                 def get_device_name(_):
                     return "Mock NVIDIA GPU"
 
-            torch.cuda = _CudaStub()  # type: ignore[assignment,attr-defined]
+            setattr(torch, "cuda", _CudaStub())
             # register shim
             sys.modules["torch"] = torch
 

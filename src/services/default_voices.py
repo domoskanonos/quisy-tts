@@ -1,4 +1,7 @@
-"""Default voice seed data – 40 German + 10 English voices with Qwen TTS instructs."""
+"""Default voice seed data – 40 German + 10 English voices with Qwen TTS instructs.
+
+Note: `system_prompt` was removed as it's not required for the TTS-only workflow.
+"""
 
 DEFAULT_VOICES: list[dict[str, str]] = [
     # ──────────────────────────────────────────────────────────────
@@ -249,61 +252,61 @@ DEFAULT_VOICES: list[dict[str, str]] = [
     # ──────────────────────────────────────────────────────────────
     {
         "name": "James – News Anchor",
-        "example_text": "Good evening. This is the evening news. Tonight, we bring you the latest developments from around the world.",
+        "example_text": "Guten Abend. Das sind die Nachrichten des Abends. Heute berichten wir über die neuesten Entwicklungen aus aller Welt.",
         "instruct": "A deep, authoritative male broadcast journalist voice. Impeccable diction with gravitas and trustworthiness.",
         "language": "english",
     },
     {
         "name": "Emily – Podcast Host",
-        "example_text": "Hey everyone, welcome back to the show! Today we have an incredible guest lined up for you.",
+        "example_text": "Hallo zusammen! Willkommen zurück zur Sendung. Heute haben wir einen tollen Gast für euch.",
         "instruct": "A warm, conversational young female podcast host voice. Relatable, witty, and naturally engaging.",
         "language": "english",
     },
     {
         "name": "Richard – Documentary Narrator",
-        "example_text": "Deep beneath the frozen tundra lies a world untouched by time, waiting to reveal its ancient secrets.",
+        "example_text": "Tief unter der gefrorenen Tundra liegt eine Welt, unberührt von der Zeit, die darauf wartet, ihre alten Geheimnisse zu offenbaren.",
         "instruct": "A majestic, resonant male nature documentary narrator voice. Awe-inspiring with poetic gravitas.",
         "language": "english",
     },
     {
         "name": "Sarah – Corporate Trainer",
-        "example_text": "Let's review the key takeaways from today's session and discuss how to apply them in your daily workflow.",
+        "example_text": "Lassen Sie uns die wichtigsten Erkenntnisse aus der heutigen Sitzung zusammenfassen und besprechen, wie Sie sie im Arbeitsalltag anwenden können.",
         "instruct": "A clear, professional female corporate voice. Structured, confident, and motivational with business acumen.",
         "language": "english",
     },
     {
         "name": "William – Storyteller",
-        "example_text": "Once upon a time, in a land where the mountains kissed the clouds, there lived a young adventurer.",
+        "example_text": "Es war einmal in einem Land, in dem die Berge die Wolken küssten, da lebte ein junger Abenteurer.",
         "instruct": "A captivating, theatrical male storyteller voice. Rich baritone with dramatic flair and emotional range.",
         "language": "english",
     },
     {
         "name": "Olivia – Meditation Guide",
-        "example_text": "Take a deep breath in, and slowly release. Feel the weight of the day melting away with each exhale.",
+        "example_text": "Atme tief ein und atme langsam wieder aus. Spüre, wie die Last des Tages mit jedem Ausatmen von dir abfällt.",
         "instruct": "An extremely soft, peaceful female meditation voice. Whisper-like, slow, with ethereal calm.",
         "language": "english",
     },
     {
         "name": "David – Tech Reviewer",
-        "example_text": "This new processor delivers incredible performance. Let me walk you through the benchmark results.",
+        "example_text": "Dieser neue Prozessor liefert beeindruckende Leistung. Ich führe Sie durch die Benchmark-Ergebnisse.",
         "instruct": "A sharp, articulate male tech reviewer voice. Knowledgeable, direct, with enthusiastic analytical delivery.",
         "language": "english",
     },
     {
         "name": "Charlotte – Audiobook Reader",
-        "example_text": "The rain tapped gently against the window as she opened the letter with trembling hands.",
+        "example_text": "Der Regen klopfte sanft gegen das Fenster, als sie den Brief mit zitternden Händen öffnete.",
         "instruct": "A rich, expressive female audiobook narrator voice. Versatile, emotionally nuanced, with perfect pacing.",
         "language": "english",
     },
     {
         "name": "Alexander – Motivational Speaker",
-        "example_text": "You have the power to change your life starting right now. Believe in yourself and take that first step!",
+        "example_text": "Du hast die Kraft, dein Leben ab jetzt zu verändern. Glaube an dich und mache den ersten Schritt!",
         "instruct": "A powerful, inspiring male motivational speaker voice. Commanding presence with passionate conviction.",
         "language": "english",
     },
     {
         "name": "Victoria – Virtual Assistant",
-        "example_text": "I'd be happy to help you with that. Let me look up the information you need right away.",
+        "example_text": "Gern helfe ich Ihnen dabei. Ich suche sofort die Informationen, die Sie benötigen.",
         "instruct": "A friendly, efficient female AI assistant voice. Natural, helpful, warm, with perfect clarity and pacing.",
         "language": "english",
     },

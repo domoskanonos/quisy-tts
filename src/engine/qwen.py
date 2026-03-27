@@ -87,9 +87,11 @@ class QwenTTSBackend:
         """Synchronous model loading (runs in thread)."""
         # Import torch lazily to allow tests/environments without torch installed
         try:
-            import torch
-        except Exception:
-            torch = None  # type: ignore
+            import torch as _torch
+
+            torch = _torch
+        except ImportError:
+            torch = None
 
         kwargs: dict[str, Any] = {"device_map": "auto"}
         if torch is not None:

@@ -1,0 +1,103 @@
+// ─── Glassmorphism Card ─────────────────────────────────────────
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
+  transition: all var(--transition-normal);
+
+  &:hover {
+    border-color: rgb(139 92 246 / 35%);
+    box-shadow: var(--glass-shadow), var(--glow-primary);
+  }
+}
+
+// ─── Gradient Button ────────────────────────────────────────────
+.btn-gradient {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: var(--gradient-brand);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-brand-hover);
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgb(139 92 246 / 40%);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  span,
+  i {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+// ─── Waveform Visualization ─────────────────────────────────────
+.waveform-container {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 64px;
+  padding: 8px 0;
+
+  .waveform-bar {
+    flex: 1;
+    background: var(--brand-primary);
+    border-radius: 2px;
+    min-height: 4px;
+    transition: height var(--transition-fast), background var(--transition-fast);
+    opacity: 0.5;
+
+    &.active {
+      opacity: 1;
+      background: var(--gradient-brand);
+    }
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+}
+
+// ─── Utility Classes ────────────────────────────────────────────
+.text-gradient {
+  background: var(--gradient-brand);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

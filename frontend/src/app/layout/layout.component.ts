@@ -1,10 +1,11 @@
-import { Component, signal, Inject, PLATFORM_ID, OnInit, effect } from '@angular/core';
+import { Component, signal, Inject, PLATFORM_ID, OnInit, effect, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 
 @Component({
     selector: 'app-layout',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
     templateUrl: './layout.component.html',
     styleUrl: './layout.component.scss',

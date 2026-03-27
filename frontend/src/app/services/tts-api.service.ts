@@ -88,14 +88,32 @@ export class TtsApiService {
     }
 
     getVoiceAudioUrl(voiceId: string): string {
+        // Return the audio endpoint; callers append a cache-buster when playing.
         return `${this.baseUrl}/voices/${voiceId}/audio`;
     }
 
+    // ─── Search / Terms API helpers ─────────────────────────────
+    getTerms(): Observable<{ terms: { term: string; count: number }[] }> {
+        return this.http.get<{ terms: { term: string; count: number }[] }>(this.baseUrl + '/voices/terms');
+    }
+
+    searchVoices(q?: string, terms?: string[], limit = 20, offset = 0): Observable<{ total: number; voices: Voice[] }> {
+        let params = new URLSearchParams();
+        if (q) params.set('q', q);
+        if (terms && terms.length) params.set('terms', terms.join(','));
+        params.set('limit', String(limit));
+        params.set('offset', String(offset));
+        const url = this.baseUrl + '/voices/search' + (params.toString() ? `?${params.toString()}` : '');
+        return this.http.get<{ total: number; voices: Voice[] }>(url);
+    }
+
     // ─── Background Generation ──────────────────────────────────
-    ensureVoiceAudio(voiceId: string): Observable<{ status: string; message: string }> {
-        return this.http.post<{ status: string; message: string }>(
-            `${this.baseUrl}/voices/${voiceId}/ensure-audio`,
-            {}
-        );
+    ensureVoiceAudio(voiceId: string, force: boolean = false): Observable<{ status: string; message: string }> {
+        const url = `${this.baseUrl}/voices/${voiceId}/ensure-audio${force ? '?force=true' : ''}`;
+        return this.http.post<{ status: string; message: string }>(url, {});
+    }
+
+    getEnsureAudioStatus(voiceId: string): Observable<any> {
+        return this.http.get<any>(`${this.baseUrl}/voices/${voiceId}/ensure-audio/status`);
     }
 }

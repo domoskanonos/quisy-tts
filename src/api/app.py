@@ -2,15 +2,15 @@
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-
 from pathlib import Path
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 
-from api.routes import base, custom_voice, info, voice_design, voices_crud, websocket
+from api.routes import base, custom_voice, info, voice_design, voices_crud, voices_search, websocket
 from config import ProjectConfig
 
 logger = ProjectConfig.get_logger()
@@ -60,9 +60,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Startup
     logger.info("Registered Routes:")
     for route in app.routes:
-        if hasattr(route, "methods"):
+        # APIRoute is the concrete FastAPI route type that exposes `methods`.
+        # Use isinstance so static analyzers (Pylance/mypy) understand the
+        # attribute access and don't report `reportAttributeAccessIssue`.
+        if isinstance(route, APIRoute):
             methods = ", ".join(route.methods)
-            path = getattr(route, "path", str(route))
+            path = route.path
             logger.info(f" -> {methods} {path}")
         else:
             path = getattr(route, "path", str(route))
@@ -77,13 +80,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # This prevents blocking the server while the model loads (10s+)
     import asyncio
 
-    from api.dependencies import get_tts_engine
-
-    engine = get_tts_engine()
-    if hasattr(engine, "ensure_loaded"):
-        # Preload the most commonly used model in background
-        asyncio.create_task(engine.ensure_loaded("voice_design"))
-
     # Preload spaCy models used by the text splitter (in background).
     # This avoids the first user request triggering a potentially slow
     # model download or load. We only attempt the small core models.
@@ -91,8 +87,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         from services.text_splitter import LANGUAGE_TO_SPACY_MODEL
 
         async def _preload_spacy_models():
-            import importlib
             import asyncio as _asyncio
+            import importlib
 
             # Preload only a small set (german, english) to keep startup time
             for lang in ("german", "english"):
@@ -175,6 +171,12 @@ api_router.include_router(info.router)
 api_router.include_router(base.router, prefix="/generate/base")
 api_router.include_router(voice_design.router, prefix="/generate/voice-design")
 api_router.include_router(custom_voice.router, prefix="/generate/custom-voice")
+# Register search routes before the CRUD router. The CRUD router contains
+# a parameterized route `/{voice_id}` which would greedily match static
+# subpaths like `/terms` or `/search` if registered earlier. Registering
+# the search router first ensures the more specific static paths are
+# matched correctly.
+api_router.include_router(voices_search.router, prefix="/voices")
 api_router.include_router(voices_crud.router, prefix="/voices")
 api_router.include_router(websocket.router)
 

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, effect, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, effect, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TabsModule } from 'primeng/tabs';
@@ -12,11 +12,13 @@ import { AudioPlayerService } from '../../services/audio-player.service';
 import { AudioPlayerComponent } from '../../components/audio-player/audio-player.component';
 import { SettingsService } from '../../services/settings.service';
 import { ModelSize, TtsMode, GenerationHistoryItem, Voice } from '../../models/tts.models';
+import { StatusService } from '../../services/status.service';
 import { VoiceGenerationService } from '../../services/voice-generation.service';
 
 @Component({
     selector: 'app-synthesis',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         CommonModule,
         FormsModule,
@@ -36,6 +38,7 @@ export class SynthesisComponent implements OnInit {
     private readonly messageService = inject(MessageService);
     private readonly settingsService = inject(SettingsService);
     private readonly voiceGen = inject(VoiceGenerationService);
+    private readonly statusService = inject(StatusService);
 
     // Form state
     text = '';
@@ -77,6 +80,9 @@ export class SynthesisComponent implements OnInit {
     isPlayingExample = signal(false);
     backendOnline = signal<boolean | null>(null);
     history = signal<GenerationHistoryItem[]>([]);
+    // Reference-generation progress
+    refGenProgress = signal(0);
+    refGenMessage = signal('');
 
     ngOnInit(): void {
         this.checkBackend();
@@ -151,19 +157,69 @@ export class SynthesisComponent implements OnInit {
 
             this.isGenerating.set(true);
             // Generate reference audio first, then continue with base generation
+        // Subscribe to WS status for the selected voice to show progress
+            try {
+            const statusSvc = this.statusService;
+            const statusSub = statusSvc.subscribeVoice(this.selectedVoice.id).subscribe((ev: any) => {
+                // Update UI based on event
+                if (ev.status === 'running' || ev.status === 'queued' || ev.status === 'progress') {
+                    // Show a progress toast or update in-place: replace the info toast
+                    const percent = ev.progress ?? 0;
+                    this.refGenProgress.set(percent);
+                    this.refGenMessage.set(ev.message || ev.status || 'running');
+                    this.messageService.clear();
+                    this.messageService.add({ severity: 'info', summary: 'Generierung', detail: `Referenz-Audio: ${this.refGenMessage()} (${percent}%)` });
+                }
+                if (ev.status === 'done') {
+                    this.refGenProgress.set(100);
+                    this.refGenMessage.set('completed');
+                    this.messageService.clear();
+                    this.messageService.add({ severity: 'success', summary: 'Generierung', detail: 'Referenz-Audio erfolgreich erstellt.' });
+                    // Refresh voice and proceed
+                    this.ttsApi.getVoice(this.selectedVoice!.id).subscribe(v => {
+                        this.voices.update(vs => vs.map(x => x.id === v.id ? v : x));
+                        this.selectedVoice = v;
+                        this.callGenerateBase();
+                        this.isGenerating.set(false);
+                    });
+                    statusSub.unsubscribe();
+                }
+                if (ev.status === 'failed') {
+                    this.refGenProgress.set(0);
+                    this.refGenMessage.set('failed');
+                    this.messageService.clear();
+                    this.messageService.add({ severity: 'error', summary: 'Fehler', detail: 'Referenz-Audio konnte nicht generiert werden.' });
+                    this.isGenerating.set(false);
+                    statusSub.unsubscribe();
+                }
+            });
+
+            // Trigger the backend generation (fire-and-forget)
+            this.voiceGen.ensureVoiceAudio(this.selectedVoice, false).subscribe({ next: () => {}, error: () => {} });
+        } catch (e) {
+            // Fallback to previous polling approach
             this.voiceGen.ensureVoiceAudio(this.selectedVoice).subscribe({
                 next: (updated: Voice) => {
                     // Update voices and selectedVoice with persisted audio
                     this.voices.update(vs => vs.map(v => v.id === updated.id ? updated : v));
                     this.selectedVoice = updated;
-                    // Now call base generation
+                    // clear the info toast and now call base generation (reference will be voice ID)
+                    this.messageService.clear();
+                    this.messageService.add({ severity: 'success', summary: 'Generierung', detail: 'Referenz-Audio erfolgreich erstellt.' });
                     this.callGenerateBase();
                 },
                 error: () => {
                     this.isGenerating.set(false);
+                    this.messageService.clear();
                     this.messageService.add({ severity: 'error', summary: 'Fehler', detail: 'Referenz-Audio konnte nicht generiert werden.' });
                 }
             });
+        }
+
+        // Remove the info toast after generation completes (success path cleans up implicitly when UI updates)
+
+        // Show a user-facing loading toast while the backend generates the reference audio
+        this.messageService.add({ severity: 'info', summary: 'Generierung', detail: 'Referenz-Audio wird erzeugt, bitte warten...' });
 
             return;
         }
@@ -180,7 +236,8 @@ export class SynthesisComponent implements OnInit {
             {
                 text: this.text,
                 language: this.selectedVoice.language || 'german',
-                reference_audio: this.selectedVoice.audio_filename,
+                // API now expects a voice ID (not a filename)
+                reference_audio: this.selectedVoice.id,
                 ref_text: this.selectedVoice.example_text || null,
             },
             this.selectedModel
@@ -192,7 +249,9 @@ export class SynthesisComponent implements OnInit {
             },
             error: (err: unknown) => {
                 this.isGenerating.set(false);
-                this.messageService.add({ severity: 'error', summary: 'Fehler', detail: 'Generierung fehlgeschlagen.' });
+                // Try to surface backend detail if available
+                const detail = (err as any)?.error?.detail || 'Generierung fehlgeschlagen.';
+                this.messageService.add({ severity: 'error', summary: 'Fehler', detail });
             },
         });
     }

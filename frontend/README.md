@@ -5,7 +5,7 @@ This short guide explains how to run the Angular frontend during development and
 
 Start the backend
 -----------------
-- Run the backend API first (see top-level README). By default the backend listens on `http://localhost:8000`.
+- Run the backend API first (see top-level README). By default the backend listens on `http://localhost:8045`.
 
 Start the frontend (dev server)
 ------------------------------
@@ -30,15 +30,15 @@ Start the frontend (dev server)
 API base path
 -------------
 - The frontend uses `/api` as the base path for backend calls (see `src/app/services/tts-api.service.ts`).
-- The proxy configuration (`frontend/proxy.conf.json`) rewrites `/api` -> `http://localhost:8000` during development so CORS is not required.
+- The proxy configuration (`frontend/proxy.conf.json`) rewrites `/api` -> `http://localhost:8045` during development so CORS is not required.
 
 WebSocket / Streaming
 ---------------------
-- The frontend connects to WebSocket endpoints on the backend using the same host (e.g. `ws://localhost:8000/ws/1.7b`). If you run backend on a different host/port, update the code that opens the WebSocket accordingly.
+- The frontend connects to WebSocket endpoints on the backend using the same host (e.g. `ws://localhost:8045/ws/1.7b`). If you run backend on a different host/port, update the code that opens the WebSocket accordingly.
 
 Changing the backend host
 -------------------------
-- If your backend is not on `localhost:8000`, update `frontend/proxy.conf.json` -> `target` and restart the dev server.
+- If your backend is not on `localhost:8045`, update `frontend/proxy.conf.json` -> `target` and restart the dev server.
 
 Build for production
 --------------------

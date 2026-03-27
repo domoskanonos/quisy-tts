@@ -13,13 +13,29 @@ from services.tts_service import TTSService
 # Use a lightweight dummy engine in tests to avoid heavy qwen model loading
 from unittest.mock import AsyncMock
 from schemas import TTSParams
+from core.interfaces import TTSEngine
+from typing import Any, cast
+from collections.abc import AsyncGenerator
 
 
-class DummyEngine:
+class DummyEngine(TTSEngine):
     def __init__(self):
-        self.generate_and_save = AsyncMock(side_effect=self._gen)
+        # keep an AsyncMock for call-tracking compatibility if tests expect it
+        self._mock = AsyncMock(side_effect=self._gen)
 
-    async def _gen(self, text, output_path, params):
+    async def generate_audio(self, text: str, params: Any) -> tuple[Any, int]:
+        # Minimal implementation returning a tiny numpy array and sample rate
+        import numpy as _np
+
+        sr = 24000
+        data = _np.zeros(10, dtype=_np.float32)
+        return data, sr
+
+    async def generate_and_save(self, text: str, output_path: str, params: Any) -> str:
+        # Delegate to the internal mock to preserve async call counting semantics
+        return await self._mock(text, output_path, params)
+
+    async def _gen(self, text: str, output_path: str, params: Any) -> str:
         # Simulate some async work and write a small wav-ish file
         await asyncio.sleep(0.01)
         # write a tiny valid WAV file using soundfile
@@ -29,14 +45,22 @@ class DummyEngine:
         sr = 24000
         t = np.linspace(0, 0.01, int(sr * 0.01), endpoint=False)
         data = 0.1 * np.sin(2 * np.pi * 440 * t).astype(np.float32)
+        from typing import cast
+
         p = Path(output_path)
         p.parent.mkdir(parents=True, exist_ok=True)
-        sf.write(str(p), data, sr)
+        sf.write(str(p), cast(Any, data), sr)
         return str(p)
+
+    def generate_audio_stream(self, text: str, params: Any, chunk_size: int = 4096) -> AsyncGenerator[bytes, None]:
+        async def _gen_stream() -> AsyncGenerator[bytes, None]:
+            yield b""
+
+        return _gen_stream()
 
 
 @pytest.mark.asyncio
-async def test_concurrent_same_text_generates_once(tmp_path):
+async def test_concurrent_same_text_generates_once(tmp_path: Path):
     """Simulate multiple concurrent requests for the same long text.
 
     The engine's underlying generate_and_save should be invoked only once per

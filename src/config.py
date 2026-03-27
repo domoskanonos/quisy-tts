@@ -15,7 +15,7 @@ class ProjectSettings(BaseSettings):
     PROJECT_NAME: str = "quisy-tts"
     LOG_LEVEL: str = "INFO"
     HOST: str = "0.0.0.0"
-    PORT: int = 8000
+    PORT: int = 8045
 
     # TTS Settings
     DOWNLOAD_MODELS: str = (
@@ -86,10 +86,11 @@ class ProjectConfig:
 
             # collect keys from .env file if present
             env_file_path = ProjectSettings.model_config.get("env_file")
+            env_file_path_str = str(env_file_path) if env_file_path is not None else None
             env_file_keys: set[str] = set()
             try:
-                if env_file_path and Path(env_file_path).is_file():
-                    with open(env_file_path, "r", encoding="utf-8") as fh:
+                if env_file_path_str and Path(env_file_path_str).is_file():
+                    with open(env_file_path_str, "r", encoding="utf-8") as fh:
                         for line in fh:
                             line = line.strip()
                             if not line or line.startswith("#"):
@@ -116,44 +117,41 @@ class ProjectConfig:
                 raise SystemExit(1)
 
             # If a default voice ID is configured, validate it exists in the
-            # application's SQLite voices database (or the seed DB in resources).
+            # application's SQLite voices database (we now use the resources DB
+            # as the single authoritative, writable runtime database).
             try:
                 default_voice_id = getattr(cls._settings, "DEFAULT_VOICE_ID", None)
                 if default_voice_id:
-                    app_db = Path(cls._settings.APP_DIR) / "quisy-tts.db"
+                    # We require the resources DB to be present and writable.
                     resource_db = Path(cls._settings.RESOURCES_DIR) / "quisy-tts.db"
-
-                    db_path = None
-                    if app_db.exists():
-                        db_path = app_db
-                    elif resource_db.exists():
-                        db_path = resource_db
-
-                    if db_path is None:
+                    if not resource_db.exists():
                         sys.stderr.write(
-                            f"ERROR: DEFAULT_VOICE_ID is set to '{default_voice_id}', but no SQLite DB was found."
-                            + " Expected at: '"
-                            + str(app_db)
-                            + "' or '"
-                            + str(resource_db)
-                            + "'\n"
+                            f"ERROR: DEFAULT_VOICE_ID is set to '{default_voice_id}', but resources DB was not found at: {resource_db}\n"
                         )
+                        raise SystemExit(1)
+
+                    # Ensure we can write to the resources DB (append test)
+                    try:
+                        with open(resource_db, "ab"):
+                            pass
+                    except Exception as e:
+                        sys.stderr.write(f"ERROR: resources DB '{resource_db}' is not writable: {e}\n")
                         raise SystemExit(1)
 
                     # Query DB for the voice id
                     try:
-                        conn = sqlite3.connect(str(db_path))
+                        conn = sqlite3.connect(str(resource_db))
                         cur = conn.cursor()
                         cur.execute("SELECT 1 FROM voices WHERE id = ? LIMIT 1", (default_voice_id,))
                         row = cur.fetchone()
                         conn.close()
                         if not row:
                             sys.stderr.write(
-                                f"ERROR: DEFAULT_VOICE_ID='{default_voice_id}' not found in DB '{db_path}'.\n"
+                                f"ERROR: DEFAULT_VOICE_ID='{default_voice_id}' not found in resources DB '{resource_db}'.\n"
                             )
                             raise SystemExit(1)
                     except sqlite3.Error as e:
-                        sys.stderr.write(f"ERROR: Failed to query voices DB '{db_path}': {e}\n")
+                        sys.stderr.write(f"ERROR: Failed to query resources DB '{resource_db}': {e}\n")
                         raise SystemExit(1)
             except SystemExit:
                 raise
