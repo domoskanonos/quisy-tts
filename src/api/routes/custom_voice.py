@@ -17,7 +17,7 @@ from services import TTSService, VoiceService
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
 
-router = APIRouter(tags=["Custom Voice Mode"])
+router: APIRouter = APIRouter(tags=["Custom Voice Mode"])
 
 
 @router.post("/0.6b", response_model=None)

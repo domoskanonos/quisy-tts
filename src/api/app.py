@@ -120,7 +120,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Application shutting down...")
 
 
-app = FastAPI(
+app: FastAPI = FastAPI(
     title="Cosmo TTS API",
     description=(
         "Production-ready Text-to-Speech API powered by Qwen3-TTS. "

@@ -119,6 +119,7 @@ class ProjectConfig:
             # If a default voice ID is configured, validate it exists in the
             # application's SQLite voices database (we now use the resources DB
             # as the single authoritative, writable runtime database).
+            assert cls._settings is not None
             try:
                 # We know _settings is not None here
                 settings = cls._settings

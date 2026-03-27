@@ -13,7 +13,7 @@ from services import VoiceService
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
 
-router = APIRouter(tags=["Info"])
+router: APIRouter = APIRouter(tags=["Info"])
 
 
 @router.get("/")

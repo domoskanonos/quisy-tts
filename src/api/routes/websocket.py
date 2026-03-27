@@ -12,7 +12,7 @@ from services import TTSService
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
 
-router = APIRouter(tags=["WebSocket"])
+router: APIRouter = APIRouter(tags=["WebSocket"])
 
 
 @router.websocket("/ws/{model_size}")
@@ -68,7 +68,7 @@ async def websocket_endpoint(
 
 
 @router.websocket("/ws/status")
-async def websocket_status_endpoint(websocket: WebSocket):
+async def websocket_status_endpoint(websocket: WebSocket) -> None:
     """WebSocket endpoint for broadcasting reference-generation status events.
 
     Client may send JSON commands to control subscriptions:

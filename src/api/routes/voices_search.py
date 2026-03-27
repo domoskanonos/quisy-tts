@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from services.voice_service import VoiceService
 
-router = APIRouter(tags=["Voice Search"])
+router: APIRouter = APIRouter(tags=["Voice Search"])
 
 
 def _get_service() -> VoiceService:

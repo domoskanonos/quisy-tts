@@ -15,7 +15,7 @@ logger = ProjectConfig.get_logger()
 
 logger = ProjectConfig.get_logger()
 
-router = APIRouter(tags=["Voice Management"])
+router: APIRouter = APIRouter(tags=["Voice Management"])
 
 # Singleton service instance
 _voice_service: VoiceService | None = None

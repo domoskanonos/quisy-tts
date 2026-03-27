@@ -18,7 +18,7 @@ from services.voice_service import VoiceService
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
 
-router = APIRouter(tags=["Base Mode (Voice Cloning)"])
+router: APIRouter = APIRouter(tags=["Base Mode (Voice Cloning)"])
 
 
 @router.post("/0.6b", response_model=None)
