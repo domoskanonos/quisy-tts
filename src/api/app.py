@@ -148,14 +148,14 @@ app.add_middleware(
 
 
 @app.exception_handler(ValueError)
-async def validation_exception_handler(_request: object, exc: ValueError) -> JSONResponse:
+async def validation_exception_handler(request: Request, exc: ValueError) -> JSONResponse:
     """Handle validation errors."""
     logger.warning(f"Validation error: {exc}")
     return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
 @app.exception_handler(RuntimeError)
-async def runtime_exception_handler(_request: object, exc: RuntimeError) -> JSONResponse:
+async def runtime_exception_handler(request: Request, exc: RuntimeError) -> JSONResponse:
     """Handle runtime errors (e.g., model loading failures)."""
     logger.error(f"Runtime error: {exc}")
     return JSONResponse(status_code=503, content={"detail": "TTS engine unavailable"})
@@ -192,7 +192,7 @@ static_dir = Path(__file__).parent.parent / "static" / "ui"
 
 
 @app.get("/", include_in_schema=False)
-async def root_redirect():
+async def root_redirect() -> RedirectResponse:
     """Redirect root to /ui."""
     return RedirectResponse(url="/ui")
 
@@ -203,7 +203,7 @@ if static_dir.exists():
 
 
 @app.exception_handler(404)
-async def not_found_handler(request: Request, exc: HTTPException):
+async def not_found_handler(request: Request, exc: HTTPException) -> JSONResponse | FileResponse:
     """Deep link support for Angular SPA."""
     if request.url.path.startswith("/ui") and static_dir.exists():
         return FileResponse(static_dir / "index.html")

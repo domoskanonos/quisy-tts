@@ -120,10 +120,12 @@ class ProjectConfig:
             # application's SQLite voices database (we now use the resources DB
             # as the single authoritative, writable runtime database).
             try:
-                default_voice_id = getattr(cls._settings, "DEFAULT_VOICE_ID", None)
+                # We know _settings is not None here
+                settings = cls._settings
+                default_voice_id = getattr(settings, "DEFAULT_VOICE_ID", None)
                 if default_voice_id:
                     # We require the resources DB to be present and writable.
-                    resource_db = Path(cls._settings.RESOURCES_DIR) / "quisy-tts.db"
+                    resource_db = Path(settings.RESOURCES_DIR) / "quisy-tts.db"
                     if not resource_db.exists():
                         sys.stderr.write(
                             f"ERROR: DEFAULT_VOICE_ID is set to '{default_voice_id}', but resources DB was not found at: {resource_db}\n"
@@ -159,6 +161,7 @@ class ProjectConfig:
                 # Be defensive: any unexpected error should prevent silent startup.
                 sys.stderr.write("ERROR: Unexpected error while validating DEFAULT_VOICE_ID.\n")
                 raise SystemExit(1)
+        assert cls._settings is not None
         return cls._settings
 
     @classmethod
