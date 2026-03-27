@@ -53,7 +53,9 @@ COPY README.md .
 RUN uv sync --frozen --no-dev --extra gpu
 
 # Pre-install spaCy models
-RUN .venv/bin/python -m spacy download de_core_news_sm && \
+RUN .venv/bin/python -m ensurepip --upgrade && \
+    .venv/bin/python -m pip install spacy && \
+    .venv/bin/python -m spacy download de_core_news_sm && \
     .venv/bin/python -m spacy download en_core_web_sm
 
 # Stage 3: Runtime (uses NVIDIA runtime image for GPU inference)
