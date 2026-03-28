@@ -90,6 +90,7 @@ async def generate_ssml(ssml_content: str) -> str:
     Rules:
     - Root: <speak>...</speak>
     - Text: <speaker name="VoiceID">Text</speaker>
+    - Sound Effect: [Description] (e.g. [door creaking])
     - Break (Time): <break time="250ms" /> or <break time="1.5s" />
     - Break (Strength): <break strength="medium" />
     - Invalid XML or missing voices will cause an immediate error.
@@ -97,6 +98,7 @@ async def generate_ssml(ssml_content: str) -> str:
     Example:
     <speak>
         <speaker name="eric">Hallo!</speaker>
+        [door creaking]
         <break time="500ms" />
         <speaker name="Chelsie">Wie geht es dir?</speaker>
     </speak>

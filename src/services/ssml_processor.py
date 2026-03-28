@@ -14,7 +14,11 @@ class BreakTask(BaseModel):
     duration_ms: int
 
 
-Task = Union[TextTask, BreakTask]
+class SoundEffectTask(BaseModel):
+    description: str
+
+
+Task = Union[TextTask, BreakTask, SoundEffectTask]
 
 STRENGTH_TO_MS = {
     "none": 0,
@@ -54,7 +58,13 @@ class SSMLProcessor:
                     raise ValueError(f"Unknown speaker ID: {name}")
 
                 text = child.text or ""
-                tasks.append(TextTask(text=text, speaker=voice["id"]))
+                parts = re.split(r"\[(.*?)\]", text)
+                for i, part in enumerate(parts):
+                    if i % 2 == 0:
+                        if part:
+                            tasks.append(TextTask(text=part, speaker=voice["id"]))
+                    else:
+                        tasks.append(SoundEffectTask(description=part))
 
             elif child.tag == "break":
                 time_val = child.get("time")

@@ -2523,6 +2523,7 @@ dependencies = [
     { name = "soundfile" },
     { name = "sox" },
     { name = "spacy" },
+    { name = "transformers" },
     { name = "uvicorn" },
     { name = "websockets" },
 ]
@@ -2563,6 +2564,7 @@ requires-dist = [
     { name = "spacy", specifier = ">=3.7.0" },
     { name = "torch", marker = "extra == 'gpu'", specifier = ">=2.0.0", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torchaudio", marker = "extra == 'gpu'", specifier = ">=2.0.0", index = "https://download.pytorch.org/whl/cu128" },
+    { name = "transformers", specifier = ">=4.40.0" },
     { name = "uvicorn", specifier = ">=0.30.0" },
     { name = "websockets", specifier = ">=13.0" },
 ]

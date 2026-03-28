@@ -12,7 +12,8 @@ from core import AudioGenerationError, CacheService, TTSEngine
 from core.exceptions import ReferenceAudioNotFoundError
 from services.voice_service import VoiceService
 from services.voice_audio_integrity import VoiceAudioIntegrityService
-from services.ssml_processor import SSMLProcessor, TextTask, BreakTask
+from services.ssml_processor import SSMLProcessor, TextTask, BreakTask, SoundEffectTask
+from services.sound_effect_service import SoundEffectService
 from schemas import TTSParams
 from schemas.languages import resolve_language
 from services.text_splitter import get_text_splitter
@@ -46,6 +47,7 @@ class TTSService:
         self.text_splitter = get_text_splitter()
         self.voice_service = VoiceService()
         self.ssml_processor = SSMLProcessor(self.voice_service)
+        self.sfx_service = SoundEffectService(ProjectConfig.get_settings().OUTPUT_DIR)
         self.voice_audio_integrity = VoiceAudioIntegrityService(self.voice_service, engine, cache)
         # locks keyed by chunk cache key to prevent duplicate concurrent generation
         self._locks: dict[str, asyncio.Lock] = {}
@@ -228,6 +230,15 @@ class TTSService:
             elif isinstance(task, BreakTask):
                 silence_samples = int(sample_rate * (task.duration_ms / 1000))
                 combined_audio.append(np.zeros(silence_samples, dtype=np.float32))
+            elif isinstance(task, SoundEffectTask):
+                sfx_path = await self.sfx_service.generate(task.description)
+                data, sr = sf.read(str(sfx_path))
+                # Resample if needed
+                if sr != sample_rate:
+                    import librosa
+
+                    data = librosa.resample(data, orig_sr=sr, target_sr=sample_rate)
+                combined_audio.append(data)
 
         final_audio = np.concatenate(combined_audio)
 
