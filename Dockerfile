@@ -1,12 +1,4 @@
-# Stage 1: Frontend Builder
-FROM node:20-slim AS frontend-builder
-WORKDIR /app
-COPY frontend/package*.json ./
-RUN npm install
-COPY frontend/ ./
-RUN npm run build -- --configuration production
-
-# Stage 2: Backend Builder
+# Stage 1: Backend Builder
 FROM nvidia/cuda:12.1.0-devel-ubuntu22.04 AS builder
 
 # Set environment variables for build
@@ -58,7 +50,7 @@ RUN .venv/bin/python -m ensurepip --upgrade && \
     .venv/bin/python -m spacy download de_core_news_sm && \
     .venv/bin/python -m spacy download en_core_web_sm
 
-# Stage 3: Runtime (uses NVIDIA runtime image for GPU inference)
+# Stage 2: Runtime (uses NVIDIA runtime image for GPU inference)
 FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04 AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
@@ -86,9 +78,6 @@ COPY --from=builder /app/.venv /app/.venv
 # Copy source code and config
 COPY src/ src/
 COPY .env.example .env
-
-# Copy built frontend from stage 1
-COPY --from=frontend-builder /app/dist/frontend/browser src/static/ui
 
 # Expose API port
 EXPOSE 8045
