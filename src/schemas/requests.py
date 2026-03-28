@@ -86,10 +86,10 @@ class CustomVoiceRequest(BaseModel):
         description="Language: 'German', 'English', 'French', etc.",
         json_schema_extra={"example": "German"},
     )
-    speaker: str = Field(
+    voice_id: str = Field(
         ...,
-        description="Predefined speaker ID (e.g., 'eric', 'Chelsie').",
-        json_schema_extra={"example": "eric"},
+        description="Predefined voice ID (use /voices search to find).",
+        json_schema_extra={"example": "default_001"},
     )
     instruct: str | None = Field(
         default=None,

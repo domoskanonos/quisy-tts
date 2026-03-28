@@ -55,9 +55,9 @@ async def _generate(
     """Internal handler for custom voice generation."""
     try:
         # Resolve speaker from DB and require a voice ID
-        voice = voice_service.get_voice_by_name(request.speaker)
+        voice = voice_service.get_voice(request.voice_id)
         if not voice:
-            raise ReferenceAudioNotFoundError(f"Speaker '{request.speaker}' not found in database.")
+            raise ReferenceAudioNotFoundError(f"Voice ID '{request.voice_id}' not found in database.")
 
         # Only accept voice IDs now: pass the voice id into the engine.
         speaker_id = voice["id"]
@@ -123,9 +123,9 @@ def _stream(
     """
 
     # Resolve speaker from DB and require voice id
-    voice = voice_service.get_voice_by_name(request.speaker)
+    voice = voice_service.get_voice(request.voice_id)
     if not voice:
-        raise ReferenceAudioNotFoundError(f"Speaker '{request.speaker}' not found in database.")
+        raise ReferenceAudioNotFoundError(f"Voice ID '{request.voice_id}' not found in database.")
 
     speaker_id = voice["id"]
     reference_audio = None

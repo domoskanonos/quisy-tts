@@ -45,20 +45,6 @@ async def trigger_cleanup(
     return {"status": "Cleanup scheduled"}
 
 
-@router.get("/speakers")
-def get_speakers(
-    voice_service: VoiceService = Depends(get_voice_service),
-) -> dict[str, Any]:
-    """Returns the list of supported speakers (from DB) for CustomVoice mode."""
-    # Return names of all voices in DB that have an audio file or are default
-    # Actually, we just return all names, and let the backend handle resolution.
-    # Default voices always work (they have instructs or audio).
-    # Custom voices need audio for cloning.
-    voices = voice_service.list_voices()
-    speaker_names = [v["name"] for v in voices]
-    return {"speakers": speaker_names}
-
-
 @router.get("/languages")
 def get_languages() -> dict[str, Any]:
     """Returns the list of supported languages."""
