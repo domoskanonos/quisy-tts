@@ -21,10 +21,7 @@ dependencies = [
     "soundfile>=0.12.1",
     "numpy>=1.26.0",
     "spacy>=3.7.0",
-    "fastmcp>=0.1.0",
-    "transformers>=4.57.3",
-    "diffusers",
-    "accelerate",
+    "fastmcp>=2.1.0"
 ]
 
 [project.optional-dependencies]

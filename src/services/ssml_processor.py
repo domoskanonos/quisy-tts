@@ -35,6 +35,9 @@ class SSMLProcessor:
         self.voice_service = voice_service
 
     def parse(self, xml_string: str) -> List[Task]:
+        # Replace [text] with <sfx>text</sfx> to make it a valid tag
+        xml_string = re.sub(r"\[(.*?)\]", r"<sfx>\1</sfx>", xml_string)
+
         try:
             root = ElementTree.fromstring(xml_string)
         except ElementTree.ParseError as e:
@@ -45,41 +48,45 @@ class SSMLProcessor:
 
         tasks = []
 
-        # Flache Struktur prüfen (kein Nesting)
-        for child in root:
-            if child.tag == "speaker":
-                name = child.get("name")
+        def _process_element(element, current_speaker: str | None):
+            if element.tag == "speaker":
+                name = element.get("name")
                 if not name:
                     raise ValueError("Speaker tag missing 'name' attribute")
-
-                # Treat 'name' as voice_id
                 voice = self.voice_service.get_voice(name)
                 if not voice:
                     raise ValueError(f"Unknown speaker ID: {name}")
 
-                text = child.text or ""
-                parts = re.split(r"\[(.*?)\]", text)
-                for i, part in enumerate(parts):
-                    if i % 2 == 0:
-                        if part:
-                            tasks.append(TextTask(text=part, speaker=voice["id"]))
-                    else:
-                        tasks.append(SoundEffectTask(description=part))
+                # Process text in this tag
+                if element.text:
+                    tasks.append(TextTask(text=element.text, speaker=voice["id"]))
 
-            elif child.tag == "break":
-                time_val = child.get("time")
-                strength = child.get("strength")
+                # Recurse for children (like <sfx>)
+                for child in element:
+                    _process_element(child, voice["id"])
 
+                # Process tail (text after tag)
+                if element.tail:
+                    # Tail text is outside of speaker, so no speaker ID
+                    # We might need to split it if it has [text] or other things,
+                    # but <sfx> tags are already handled.
+                    # Simple approach: add as text task without speaker?
+                    # Actually, the user shouldn't have raw text outside tags.
+                    pass
+
+            elif element.tag == "sfx":
+                tasks.append(SoundEffectTask(description=element.text or ""))
+
+            elif element.tag == "break":
+                time_val = element.get("time")
+                strength = element.get("strength")
                 if time_val:
                     if not re.match(r"^\d+(\.\d+)?(ms|s)$", time_val):
                         raise ValueError(f"Invalid break time format: {time_val}")
-
                     value = float(re.findall(r"\d+\.?\d*", time_val)[0])
                     unit = re.findall(r"ms|s", time_val)[0]
-
                     duration_ms = int(value * 1000 if unit == "s" else value)
                     tasks.append(BreakTask(duration_ms=duration_ms))
-
                 elif strength:
                     if strength not in STRENGTH_TO_MS:
                         raise ValueError(f"Invalid break strength: {strength}")
@@ -87,6 +94,9 @@ class SSMLProcessor:
                 else:
                     raise ValueError("Break tag missing 'time' or 'strength' attribute")
             else:
-                raise ValueError(f"Unsupported tag: {child.tag}")
+                raise ValueError(f"Unsupported tag: {element.tag}")
+
+        for child in root:
+            _process_element(child, None)
 
         return tasks
