@@ -418,6 +418,9 @@ class VoiceService:
         # Remove old generated audio files for this voice (keep user uploads if they don't match prefix)
         try:
             for p in list(self._voices_dir.glob(f"voice_{voice_id}_*.wav")):
+                # Skip the file we are about to save/set
+                if audio_filename and p.name == audio_filename:
+                    continue
                 # Only remove files that look like auto-generated (have a short hex suffix)
                 name = p.name
                 parts = name.rsplit("_", 2)
