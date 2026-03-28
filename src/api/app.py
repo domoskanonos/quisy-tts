@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 
-from api.routes import base, custom_voice, info, voice_design, voices_crud, voices_search, websocket
+from api.routes import base, custom_voice, info, voice_design, voices_crud, voices_search, websocket, ssml
 from config import ProjectConfig
 from mcp_server import mcp
 
@@ -184,6 +184,7 @@ api_router.include_router(custom_voice.router, prefix="/generate/custom-voice")
 api_router.include_router(voices_search.router, prefix="/voices")
 api_router.include_router(voices_crud.router, prefix="/voices")
 api_router.include_router(websocket.router)
+api_router.include_router(ssml.router, prefix="/ssml")
 
 app.include_router(api_router, prefix="/api")
 

@@ -11,6 +11,7 @@ from config import ProjectConfig
 from core import AudioGenerationError, CacheService, TTSEngine
 from core.exceptions import ReferenceAudioNotFoundError
 from services.voice_service import VoiceService
+from services.ssml_processor import SSMLProcessor, TextTask, BreakTask
 from schemas import TTSParams
 from schemas.languages import resolve_language
 from services.text_splitter import get_text_splitter
@@ -42,6 +43,7 @@ class TTSService:
         self.engine = engine
         self.cache = cache
         self.text_splitter = get_text_splitter()
+        self.ssml_processor = SSMLProcessor(VoiceService())
         # locks keyed by chunk cache key to prevent duplicate concurrent generation
         self._locks: dict[str, asyncio.Lock] = {}
         # reference audio generation tasks/status
@@ -261,6 +263,52 @@ class TTSService:
             lock = asyncio.Lock()
             self._locks[key] = lock
         return lock
+
+    async def generate_from_ssml(self, ssml_content: str, base_params: TTSParams) -> Path:
+        """Generate audio from SSML content."""
+        tasks = self.ssml_processor.parse(ssml_content)
+
+        combined_audio = []
+        sample_rate = 24000
+
+        for task in tasks:
+            if isinstance(task, TextTask):
+                vs = VoiceService()
+                voice = vs.get_voice_by_name(task.speaker)
+                if not voice:
+                    raise AudioGenerationError(f"Speaker {task.speaker} not found")
+
+                # Copy params and update speaker/mode
+                params = base_params.model_copy()
+                params.mode = "custom_voice"
+                params.speaker = voice["id"]
+
+                # Generate audio chunk
+                chunk_path = await self.generate_audio(
+                    task.text,
+                    params.language or "German",
+                    "custom_voice",
+                    params.model_size or "1.7B",
+                    speaker=voice["id"],
+                )
+
+                data, sr = sf.read(str(chunk_path))
+                combined_audio.append(data)
+                sample_rate = sr
+            elif isinstance(task, BreakTask):
+                silence_samples = int(sample_rate * (task.duration_ms / 1000))
+                combined_audio.append(np.zeros(silence_samples, dtype=np.float32))
+
+        final_audio = np.concatenate(combined_audio)
+
+        # Save to a new filename based on hash
+        import hashlib
+
+        ssml_key = hashlib.sha256(ssml_content.encode()).hexdigest()[:12]
+        output_path = ProjectConfig.get_settings().OUTPUT_DIR / f"ssml_{ssml_key}.wav"
+
+        sf.write(str(output_path), final_audio, sample_rate)
+        return output_path
 
     async def generate_audio(  # noqa: PLR0913
         self,
