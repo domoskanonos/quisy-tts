@@ -1,7 +1,7 @@
 import torch
 import torchaudio
 from pathlib import Path
-from transformers import AudioGenForConditionalGeneration, AutoProcessor
+from audiocraft.models import AudioGen
 from config import ProjectConfig
 
 logger = ProjectConfig.get_logger()
@@ -13,24 +13,18 @@ class SoundEffectService:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info(f"Loading AudioGen on {self.device}...")
         try:
-            self.processor = AutoProcessor.from_pretrained("facebook/audiogen-medium")
-            self.model = AudioGenForConditionalGeneration.from_pretrained("facebook/audiogen-medium").to(self.device)
+            self.model = AudioGen.get_pretrained("facebook/audiogen-medium")
+            self.model.set_generation_params(duration=5)
         except Exception as e:
             logger.error(f"Failed to load AudioGen: {e}")
             raise
 
     async def generate(self, description: str) -> Path:
         logger.info(f"Generating sound effect: {description}")
-        inputs = self.processor(
-            text=[description],
-            padding=True,
-            return_tensors="pt",
-        ).to(self.device)
-
         with torch.no_grad():
-            audio_values = self.model.generate(**inputs, max_new_tokens=512)
+            wav = self.model.generate([description], progress=True)
 
-        audio_values = audio_values.squeeze().cpu()
+        audio_values = wav.squeeze().cpu()
 
         import hashlib
 

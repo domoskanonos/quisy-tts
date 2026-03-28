@@ -9,7 +9,6 @@ import soundfile as sf
 
 from config import ProjectConfig
 from core import AudioGenerationError, CacheService, TTSEngine
-from core.exceptions import ReferenceAudioNotFoundError
 from services.voice_service import VoiceService
 from services.voice_audio_integrity import VoiceAudioIntegrityService
 from services.ssml_processor import SSMLProcessor, TextTask, BreakTask, SoundEffectTask
