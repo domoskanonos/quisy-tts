@@ -11,6 +11,7 @@ from config import ProjectConfig
 from core import AudioGenerationError, CacheService, TTSEngine
 from core.exceptions import ReferenceAudioNotFoundError
 from services.voice_service import VoiceService
+from services.voice_audio_integrity import VoiceAudioIntegrityService
 from services.ssml_processor import SSMLProcessor, TextTask, BreakTask
 from schemas import TTSParams
 from schemas.languages import resolve_language
@@ -43,12 +44,29 @@ class TTSService:
         self.engine = engine
         self.cache = cache
         self.text_splitter = get_text_splitter()
-        self.ssml_processor = SSMLProcessor(VoiceService())
+        self.voice_service = VoiceService()
+        self.ssml_processor = SSMLProcessor(self.voice_service)
+        self.voice_audio_integrity = VoiceAudioIntegrityService(self.voice_service, engine, cache)
         # locks keyed by chunk cache key to prevent duplicate concurrent generation
         self._locks: dict[str, asyncio.Lock] = {}
         # reference audio generation tasks/status
         self._ref_gen_tasks: dict[str, asyncio.Task] = {}
         self._ref_gen_status: dict[str, dict] = {}
+
+    async def _ensure_reference_audio(self, voice_id: str, force: bool = False) -> None:
+        """Ensure reference audio is generated and persisted."""
+
+        # Generator callback that calls self.generate_audio
+        async def _generator_callback(text, lang, mode, model_size, instruct):
+            return await self.generate_audio(
+                text=text,
+                language=lang,
+                mode=mode,
+                model_size=model_size,
+                instruct=instruct,
+            )
+
+        await self.voice_audio_integrity.ensure_audio(voice_id, _generator_callback, force=force)
 
     def trigger_reference_audio_generation(self, voice_id: str, force: bool = False) -> None:
         """Start background generation for a voice's reference audio.
@@ -103,7 +121,7 @@ class TTSService:
                 )
             except Exception:
                 pass
-            await self._ensure_reference_audio_for_voice_id(voice_id, force=force)
+            await self._ensure_reference_audio(voice_id, force=force)
 
             self._ref_gen_status[voice_id] = {"status": "done", "message": "completed", "progress": 100}
             try:
@@ -145,100 +163,6 @@ class TTSService:
         Possible statuses: pending/running/done/failed. If unknown, returns pending.
         """
         return self._ref_gen_status.get(voice_id, {"status": "pending", "message": "not_started"})
-
-    async def _ensure_reference_audio_for_voice_id(self, voice_id: str, force: bool = False) -> None:
-        """Ensure a voice with id `voice_id` has an audio file. If missing,
-        synchronously generate it (voice_design) and persist it to the voices DB.
-
-        This blocks the calling request until generation completes so the
-        subsequent base cloning has a concrete reference audio available.
-        """
-        vs = VoiceService()
-        voice = vs.get_voice(voice_id)
-        if voice is None:
-            raise ReferenceAudioNotFoundError(f"Voice '{voice_id}' not found in database.")
-
-        # Compute expected cache key for the voice's example_text + params
-        example_text = voice.get("example_text")
-        # Diagnostic log: show the exact example_text read from DB when starting generation
-        logger.info(f"Ref-gen debug: voice {voice_id} example_text (db)={example_text!r}")
-        if not example_text:
-            raise ReferenceAudioNotFoundError(f"Voice '{voice_id}' has no example_text to generate audio from.")
-
-        # Build params for voice_design generation
-        gen_params = TTSParams(
-            language=voice.get("language", "german"),
-            instruct=voice.get("instruct") or "A clear and natural voice.",
-            mode="voice_design",
-            model_size="1.7B",
-        )
-
-        global_key = self.cache.get_key(example_text, gen_params)
-        logger.info(f"Ref-gen debug: voice {voice_id} computed global_key={global_key[:12]} for current example_text")
-        short = global_key[:12]
-        expected_voice_fn = f"voice_{voice_id}_{short}.wav"
-
-        # If existing audio matches expected and not forcing, skip generation
-        existing_audio = voice.get("audio_filename")
-        if existing_audio and (global_key in existing_audio or short in existing_audio) and not force:
-            logger.info(f"Reference audio for voice {voice_id} is up-to-date (key {short}). Skipping generation.")
-            return
-
-        # Need example_text to generate via voice_design (already checked above)
-
-        # Prepare to generate via existing pipeline (generate_audio) which will store chunk cache files
-        try:
-            logger.info(f"Automatic generation: starting reference audio generation for voice {voice_id} (key {short})")
-            try:
-                await status_ws_manager.broadcast_to_voice(
-                    voice_id,
-                    {
-                        "type": "ref-gen",
-                        "voice_id": voice_id,
-                        "status": "running",
-                        "progress": 10,
-                        "message": "loading_model",
-                    },
-                )
-            except Exception:
-                pass
-
-            # Use TTSService.generate_audio to leverage existing cache key generation and chunking.
-            generated_path = await self.generate_audio(
-                text=example_text,
-                language=gen_params.language,
-                mode=gen_params.mode,
-                model_size=gen_params.model_size,
-                instruct=gen_params.instruct,
-            )
-
-            # generated_path is the cached global audio (cache_{global_key}.wav) or combined file.
-            # Copy it into voices dir with a deterministic name containing the short key.
-            target_path = vs._voices_dir / expected_voice_fn
-            target_path.write_bytes(Path(generated_path).read_bytes())
-
-            # Persist via DB using set_audio override (new signature supports explicit filename)
-            vs.set_audio(voice_id, target_path.read_bytes(), target_path.name, audio_filename=expected_voice_fn)
-
-            logger.info(
-                f"Automatic generation: finished and persisted reference audio for voice {voice_id} as {expected_voice_fn}"
-            )
-            try:
-                await status_ws_manager.broadcast_to_voice(
-                    voice_id,
-                    {
-                        "type": "ref-gen",
-                        "voice_id": voice_id,
-                        "status": "running",
-                        "progress": 90,
-                        "message": "persisted",
-                    },
-                )
-            except Exception:
-                pass
-
-        except Exception as e:
-            raise AudioGenerationError(f"Failed to generate reference audio for voice '{voice_id}': {e}") from e
 
     def _get_lock(self, key: str) -> asyncio.Lock:
         """Return an asyncio.Lock for the given key, creating it if necessary.
