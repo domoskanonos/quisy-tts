@@ -209,7 +209,7 @@ class TTSService:
                 params.instruct = voice.get("instruct")
 
                 # Ensure reference audio exists (cloning requires audio_filename)
-                await self._ensure_reference_audio_for_voice_id(voice["id"])
+                await self._ensure_reference_audio(voice["id"])
 
                 # Generate audio chunk
                 chunk_path = await self.generate_audio(
@@ -291,6 +291,8 @@ class TTSService:
             voice = vs.get_voice(reference_audio)
             if voice:
                 ref_text = voice.get("example_text")
+                # Ensure reference audio exists (cloning requires audio_filename)
+                await self._ensure_reference_audio(reference_audio)
 
         params = TTSParams(
             language=resolved,
