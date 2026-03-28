@@ -29,27 +29,31 @@ def _validate_startup_requirements() -> None:
         import qwen_tts  # noqa: F401
 
         logger.info("✓ qwen-tts is available.")
-    except ImportError as e:
-        raise RuntimeError("qwen-tts is required but not installed. Install it with: pip install qwen-tts") from e
+    except ImportError:
+        logger.warning(
+            "qwen-tts is not installed. If you intend to run real generation, install it with `pip install qwen-tts`."
+        )
 
-    # 2. Check sox binary
+    # 2. Check sox binary (optional)
     try:
         result = subprocess.run(["sox", "--version"], capture_output=True, text=True, check=False)
         sox_version = result.stdout.strip() or result.stderr.strip()
         logger.info(f"✓ sox is available: {sox_version}")
-    except FileNotFoundError as e:
-        raise RuntimeError("sox is required but not found in PATH. Install it with: apt-get install sox") from e
+    except FileNotFoundError:
+        logger.warning("sox binary not found in PATH. Post-processing will be skipped if sox is absent.")
 
-    # 3. Check CUDA GPU
-    if not torch.cuda.is_available():
-        raise RuntimeError(
-            "CUDA GPU is required but not available. "
-            "Ensure NVIDIA drivers and CUDA toolkit are installed, "
-            "and run the container with --gpus all."
-        )
-
-    gpu_name = torch.cuda.get_device_name(0)
-    logger.info(f"✓ CUDA GPU available: {gpu_name}")
+    # 3. Check CUDA GPU (optional). Prefer GPU but allow CPU fallback for dev/tests.
+    try:
+        if torch.cuda.is_available():
+            try:
+                gpu_name = torch.cuda.get_device_name(0)
+            except Exception:
+                gpu_name = "Unknown GPU"
+            logger.info(f"✓ CUDA GPU available: {gpu_name}")
+        else:
+            logger.warning("CUDA GPU not available. The engine will attempt to run on CPU which may be slower.")
+    except Exception:
+        logger.warning("Unable to determine CUDA availability. Proceeding assuming CPU execution.")
 
 
 @asynccontextmanager
@@ -202,8 +206,21 @@ async def root_redirect() -> RedirectResponse:
 if static_dir.exists():
     app.mount("/ui", StaticFiles(directory=static_dir, html=True), name="ui")
 
-# Mount MCP server
-app.mount("/mcp", mcp.http_app())
+# Mount generated audio files to make them accessible via URL
+app.mount("/audio", StaticFiles(directory=settings.OUTPUT_DIR), name="audio")
+
+
+# Mount MCP server under /mcp to avoid shadowing the API routes when the
+# MCP application is present. This keeps the API available at /api for tests
+# and clients while still exposing the MCP UI under /mcp.
+mcp_app = mcp.http_app()
+app.mount("/mcp", mcp_app)
+# Integrate lifespan context from MCP app if present (best-effort).
+try:
+    app.router.lifespan_context = mcp_app.router.lifespan_context
+except Exception:
+    # If MCP app doesn't expose lifespan_context, ignore.
+    pass
 
 
 @app.exception_handler(404)

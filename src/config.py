@@ -31,12 +31,29 @@ class ProjectSettings(BaseSettings):
         "Qwen/Qwen3-TTS-12Hz-0.6B-VoiceDesign,"
         "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice"
     )
-    MODELS_DIR: Path = BASE_DATA_DIR / "models"
-    VOICES_DIR: Path = BASE_DATA_DIR / "voices"
-    OUTPUT_DIR: Path = BASE_DATA_DIR / "output"
-    APP_DIR: Path = BASE_DATA_DIR / "app_data"
-    RESOURCES_DIR: Path = BASE_DIR / "resources"
+
+    @property
+    def MODELS_DIR(self) -> Path:
+        return self.BASE_DATA_DIR / "models"
+
+    @property
+    def VOICES_DIR(self) -> Path:
+        return self.BASE_DATA_DIR / "voices"
+
+    @property
+    def OUTPUT_DIR(self) -> Path:
+        return self.BASE_DATA_DIR / "output"
+
+    @property
+    def APP_DIR(self) -> Path:
+        return self.BASE_DATA_DIR / "app_data"
+
+    @property
+    def RESOURCES_DIR(self) -> Path:
+        return self.BASE_DIR / "resources"
+
     DEFAULT_LANGUAGE: str = "de"
+
     # When set, this should be a voice `id` existing in the SQLite voices
     # database (e.g. the seeded ids `default_001`, ...). If provided, the
     # engine will prefer the audio file attached to that voice as the default

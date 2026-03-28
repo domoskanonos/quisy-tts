@@ -69,4 +69,14 @@ class AudioUtils:
             except Exception:
                 pass
 
+        logger.info(f"Saving waveform with shape: {data.shape if hasattr(data, 'shape') else 'unknown'}")
         sf.write(path, data, sr)
+        # Verify the file was written successfully
+        import os
+
+        if os.path.exists(path) and os.path.getsize(path) == 0:
+            logger.error(f"Saved audio file {path} is empty (0 bytes).")
+            raise IOError(f"Audio file {path} is empty.")
+        elif not os.path.exists(path):
+            logger.error(f"Failed to create audio file {path}.")
+            raise IOError(f"Audio file {path} was not created.")

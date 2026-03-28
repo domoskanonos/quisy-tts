@@ -72,6 +72,7 @@ class FileCacheService(CacheService):
         """Retrieve cached audio by key."""
         cache_path = self.cache_dir / f"cache_{key}.wav"
         if cache_path.exists():
+            logger.info(f"DEBUG: Found cache file at {cache_path}")
             logger.info(f"Cache hit for key: {key[:8]}...")
             return cache_path
         return None

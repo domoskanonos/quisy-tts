@@ -1,5 +1,7 @@
 from fastmcp import FastMCP
 from api.dependencies import get_tts_service, get_voice_service
+from config import ProjectConfig
+import os
 
 # Initialize MCP server
 mcp = FastMCP("QuisyTTS-MCP-Server")
@@ -7,6 +9,16 @@ mcp = FastMCP("QuisyTTS-MCP-Server")
 # Services
 tts_service = get_tts_service()
 voice_service = get_voice_service()
+settings = ProjectConfig.get_settings()
+
+# Base URL for audio files
+base_audio_url = f"http://localhost:{settings.PORT}/audio"
+
+
+def get_audio_url(file_path: str) -> str:
+    """Converts a local file path to an accessible URL."""
+    filename = os.path.basename(file_path)
+    return f"{base_audio_url}/{filename}"
 
 
 @mcp.tool
@@ -33,7 +45,7 @@ async def generate_base_06b(
         reference_audio=reference_audio,
         ref_text=ref_text,
     )
-    return str(result_path)
+    return get_audio_url(str(result_path))
 
 
 @mcp.tool
@@ -60,7 +72,7 @@ async def generate_base_17b(
         reference_audio=reference_audio,
         ref_text=ref_text,
     )
-    return str(result_path)
+    return get_audio_url(str(result_path))
 
 
 @mcp.tool
@@ -80,7 +92,7 @@ async def generate_voice_design_17b(text: str, instruct: str, language: str = "G
         model_size="1.7B",
         instruct=instruct,
     )
-    return str(result_path)
+    return get_audio_url(str(result_path))
 
 
 @mcp.tool
@@ -108,7 +120,7 @@ async def generate_custom_voice_06b(
         speaker=voice["id"],
         instruct=instruct,
     )
-    return str(result_path)
+    return get_audio_url(str(result_path))
 
 
 @mcp.tool
@@ -136,7 +148,7 @@ async def generate_custom_voice_17b(
         speaker=voice["id"],
         instruct=instruct,
     )
-    return str(result_path)
+    return get_audio_url(str(result_path))
 
 
 @mcp.tool

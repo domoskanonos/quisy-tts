@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, Field
 
-from config import ProjectSettings
+from config import ProjectConfig
 
 # =============================================================================
 # Base Mode Schemas (Voice Cloning)
@@ -23,7 +23,7 @@ class BaseGenerateRequest(BaseModel):
         json_schema_extra={"example": "German"},
     )
     reference_audio: str | None = Field(
-        default_factory=lambda: ProjectSettings().DEFAULT_VOICE_ID,
+        default_factory=lambda: ProjectConfig.get_settings().DEFAULT_VOICE_ID,
         description=(
             "Voice ID to use as reference (e.g. 'default_001')."
             " Explicit filenames (e.g. 'chatbot_male.wav') are no longer accepted"

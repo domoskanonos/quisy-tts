@@ -81,6 +81,8 @@ class QwenTTSBackend:
 
             elapsed = time.time() - start_time
             logger.info(f"Qwen3-TTS model '{mode}' loaded successfully in {elapsed:.2f}s")
+            # Log concrete model type for diagnostics (helps detect local stubs/mocks)
+            logger.debug("Loaded model instance: %s", type(model))
             return model
 
     def _load_model_sync(self, model_name: str) -> Qwen3TTSModel:
@@ -138,48 +140,83 @@ class QwenTTSBackend:
 
         # Convert numpy array to torch tensor if torch is available, otherwise return numpy
         audio_np = wavs[0]
+        # Log the raw waveform shape for debugging short/empty outputs
+        try:
+            logger.debug(
+                "Raw generated audio shape: %s, sample_rate=%s", getattr(audio_np, "shape", type(audio_np)), sr
+            )
+        except Exception:
+            logger.debug("Raw generated audio shape unavailable")
+
         try:
             import torch
 
             audio_tensor = torch.from_numpy(audio_np).float().unsqueeze(0)  # [1, T]
+            logger.debug("Converted generated audio to torch tensor with shape: %s", tuple(audio_tensor.shape))
             return audio_tensor, sr
         except Exception:
+            logger.debug("Torch not available or conversion failed; returning numpy array")
             return audio_np, sr
 
     def _generate_sync(self, model: Qwen3TTSModel, text: str, params: TTSParams, gen_kwargs: dict) -> tuple[list, int]:
         """Synchronous generation logic."""
-        if params.mode == "voice_design":
-            return model.generate_voice_design(
-                text=text,
-                language=params.resolved_language,
-                instruct=params.instruct or "",
-                **gen_kwargs,
-            )
-        elif params.mode == "custom_voice":
-            return model.generate_custom_voice(
-                text=text,
-                language=params.resolved_language,
-                speaker=params.speaker or "Vivian",
-                instruct=params.instruct or "",
-                **gen_kwargs,
-            )
-        else:
-            # Base mode = voice clone
-            ref_audio_path = self._resolve_ref_audio(params)
-            if not ref_audio_path:
-                from core.exceptions import ReferenceAudioNotFoundError
-
-                raise ReferenceAudioNotFoundError(
-                    "No reference audio found for voice cloning. "
-                    "Please provide `reference_audio` or ensure a default voice exists in `voices/`."
+        start = time.time()
+        try:
+            if params.mode == "voice_design":
+                result = model.generate_voice_design(
+                    text=text,
+                    language=params.resolved_language,
+                    instruct=params.instruct or "",
+                    **gen_kwargs,
                 )
-            return model.generate_voice_clone(
-                text=text,
-                language=params.resolved_language,
-                ref_audio=ref_audio_path,
-                ref_text=params.ref_text or "",
-                **gen_kwargs,
-            )
+            elif params.mode == "custom_voice":
+                result = model.generate_custom_voice(
+                    text=text,
+                    language=params.resolved_language,
+                    speaker=params.speaker or "Vivian",
+                    instruct=params.instruct or "",
+                    **gen_kwargs,
+                )
+            else:
+                # Base mode = voice clone
+                ref_audio_path = self._resolve_ref_audio(params)
+                if not ref_audio_path:
+                    from core.exceptions import ReferenceAudioNotFoundError
+
+                    raise ReferenceAudioNotFoundError(
+                        "No reference audio found for voice cloning. "
+                        "Please provide `reference_audio` or ensure a default voice exists in `voices/`."
+                    )
+                result = model.generate_voice_clone(
+                    text=text,
+                    language=params.resolved_language,
+                    ref_audio=ref_audio_path,
+                    ref_text=params.ref_text or "",
+                    **gen_kwargs,
+                )
+
+            elapsed = time.time() - start
+            # result expected: (wavs, sr)
+            try:
+                wavs, sr = result
+                # Log model type and returned waveform details to help detect stub usage
+                logger.debug("Model type during generation: %s", type(model))
+                logger.debug(
+                    "Generation finished in %.3fs; returned %d waveform(s); sample_rate=%s", elapsed, len(wavs), sr
+                )
+                # Log shape of first waveform if possible
+                try:
+                    logger.debug("First waveform shape: %s", getattr(wavs[0], "shape", type(wavs[0])))
+                except Exception:
+                    logger.debug("Could not determine waveform shape")
+            except Exception:
+                # Fall back if model returns something unexpected
+                logger.debug("Generation finished in %.3fs; result type: %s", elapsed, type(result))
+            return result
+        except Exception:
+            # Re-raise after logging to preserve original behavior
+            logger.exception("Error during synchronous generation call")
+            raise
 
     async def generate_audio_stream(
         self, text: str, params: TTSParams, chunk_size: int = 4096
