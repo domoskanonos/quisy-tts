@@ -1,5 +1,4 @@
 import sqlite3
-import os
 
 db_path = "resources/quisy-tts.db"
 conn = sqlite3.connect(db_path)

@@ -2,7 +2,6 @@ from xml.etree import ElementTree
 from typing import List, Union
 from pydantic import BaseModel
 from services.voice_service import VoiceService
-from config import ProjectConfig
 import re
 
 

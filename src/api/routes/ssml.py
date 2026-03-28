@@ -1,6 +1,4 @@
 from fastapi import APIRouter, HTTPException, Request
-from schemas.requests import CustomVoiceRequest
-from services.tts_service import TTSService
 from api.dependencies import get_tts_service
 from schemas import TTSParams
 import os
