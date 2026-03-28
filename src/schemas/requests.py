@@ -33,14 +33,6 @@ class BaseGenerateRequest(BaseModel):
         ),
         json_schema_extra={"example": "default_001"},
     )
-    ref_text: str | None = Field(
-        default=None,
-        description=(
-            "Transcript of reference audio. Leave empty for faster x_vector_only mode. "
-            "Provide text for better quality ICL mode cloning."
-        ),
-        json_schema_extra={"example": None},
-    )
 
 
 # =============================================================================

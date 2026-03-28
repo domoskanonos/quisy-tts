@@ -62,31 +62,34 @@ async def _generate(
     """Internal handler for base mode generation."""
     try:
         # If reference_audio is a voice ID and that voice lacks audio, generate it first
+        ref_text = None
         if request.reference_audio:
             from services.voice_service import VoiceService
 
             vs = VoiceService()
             v = vs.get_voice(request.reference_audio)
-            if v and not v.get("audio_filename"):
-                # Do not block the request: start background generation and ask client to poll
-                logger.info(
-                    f"Reference audio missing for voice {request.reference_audio}; triggering background generation."
-                )
-                service.trigger_reference_audio_generation(request.reference_audio)
-                return JSONResponse(
-                    status_code=202,
-                    content={
-                        "status": "queued",
-                        "message": "Reference audio generation started in background. Poll /api/voices/{id}/ensure-audio/status",
-                    },
-                )
+            if v:
+                ref_text = v.get("example_text")
+                if not v.get("audio_filename"):
+                    # Do not block the request: start background generation and ask client to poll
+                    logger.info(
+                        f"Reference audio missing for voice {request.reference_audio}; triggering background generation."
+                    )
+                    service.trigger_reference_audio_generation(request.reference_audio)
+                    return JSONResponse(
+                        status_code=202,
+                        content={
+                            "status": "queued",
+                            "message": "Reference audio generation started in background. Poll /api/voices/{id}/ensure-audio/status",
+                        },
+                    )
         result_path = await service.generate_audio(
             text=request.text,
             language=request.language,
             mode="base",
             model_size=model_size,
             reference_audio=request.reference_audio,
-            ref_text=request.ref_text,
+            ref_text=ref_text,
         )
 
         background_tasks.add_task(cleanup.cleanup_old_files, settings.OUTPUT_DIR, 24)
@@ -116,7 +119,7 @@ async def stream_base_06b(
     if request.reference_audio:
         if voice_service.get_voice(request.reference_audio) is None:
             raise HTTPException(status_code=400, detail=f"Reference voice id '{request.reference_audio}' not found")
-    return _stream(request, "0.6B", service)
+    return _stream(request, "0.6B", service, voice_service)
 
 
 @router.post("/stream/1.7b", response_model=None)
@@ -129,15 +132,22 @@ async def stream_base_17b(
     if request.reference_audio:
         if voice_service.get_voice(request.reference_audio) is None:
             raise HTTPException(status_code=400, detail=f"Reference voice id '{request.reference_audio}' not found")
-    return _stream(request, "1.7B", service)
+    return _stream(request, "1.7B", service, voice_service)
 
 
 def _stream(
     request: BaseGenerateRequest,
     model_size: str,
     service: TTSService,
+    voice_service: VoiceService,
 ) -> StreamingResponse:
     """Internal handler for base mode streaming."""
+    ref_text = None
+    if request.reference_audio:
+        voice = voice_service.get_voice(request.reference_audio)
+        if voice:
+            ref_text = voice.get("example_text")
+
     return StreamingResponse(
         service.generate_stream(
             text=request.text,
@@ -145,7 +155,7 @@ def _stream(
             mode="base",
             model_size=model_size,
             reference_audio=request.reference_audio,
-            ref_text=request.ref_text,
+            ref_text=ref_text,
         ),
         media_type="audio/l16; rate=24000; channels=1",
     )

@@ -321,6 +321,9 @@ class VoiceService:
         language: str = "german",
     ) -> dict | None:
         """Create a new user voice."""
+        if not example_text or not example_text.strip():
+            raise ValueError("example_text is mandatory for creating a new voice.")
+
         voice_id = uuid.uuid4().hex[:12]
         now = datetime.now(UTC).isoformat()
 

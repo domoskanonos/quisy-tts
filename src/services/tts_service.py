@@ -294,6 +294,7 @@ class TTSService:
                     "base",
                     params.model_size or "1.7B",
                     reference_audio=voice["id"],
+                    ref_text=voice.get("example_text"),
                     instruct=params.instruct,
                 )
 
@@ -359,6 +360,13 @@ class TTSService:
         except Exception:
             # Be defensive: fallback to original instruct
             final_instruct = instruct
+
+        # Automatically resolve ref_text from DB if cloning
+        if not ref_text and reference_audio:
+            vs = VoiceService()
+            voice = vs.get_voice(reference_audio)
+            if voice:
+                ref_text = voice.get("example_text")
 
         params = TTSParams(
             language=resolved,

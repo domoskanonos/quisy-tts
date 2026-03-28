@@ -66,7 +66,8 @@ async def generate_voice(text: str, voice_id: str, language: str = "German", ins
     """
     Generate audio using a specific voice_id (DB) with base mode (1.7B).
     """
-    if not voice_service.get_voice(voice_id):
+    voice = voice_service.get_voice(voice_id)
+    if not voice:
         return f"Error: Voice '{voice_id}' not found."
 
     result_path = await tts_service.generate_audio(
@@ -75,6 +76,7 @@ async def generate_voice(text: str, voice_id: str, language: str = "German", ins
         mode="base",
         model_size="1.7B",
         reference_audio=voice_id,
+        ref_text=voice.get("example_text"),
         instruct=instruct,
     )
     return get_audio_url(str(result_path))
