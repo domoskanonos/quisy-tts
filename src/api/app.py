@@ -214,7 +214,8 @@ app.mount("/audio", StaticFiles(directory=settings.OUTPUT_DIR), name="audio")
 # MCP application is present. This keeps the API available at /api for tests
 # and clients while still exposing the MCP UI under /mcp.
 mcp_app = mcp.http_app()
-app.mount("/mcp", mcp_app)
+app.mount("/interface", mcp_app)
+
 # Integrate lifespan context from MCP app if present (best-effort).
 try:
     app.router.lifespan_context = mcp_app.router.lifespan_context
