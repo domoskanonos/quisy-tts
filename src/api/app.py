@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 
-from api.routes import base, custom_voice, info, voice_design, voices_crud, voices_search, websocket, ssml
+from api.routes import base, info, voice_design, voices_crud, voices_search, websocket, ssml
 from config import ProjectConfig
 from mcp_server import mcp
 
@@ -175,7 +175,6 @@ api_router = APIRouter()
 api_router.include_router(info.router)
 api_router.include_router(base.router, prefix="/generate/base")
 api_router.include_router(voice_design.router, prefix="/generate/voice-design")
-api_router.include_router(custom_voice.router, prefix="/generate/custom-voice")
 # Register search routes before the CRUD router. The CRUD router contains
 # a parameterized route `/{voice_id}` which would greedily match static
 # subpaths like `/terms` or `/search` if registered earlier. Registering

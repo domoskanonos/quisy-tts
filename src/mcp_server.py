@@ -62,89 +62,19 @@ async def delete_voice(voice_id: str) -> str:
 
 
 @mcp.tool
-async def generate_base_17b(
-    text: str, language: str = "German", reference_audio: str | None = None, ref_text: str | None = None
-) -> str:
+async def generate_voice(text: str, voice_id: str, language: str = "German", instruct: str | None = None) -> str:
     """
-    Generates audio using base mode (voice cloning) with the 1.7B model.
-
-    Args:
-        text: The text to be converted to speech.
-        language: The language (e.g., 'German', 'English').
-        reference_audio: Optional voice ID to clone.
-        ref_text: Optional transcript of the reference audio for better quality.
+    Generate audio using a specific voice_id (DB) with base mode (1.7B).
     """
-    if reference_audio and voice_service.get_voice(reference_audio) is None:
-        return f"Error: Reference voice id '{reference_audio}' not found"
+    if not voice_service.get_voice(voice_id):
+        return f"Error: Voice '{voice_id}' not found."
 
     result_path = await tts_service.generate_audio(
         text=text,
         language=language,
         mode="base",
         model_size="1.7B",
-        reference_audio=reference_audio,
-        ref_text=ref_text,
-    )
-    return get_audio_url(str(result_path))
-
-
-@mcp.tool
-async def generate_voice_design_17b(text: str, instruct: str, language: str = "German") -> str:
-    """
-    Generate audio using voice design mode with the 1.7B model.
-
-    Args:
-        text: The text to be converted to speech.
-        instruct: A natural language description of the voice (e.g., 'A deep, calm male voice').
-        language: The language.
-    """
-    result_path = await tts_service.generate_audio(
-        text=text,
-        language=language,
-        mode="voice_design",
-        model_size="1.7B",
-        instruct=instruct,
-    )
-    return get_audio_url(str(result_path))
-
-
-@mcp.tool
-async def generate_custom_voice_06b(
-    text: str, voice_id: str, language: str = "German", instruct: str | None = None
-) -> str:
-    """
-    Generate audio using a specific voice_id with the 0.6B model.
-    """
-    if not voice_service.get_voice(voice_id):
-        return f"Error: Voice '{voice_id}' not found."
-
-    result_path = await tts_service.generate_audio(
-        text=text,
-        language=language,
-        mode="custom_voice",
-        model_size="0.6B",
-        speaker=voice_id,
-        instruct=instruct,
-    )
-    return get_audio_url(str(result_path))
-
-
-@mcp.tool
-async def generate_custom_voice_17b(
-    text: str, voice_id: str, language: str = "German", instruct: str | None = None
-) -> str:
-    """
-    Generate audio using a specific voice_id with the 1.7B model.
-    """
-    if not voice_service.get_voice(voice_id):
-        return f"Error: Voice '{voice_id}' not found."
-
-    result_path = await tts_service.generate_audio(
-        text=text,
-        language=language,
-        mode="custom_voice",
-        model_size="1.7B",
-        speaker=voice_id,
+        reference_audio=voice_id,
         instruct=instruct,
     )
     return get_audio_url(str(result_path))
@@ -169,6 +99,6 @@ async def generate_ssml(ssml_content: str) -> str:
         <speaker name="Chelsie">Wie geht es dir?</speaker>
     </speak>
     """
-    base_params = TTSParams(mode="custom_voice", model_size="1.7B")
+    base_params = TTSParams(mode="base", model_size="1.7B")
     result_path = await tts_service.generate_from_ssml(ssml_content, base_params)
     return get_audio_url(str(result_path))

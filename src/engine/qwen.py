@@ -32,7 +32,6 @@ QWEN_GENERATION_CONFIG = {
 MODEL_MAP = {
     "base": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
     "voice_design": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
-    "custom_voice": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
 }
 
 # Silence duration between chunks in seconds
@@ -166,14 +165,6 @@ class QwenTTSBackend:
                 result = model.generate_voice_design(
                     text=text,
                     language=params.resolved_language,
-                    instruct=params.instruct or "",
-                    **gen_kwargs,
-                )
-            elif params.mode == "custom_voice":
-                result = model.generate_custom_voice(
-                    text=text,
-                    language=params.resolved_language,
-                    speaker=params.speaker or "Vivian",
                     instruct=params.instruct or "",
                     **gen_kwargs,
                 )

@@ -274,22 +274,27 @@ class TTSService:
         for task in tasks:
             if isinstance(task, TextTask):
                 vs = VoiceService()
-                voice = vs.get_voice_by_name(task.speaker)
+                voice = vs.get_voice(task.speaker)
                 if not voice:
-                    raise AudioGenerationError(f"Speaker {task.speaker} not found")
+                    raise AudioGenerationError(f"Speaker ID {task.speaker} not found")
 
-                # Copy params and update speaker/mode
+                # Use base mode for all DB-backed voices (Voice Cloning)
                 params = base_params.model_copy()
-                params.mode = "custom_voice"
-                params.speaker = voice["id"]
+                params.mode = "base"
+                params.reference_audio = voice["id"]
+                params.instruct = voice.get("instruct")
+
+                # Ensure reference audio exists (cloning requires audio_filename)
+                await self._ensure_reference_audio_for_voice_id(voice["id"])
 
                 # Generate audio chunk
                 chunk_path = await self.generate_audio(
                     task.text,
                     params.language or "German",
-                    "custom_voice",
+                    "base",
                     params.model_size or "1.7B",
-                    speaker=voice["id"],
+                    reference_audio=voice["id"],
+                    instruct=params.instruct,
                 )
 
                 data, sr = sf.read(str(chunk_path))

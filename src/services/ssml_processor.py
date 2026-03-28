@@ -48,10 +48,14 @@ class SSMLProcessor:
                 name = child.get("name")
                 if not name:
                     raise ValueError("Speaker tag missing 'name' attribute")
-                if not self.voice_service.get_voice_by_name(name):
-                    raise ValueError(f"Unknown speaker: {name}")
+
+                # Treat 'name' as voice_id
+                voice = self.voice_service.get_voice(name)
+                if not voice:
+                    raise ValueError(f"Unknown speaker ID: {name}")
+
                 text = child.text or ""
-                tasks.append(TextTask(text=text, speaker=name))
+                tasks.append(TextTask(text=text, speaker=voice["id"]))
 
             elif child.tag == "break":
                 time_val = child.get("time")
