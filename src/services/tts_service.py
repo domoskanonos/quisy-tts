@@ -28,29 +28,6 @@ class TTSService:
         self.sfx_service = SoundEffectService(ProjectConfig.get_settings().AUDIO_DIR)
         self.voice_audio_integrity = VoiceAudioIntegrityService(self.voice_service, engine, cache)
         self._locks: dict[str, asyncio.Lock] = {}
-        self._ref_gen_tasks: dict[str, asyncio.Task] = {}
-        self._ref_gen_status: dict[str, dict] = {}
-
-    async def _ensure_reference_audio(self, voice_id: str, force: bool = False) -> None:
-        await reference.ensure_reference_audio(self, voice_id, force)
-
-    def trigger_reference_audio_generation(self, voice_id: str, force: bool = False) -> None:
-        # Check running
-        task = self._ref_gen_tasks.get(voice_id)
-        if task and not task.done():
-            if force:
-                try:
-                    task.cancel()
-                except Exception:
-                    pass
-            else:
-                return
-        self._ref_gen_status[voice_id] = {"status": "pending", "message": "queued"}
-        t = asyncio.create_task(reference.run_ref_gen_task(self, voice_id, force=force))
-        self._ref_gen_tasks[voice_id] = t
-
-    def get_reference_generation_status(self, voice_id: str) -> dict:
-        return self._ref_gen_status.get(voice_id, {"status": "pending", "message": "not_started"})
 
     def _get_lock(self, key: str) -> asyncio.Lock:
         # Keep internal logic here as it's stateful
