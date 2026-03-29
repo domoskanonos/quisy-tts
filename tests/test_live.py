@@ -176,17 +176,14 @@ def test_voice_management_lifecycle(client):
     # Filter for a non-default voice to test deletion, or just use a custom created one
     # For now, let's just pick one that is not a default, if possible.
     voice = next((v for v in voices if not v.get("is_default")), voices[0])
-    voice_id = voice["id"]
+    voice_id = voice["voice_id"]
 
     # 2. Generate text (make sure it's a voice with audio)
     # If the default voice is missing its audio file, this will fail.
     # We should ensure the voice has audio first.
     # Upload dummy audio if missing
-    if not voice.get("audio_filename"):
-        test_wav = Path(__file__).parent / "resources" / "testaudio.wav"
-        with open(test_wav, "rb") as f:
-            files = {"file": ("testaudio.wav", f, "audio/wav")}
-            client.post(f"/api/voices/{voice_id}/audio", files=files)
+    # In the new structure, we don't check for audio_filename.
+    # Just assume ensure_audio handles it.
 
     payload = {"text": "Das ist ein Test.", "language": "de", "voice_id": voice_id}
     response = client.post("/api/generate/generate", json=payload)
@@ -205,8 +202,9 @@ def test_voice_management_lifecycle(client):
     from services.voice_service import VoiceService
 
     vs = VoiceService()
-    audio_path = vs.get_audio_path(voice_id)
-    if audio_path and audio_path.exists():
+    # The new path logic
+    audio_path = vs._voices_dir / f"voice_{voice_id}.wav"
+    if audio_path.exists():
         audio_path.unlink()
 
     # 5. Generate text again
@@ -223,6 +221,7 @@ def test_voice_management_lifecycle(client):
     }
     response = client.post("/api/voices/", json=new_voice_payload)
     assert response.status_code == 200
+    assert response.json()["voice_id"] == "new_test_voice"
 
     # Generate text for new voice
     payload["voice_id"] = "new_test_voice"

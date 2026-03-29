@@ -16,12 +16,11 @@ logger = ProjectConfig.get_logger()
 
 _CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS voices (
-    id TEXT PRIMARY KEY,
+    voice_id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     example_text TEXT NOT NULL,
     instruct TEXT,
     language TEXT NOT NULL DEFAULT 'german',
-    audio_filename TEXT,
     is_default INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -38,27 +37,33 @@ class VoiceService:
         print(f"DEBUG: VoiceService init. voices_dir={self._voices_dir}, CWD={Path.cwd()}")
         self._voices_dir.mkdir(parents=True, exist_ok=True)
 
-        # Use either provided db_path (useful for tests) or resources DB as the
-        # single authoritative, writable runtime DB.
-        self._db_path = Path(db_path) if db_path is not None else settings.RESOURCES_DIR / "quisy-tts.db"
+        # Use either provided db_path (useful for tests) or a copy of the resources DB
+        # in data/app_data as the single authoritative, writable runtime DB.
+        db_destination = settings.APP_DIR / "quisy-tts.db"
+        if db_path is not None:
+            self._db_path = Path(db_path)
+        else:
+            self._db_path = db_destination
+            # Ensure the directory exists
+            self._db_path.parent.mkdir(parents=True, exist_ok=True)
+            # Copy if not exists
+            if not self._db_path.exists():
+                import shutil
 
-        if not self._db_path.exists():
-            # If the DB doesn't exist we try to create an empty DB file. In
-            # production a missing DB is a configuration error, but tests and
-            # some runtime paths expect to be able to create a fresh DB.
-            try:
-                self._db_path.parent.mkdir(parents=True, exist_ok=True)
-                import sqlite3 as _sqlite
+                source_db = settings.RESOURCES_DIR / "quisy-tts.db"
+                if source_db.exists():
+                    shutil.copy2(source_db, self._db_path)
+                    logger.info(f"Copied resources DB to {self._db_path}")
+                else:
+                    # Fallback to create empty if source not found
+                    import sqlite3 as _sqlite
 
-                conn = _sqlite.connect(str(self._db_path))
-                conn.commit()
-                conn.close()
-                logger.info(f"Created new resources DB at {self._db_path}")
-            except Exception as e:
-                logger.error(f"resources DB not found at {self._db_path}")
-                raise FileNotFoundError(f"resources DB not found at {self._db_path}") from e
+                    conn = _sqlite.connect(str(self._db_path))
+                    conn.commit()
+                    conn.close()
+                    logger.info(f"Created new DB at {self._db_path}")
 
-        # Ensure we can write to the resources DB
+        # Ensure we can write to the runtime DB
         try:
             with open(self._db_path, "ab"):
                 pass
@@ -179,8 +184,8 @@ class VoiceService:
         for i, voice in enumerate(DEFAULT_VOICES):
             voice_id = f"default_{i + 1:03d}"
             conn.execute(
-                """INSERT INTO voices (id, name, example_text, instruct, language, audio_filename, is_default, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, NULL, 1, ?, ?)""",
+                """INSERT INTO voices (voice_id, name, example_text, instruct, language, is_default, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, 1, ?, ?)""",
                 (
                     voice_id,
                     voice["name"],
@@ -206,12 +211,11 @@ class VoiceService:
     def _row_to_dict(row: sqlite3.Row) -> dict:
         """Convert a sqlite3.Row to a plain dict."""
         return {
-            "id": row["id"],
+            "voice_id": row["voice_id"],
             "name": row["name"],
             "example_text": row["example_text"],
             "instruct": row["instruct"],
             "language": row["language"],
-            "audio_filename": row["audio_filename"],
             "is_default": bool(row["is_default"]),
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
@@ -303,7 +307,7 @@ class VoiceService:
     def get_voice(self, voice_id: str) -> dict | None:
         """Return a single voice by ID, or None if not found."""
         with self._get_conn() as conn:
-            row = conn.execute("SELECT * FROM voices WHERE id = ?", (voice_id,)).fetchone()
+            row = conn.execute("SELECT * FROM voices WHERE voice_id = ?", (voice_id,)).fetchone()
         return self._row_to_dict(row) if row is not None else None
 
     def get_voice_by_name(self, name: str) -> dict | None:
@@ -317,7 +321,6 @@ class VoiceService:
         name: str,
         example_text: str,
         instruct: str | None = None,
-        # system_prompt: removed
         language: str = "german",
     ) -> dict | None:
         """Create a new user voice."""
@@ -332,7 +335,7 @@ class VoiceService:
 
         def _id_available(cid: str) -> bool:
             with self._get_conn() as conn:
-                row = conn.execute("SELECT 1 FROM voices WHERE id = ? LIMIT 1", (cid,)).fetchone()
+                row = conn.execute("SELECT 1 FROM voices WHERE voice_id = ? LIMIT 1", (cid,)).fetchone()
                 return row is None
 
         if name and re.match(r"^[a-zA-Z0-9_-]{1,100}$", name) and _id_available(name):
@@ -352,13 +355,14 @@ class VoiceService:
 
         with self._get_conn() as conn:
             conn.execute(
-                """INSERT INTO voices (id, name, example_text, instruct, language, audio_filename, is_default, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, NULL, 0, ?, ?)""",
-                (voice_id, name, example_text, instruct, language, now, now),
+                """INSERT INTO voices (voice_id, name, example_text, instruct, language, is_default, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, 0, ?, ?)""",
+                (voice_id, name, example_text, instruct, resolve_language(language), now, now),
             )
+            # Rebuild FTS index
+            conn.execute("INSERT INTO voices_fts(voices_fts) VALUES('rebuild')")
+            conn.commit()
 
-        logger.info(f"Voice created: {voice_id} ({name})")
-        # get_voice may return None according to typing, but in normal flow it exists
         return self.get_voice(voice_id)
 
     def update_voice(
@@ -399,7 +403,7 @@ class VoiceService:
         params.append(now)
         params.append(voice_id)
 
-        sql = f"UPDATE voices SET {', '.join(updates)} WHERE id = ?"  # noqa: S608
+        sql = f"UPDATE voices SET {', '.join(updates)} WHERE voice_id = ?"  # noqa: S608
 
         with self._get_conn() as conn:
             conn.execute(sql, params)
@@ -417,65 +421,38 @@ class VoiceService:
             return False  # Default voices cannot be deleted
 
         # Remove audio file if exists
-        audio_filename = voice.get("audio_filename")
-        if audio_filename:
-            audio_path = self._voices_dir / audio_filename
-            if audio_path.exists():
-                audio_path.unlink()
-                logger.info(f"Audio file deleted: {audio_path}")
+        audio_path = self._voices_dir / f"voice_{voice_id}.wav"
+        if audio_path.exists():
+            audio_path.unlink()
+            logger.info(f"Audio file deleted: {audio_path}")
 
         with self._get_conn() as conn:
-            conn.execute("DELETE FROM voices WHERE id = ?", (voice_id,))
+            conn.execute("DELETE FROM voices WHERE voice_id = ?", (voice_id,))
+            # Rebuild FTS index
+            conn.execute("INSERT INTO voices_fts(voices_fts) VALUES('rebuild')")
+            conn.commit()
 
         logger.info(f"Voice deleted: {voice_id}")
         return True
 
-    def set_audio(
-        self, voice_id: str, audio_data: bytes, original_filename: str, audio_filename: str | None = None
-    ) -> dict | None:
+    def set_audio(self, voice_id: str, audio_data: bytes, original_filename: str) -> dict | None:
         """Save or replace the audio file for a voice."""
         voice = self.get_voice(voice_id)
         if voice is None:
             return None
 
-        # Remove old generated audio files for this voice (keep user uploads if they don't match prefix)
-        try:
-            for p in list(self._voices_dir.glob(f"voice_{voice_id}_*.wav")):
-                # Skip the file we are about to save/set
-                if audio_filename and p.name == audio_filename:
-                    continue
-                # Only remove files that look like auto-generated (have a short hex suffix)
-                name = p.name
-                parts = name.rsplit("_", 2)
-                if len(parts) >= 2 and parts[-1].lower().endswith(".wav"):
-                    # e.g. voice_<id>_<short>.wav -> remove only if it's not the exact
-                    # filename the user explicitly uploaded (voice_<id>.wav)
-                    try:
-                        p.unlink()
-                        logger.info(f"Removed old generated audio file: {p.name}")
-                    except Exception:
-                        logger.debug(f"Failed to remove old generated audio file: {p}")
-        except Exception:
-            # ignore if glob/read fails
-            pass
-
-        # Determine filename to use
-        if audio_filename:
-            final_filename = audio_filename
-        else:
-            # Determine extension from original filename
-            ext = Path(original_filename).suffix or ".wav"
-            final_filename = f"voice_{voice_id}{ext}"
-
+        # Always use voice_{voice_id}.wav
+        final_filename = f"voice_{voice_id}.wav"
         audio_path = self._voices_dir / final_filename
         audio_path.write_bytes(audio_data)
 
         now = datetime.now(UTC).isoformat()
         with self._get_conn() as conn:
             conn.execute(
-                "UPDATE voices SET audio_filename = ?, updated_at = ? WHERE id = ?",
-                (final_filename, now, voice_id),
+                "UPDATE voices SET updated_at = ? WHERE voice_id = ?",
+                (now, voice_id),
             )
+            conn.commit()
 
         logger.info(f"Audio saved for voice {voice_id}: {final_filename}")
         return self.get_voice(voice_id)

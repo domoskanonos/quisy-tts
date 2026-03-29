@@ -248,14 +248,8 @@ class QwenTTSBackend:
                         f"Requested reference voice id '{params.reference_audio}' not found in database."
                     )
 
-                # Ensure that this voice has an attached audio file on disk
-                audio_filename = voice.get("audio_filename")
-                if not audio_filename:
-                    raise ReferenceAudioNotFoundError(
-                        f"Voice '{params.reference_audio}' exists but has no audio file attached."
-                    )
-
-                path = self.settings.VOICES_DIR / audio_filename
+                # Reference audio is always voice_{voice_id}.wav
+                path = self.settings.VOICES_DIR / f"voice_{params.reference_audio}.wav"
                 if not path.exists():
                     raise ReferenceAudioNotFoundError(
                         f"Audio file for voice '{params.reference_audio}' not found at: {path}"

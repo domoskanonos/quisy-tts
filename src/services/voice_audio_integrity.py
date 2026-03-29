@@ -38,10 +38,10 @@ class VoiceAudioIntegrityService:
             raise ReferenceAudioNotFoundError(f"Voice '{voice_id}' not found in database.")
 
         # Check physical existence if audio is already linked in DB
-        if voice.get("audio_filename") and not self._is_file_valid(voice):
-            self.logger.warning(
-                f"Voice '{voice_id}' has DB entry '{voice.get('audio_filename')}' but file is missing. Forcing regeneration."
-            )
+        # The filename is now strictly voice_{voice_id}.wav
+        audio_path = Path(self.settings.VOICES_DIR) / f"voice_{voice_id}.wav"
+        if not audio_path.exists() or audio_path.stat().st_size == 0:
+            self.logger.warning(f"Voice '{voice_id}' has no reference audio file. Forcing regeneration.")
             force = True
 
         example_text = voice.get("example_text")
@@ -103,9 +103,7 @@ class VoiceAudioIntegrityService:
             target_path = Path(self.settings.VOICES_DIR) / expected_voice_fn
             target_path.write_bytes(Path(generated_path).read_bytes())
 
-            self.voice_service.set_audio(
-                voice_id, target_path.read_bytes(), target_path.name, audio_filename=expected_voice_fn
-            )
+            self.voice_service.set_audio(voice_id, target_path.read_bytes(), target_path.name)
             self.logger.info(f"Automatic generation: persisted reference audio for voice {voice_id}")
 
         except Exception as e:

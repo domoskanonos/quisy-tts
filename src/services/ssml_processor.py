@@ -71,11 +71,11 @@ class SSMLProcessor:
 
                 # Process text in this tag
                 if element.text and element.text.strip():
-                    tasks.append(TextTask(text=element.text.strip(), speaker=voice["id"]))
+                    tasks.append(TextTask(text=element.text.strip(), speaker=voice["voice_id"]))
 
                 # Recurse for children (like <sfx>)
                 for child in element:
-                    _process_element(child, voice["id"])
+                    _process_element(child, voice["voice_id"])
 
                 # Process tail (text after tag)
                 if element.tail:

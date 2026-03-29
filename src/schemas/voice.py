@@ -51,13 +51,12 @@ class VoiceCreate(BaseModel):
 class VoiceResponse(BaseModel):
     """Response schema for a single voice."""
 
-    id: str
+    voice_id: str
     name: str
     example_text: str
     instruct: str | None = None
     # system_prompt removed: not needed for the TTS-only workflow
     language: str = "german"
-    audio_filename: str | None = None
     is_default: bool = False
     created_at: datetime
     updated_at: datetime

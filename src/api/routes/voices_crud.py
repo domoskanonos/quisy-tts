@@ -67,17 +67,17 @@ async def create_voice(
         )
         # 3. Associate audio with the new voice
         audio_data = result_path.read_bytes()
-        voice_service.set_audio(voice["id"], audio_data, result_path.name)
+        voice_service.set_audio(voice["voice_id"], audio_data, result_path.name)
 
         # Cleanup temp file
         result_path.unlink(missing_ok=True)
     except Exception as e:
-        logger.error(f"Failed to generate reference audio for voice {voice['id']}: {e}")
+        logger.error(f"Failed to generate reference audio for voice {voice['voice_id']}: {e}")
         # Delete voice entry since generation failed?
-        voice_service.delete_voice(voice["id"])
+        voice_service.delete_voice(voice["voice_id"])
         raise HTTPException(status_code=503, detail=f"Voice created but audio generation failed: {e}")
 
-    return {"status": "success", "voice_id": voice["id"]}
+    return {"status": "success", "voice_id": voice["voice_id"]}
 
 
 @router.delete("/{voice_id}", status_code=204)
