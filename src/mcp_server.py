@@ -68,6 +68,13 @@ async def delete_voice(voice_id: str) -> str:
 async def generate_voice(text: str, voice_id: str, language: str = "German", instruct: str | None = None) -> str:
     """
     Generate audio using a specific voice_id (DB) with base mode (1.7B).
+
+    Args:
+        text: The text to convert to speech.
+        voice_id: The ID of the voice to use.
+        language: The target language (e.g., 'German').
+        instruct: Style instruction for the voice. NOTE: Instructions should be provided in English
+                  for best results, regardless of the target voice's language.
     """
     voice = voice_service.get_voice(voice_id)
     if not voice:

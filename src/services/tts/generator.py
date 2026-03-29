@@ -16,6 +16,7 @@ async def generate_audio(
     ref_text: str | None = None,
     instruct: str | None = None,
     speaker: str | None = None,
+    skip_integrity_check: bool = False,
 ) -> Path:
     """Generate audio from text with caching and smart splitting."""
     resolved = resolve_language(language)
@@ -28,7 +29,7 @@ async def generate_audio(
     except Exception:
         final_instruct = instruct
 
-    if not ref_text and reference_audio:
+    if not skip_integrity_check and not ref_text and reference_audio:
         vs = VoiceService()
         voice = vs.get_voice(reference_audio)
         if voice:

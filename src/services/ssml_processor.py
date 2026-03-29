@@ -70,8 +70,8 @@ class SSMLProcessor:
                     raise ValueError(f"Unknown speaker ID: {name}")
 
                 # Process text in this tag
-                if element.text:
-                    tasks.append(TextTask(text=element.text, speaker=voice["id"]))
+                if element.text and element.text.strip():
+                    tasks.append(TextTask(text=element.text.strip(), speaker=voice["id"]))
 
                 # Recurse for children (like <sfx>)
                 for child in element:

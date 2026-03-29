@@ -13,6 +13,7 @@ async def ensure_reference_audio(service, voice_id: str, force: bool = False) ->
             mode=mode,
             model_size=model_size,
             instruct=instruct,
+            skip_integrity_check=True,
         )
 
     integrity_service = VoiceAudioIntegrityService(service.voice_service, service.engine, service.cache)

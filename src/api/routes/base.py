@@ -30,10 +30,9 @@ async def generate_base_06b(
     voice_service: VoiceService = Depends(get_voice_service),
 ) -> Response:
     """Generate audio using base mode (voice cloning) with 0.6B model."""
-    # If a reference_audio is supplied it must be a voice ID (filenames are no longer accepted)
-    if request.reference_audio:
-        if voice_service.get_voice(request.reference_audio) is None:
-            raise HTTPException(status_code=400, detail=f"Reference voice id '{request.reference_audio}' not found")
+    # reference_audio is now required, so no check for existence needed.
+    if voice_service.get_voice(request.reference_audio) is None:
+        raise HTTPException(status_code=400, detail=f"Reference voice id '{request.reference_audio}' not found")
     return await _generate(request, "0.6B", service, background_tasks, cleanup)
 
 
@@ -46,9 +45,8 @@ async def generate_base_17b(
     voice_service: VoiceService = Depends(get_voice_service),
 ) -> Response:
     """Generate audio using base mode (voice cloning) with 1.7B model."""
-    if request.reference_audio:
-        if voice_service.get_voice(request.reference_audio) is None:
-            raise HTTPException(status_code=400, detail=f"Reference voice id '{request.reference_audio}' not found")
+    if voice_service.get_voice(request.reference_audio) is None:
+        raise HTTPException(status_code=400, detail=f"Reference voice id '{request.reference_audio}' not found")
     return await _generate(request, "1.7B", service, background_tasks, cleanup)
 
 

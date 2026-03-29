@@ -55,6 +55,9 @@ class VoiceAudioIntegrityService:
                 example_text, gen_params.language, gen_params.mode, gen_params.model_size, gen_params.instruct
             )
 
+            if not Path(generated_path).exists() or Path(generated_path).stat().st_size == 0:
+                raise AudioGenerationError(f"Generated audio file for voice '{voice_id}' is empty or missing.")
+
             target_path = Path(self.settings.VOICES_DIR) / expected_voice_fn
             target_path.write_bytes(Path(generated_path).read_bytes())
 
