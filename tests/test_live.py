@@ -174,8 +174,8 @@ def test_voice_management_lifecycle(client):
     assert len(voices) > 0
 
     # Filter for a non-default voice to test deletion, or just use a custom created one
-    # For now, let's just pick one that is not a default, if possible.
-    voice = next((v for v in voices if not v.get("is_default")), voices[0])
+    # For now, let's just pick one.
+    voice = voices[0]
     voice_id = voice["voice_id"]
 
     # 2. Generate text (make sure it's a voice with audio)

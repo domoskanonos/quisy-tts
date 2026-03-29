@@ -92,8 +92,6 @@ def delete_voice(
     voice = voice_service.get_voice(voice_id)
     if voice is None:
         raise HTTPException(status_code=404, detail=f"Voice {voice_id} not found")
-    if voice.get("is_default"):
-        raise HTTPException(status_code=403, detail="Default voices cannot be deleted")
 
     deleted = voice_service.delete_voice(voice_id)
     if not deleted:

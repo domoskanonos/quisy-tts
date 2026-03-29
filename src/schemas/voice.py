@@ -57,7 +57,6 @@ class VoiceResponse(BaseModel):
     instruct: str | None = None
     # system_prompt removed: not needed for the TTS-only workflow
     language: str = "german"
-    is_default: bool = False
     created_at: datetime
     updated_at: datetime
 

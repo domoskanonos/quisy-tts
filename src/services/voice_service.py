@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS voices (
     example_text TEXT NOT NULL,
     instruct TEXT,
     language TEXT NOT NULL DEFAULT 'german',
-    is_default INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 )
@@ -95,7 +94,8 @@ class VoiceService:
             self._migrate(conn)
 
             # Check if default voices already exist
-            count = conn.execute("SELECT COUNT(*) FROM voices WHERE is_default = 1").fetchone()[0]
+            # Note: We rely on the naming convention (default_*) or just count.
+            count = conn.execute("SELECT COUNT(*) FROM voices WHERE voice_id LIKE 'default_%'").fetchone()[0]
 
             if count == 0:
                 self._seed_defaults(conn)
@@ -107,6 +107,12 @@ class VoiceService:
         if "language" not in columns:
             logger.info("Migrating voices table: adding 'language' column...")
             conn.execute("ALTER TABLE voices ADD COLUMN language TEXT NOT NULL DEFAULT 'german'")
+            conn.commit()
+
+        # Remove 'is_default' column if it still exists
+        if "is_default" in columns:
+            logger.info("Migrating voices table: dropping 'is_default' column...")
+            conn.execute("ALTER TABLE voices DROP COLUMN is_default")
             conn.commit()
 
         # No-op: system_prompt removed from schema
@@ -184,8 +190,8 @@ class VoiceService:
         for i, voice in enumerate(DEFAULT_VOICES):
             voice_id = f"default_{i + 1:03d}"
             conn.execute(
-                """INSERT INTO voices (voice_id, name, example_text, instruct, language, is_default, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, 1, ?, ?)""",
+                """INSERT INTO voices (voice_id, name, example_text, instruct, language, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
                 (
                     voice_id,
                     voice["name"],
@@ -216,7 +222,6 @@ class VoiceService:
             "example_text": row["example_text"],
             "instruct": row["instruct"],
             "language": row["language"],
-            "is_default": bool(row["is_default"]),
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
         }
@@ -226,7 +231,7 @@ class VoiceService:
     def list_voices(self) -> list[dict]:
         """Return all voices, defaults first then by creation date."""
         with self._get_conn() as conn:
-            rows = conn.execute("SELECT * FROM voices ORDER BY is_default DESC, name ASC").fetchall()
+            rows = conn.execute("SELECT * FROM voices ORDER BY name ASC").fetchall()
         return [self._row_to_dict(r) for r in rows]
 
     # ─── FTS / Search Helpers ─────────────────────────────────────
@@ -280,7 +285,7 @@ class VoiceService:
                         params.append(q + "*")
 
                     where = " AND ".join(clauses) if clauses else "1=1"
-                    sql = f"SELECT * FROM voices WHERE {where} ORDER BY is_default DESC, name ASC LIMIT ? OFFSET ?"
+                    sql = f"SELECT * FROM voices WHERE {where} ORDER BY name ASC LIMIT ? OFFSET ?"
                     params.extend([str(limit), str(offset)])
                     rows = conn.execute(sql, params).fetchall()
                     return [self._row_to_dict(r) for r in rows]
@@ -299,7 +304,7 @@ class VoiceService:
                 like_params.extend([f"%{q}%"] * 3)
 
             where = " AND ".join(parts) if parts else "1=1"
-            sql = f"SELECT * FROM voices WHERE {where} ORDER BY is_default DESC, name ASC LIMIT ? OFFSET ?"
+            sql = f"SELECT * FROM voices WHERE {where} ORDER BY name ASC LIMIT ? OFFSET ?"
             like_params.extend([str(limit), str(offset)])
             rows = conn.execute(sql, like_params).fetchall()
             return [self._row_to_dict(r) for r in rows]
@@ -355,8 +360,8 @@ class VoiceService:
 
         with self._get_conn() as conn:
             conn.execute(
-                """INSERT INTO voices (voice_id, name, example_text, instruct, language, is_default, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, 0, ?, ?)""",
+                """INSERT INTO voices (voice_id, name, example_text, instruct, language, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
                 (voice_id, name, example_text, instruct, resolve_language(language), now, now),
             )
             # Rebuild FTS index
@@ -416,9 +421,6 @@ class VoiceService:
         voice = self.get_voice(voice_id)
         if voice is None:
             return False
-
-        if voice.get("is_default"):
-            return False  # Default voices cannot be deleted
 
         # Remove audio file if exists
         audio_path = self._voices_dir / f"voice_{voice_id}.wav"
