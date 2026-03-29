@@ -68,40 +68,22 @@ class VoiceAudioIntegrityService:
         if existing_audio and (global_key in existing_audio or short in existing_audio) and not force:
             return
 
+        # Bypass the callback and generate directly using the engine if we are in this service,
+        # or use a simplified generator that doesn't trigger the full TTSService pipeline
+        # to avoid deadlocks (locks on TTSService).
         try:
             self.logger.info(f"Automatic generation: starting reference audio generation for voice {voice_id}")
-            self.logger.info(f"Debug: generator_callback is {generator_callback}")
 
-            # Use callback to generate (this allows reuse of TTSService.generate_audio)
-            if generator_callback is None:
-                self.logger.info("Debug: Using default_gen")
-                # Default generator uses the engine to generate and save audio to a temp file
-                from uuid import uuid4
+            # Simple direct generation using the engine to avoid TTSService re-entrancy
+            tmp_fn = f"voice_gen_{voice_id}.wav"
+            tmp_path = Path(self.settings.AUDIO_DIR) / tmp_fn
 
-                async def _default_gen(
-                    text: str, language: str, mode: str, model_size: str, instruct: str | None
-                ) -> str:
-                    self.logger.info("Debug: _default_gen starting")
-                    tmp_fn = f"voice_gen_{uuid4().hex}.wav"
-                    tmp_path = Path(self.settings.AUDIO_DIR) / tmp_fn
-                    # Build params object for engine
-                    params = TTSParams(language=language, instruct=instruct, mode=mode, model_size=model_size)
-                    res = await self.engine.generate_and_save(text, str(tmp_path), params)
-                    self.logger.info(f"Debug: _default_gen finished, result: {res}")
-                    return res
+            # Build params object for engine directly
+            params = TTSParams(language=lang, instruct=gen_params.instruct, mode="voice_design", model_size="1.7B")
 
-                generated_path = await _default_gen(
-                    example_text, lang, gen_params.mode, gen_params.model_size, gen_params.instruct
-                )
-            else:
-                self.logger.info("Debug: Using provided callback")
-                # generator_callback may be a TTSService.generate_audio-like
-                # signature where language is expected to be a str. Use the
-                # validated `lang` obtained earlier.
-                generated_path = await generator_callback(
-                    example_text, lang, gen_params.mode, gen_params.model_size, gen_params.instruct
-                )
-                self.logger.info(f"Debug: generator_callback finished, result: {generated_path}")
+            # Use engine directly
+            generated_path = await self.engine.generate_and_save(example_text, str(tmp_path), params)
+            self.logger.info(f"Generated ref audio directly at: {generated_path}")
 
             if not Path(generated_path).exists() or Path(generated_path).stat().st_size == 0:
                 raise AudioGenerationError(f"Generated audio file for voice '{voice_id}' is empty or missing.")

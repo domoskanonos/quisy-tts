@@ -37,7 +37,11 @@ async def generate_from_ssml(service, ssml_content: str, base_params) -> Path:
             # Ensure reference audio exists; provide the service.generate_audio
             # callback so the integrity service can invoke generation if needed.
             service.logger.info(f"Debug: SSML checking integrity for {voice['voice_id']}")
-            await service.voice_audio_integrity.ensure_audio(voice["voice_id"], service.generate_audio)
+            try:
+                await service.voice_audio_integrity.ensure_audio(voice["voice_id"], service.generate_audio)
+            except Exception as e:
+                service.logger.error(f"Debug: SSML integrity check FAILED for {voice['voice_id']}: {e}")
+                raise
             service.logger.info(f"Debug: SSML integrity check finished for {voice['voice_id']}")
 
             service.logger.info(f"Debug: SSML generating audio for {task.speaker}")

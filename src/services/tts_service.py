@@ -28,7 +28,7 @@ class TTSService:
         self.sfx_service = SoundEffectService(ProjectConfig.get_settings().AUDIO_DIR)
         self.voice_audio_integrity = VoiceAudioIntegrityService(self.voice_service, engine, cache)
         self._locks: dict[str, asyncio.Lock] = {}
-        self._global_generation_lock = asyncio.Lock()
+        self.logger = logger
 
     def _get_lock(self, key: str) -> asyncio.Lock:
         # Keep internal logic here as it's stateful
@@ -48,15 +48,12 @@ class TTSService:
         return lock
 
     async def generate_from_ssml(self, ssml_content: str, base_params: TTSParams) -> Path:
-        async with self._global_generation_lock:
-            return await ssml.generate_from_ssml(self, ssml_content, base_params)
+        return await ssml.generate_from_ssml(self, ssml_content, base_params)
 
     async def generate_audio(self, *args, **kwargs) -> Path:
-        async with self._global_generation_lock:
-            return await generator.generate_audio(self, *args, **kwargs)
+        return await generator.generate_audio(self, *args, **kwargs)
 
     async def generate_stream(self, *args, **kwargs) -> AsyncGenerator[bytes, None]:
         """Generate audio stream."""
-        async with self._global_generation_lock:
-            async for chunk in streamer.generate_stream(self, *args, **kwargs):
-                yield chunk
+        async for chunk in streamer.generate_stream(self, *args, **kwargs):
+            yield chunk
