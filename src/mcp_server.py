@@ -43,7 +43,7 @@ async def get_voice_details(voice_id: str) -> str:
 
 
 @mcp.tool
-async def create_voice(name: str, example_text: str, instruct: str, language: str = "German") -> str:
+async def create_voice(name: str, example_text: str, instruct: str, language: str = "de") -> str:
     """Create a new voice metadata entry."""
     voice = voice_service.create_voice(
         name=name,
@@ -57,22 +57,14 @@ async def create_voice(name: str, example_text: str, instruct: str, language: st
 
 
 @mcp.tool
-async def delete_voice(voice_id: str) -> str:
-    """Delete a voice and its associated audio file."""
-    if not voice_service.delete_voice(voice_id):
-        return f"Error: Failed to delete voice '{voice_id}'."
-    return f"Voice '{voice_id}' deleted successfully."
-
-
-@mcp.tool
-async def generate_voice(text: str, voice_id: str, language: str = "German", instruct: str | None = None) -> str:
+async def generate_voice(text: str, voice_id: str, language: str = "de", instruct: str | None = None) -> str:
     """
     Generate audio using a specific voice_id (DB) with base mode (1.7B).
 
     Args:
         text: The text to convert to speech.
         voice_id: The ID of the voice to use.
-        language: The target language (e.g., 'German').
+        language: The target language (e.g., 'de').
         instruct: Style instruction for the voice. NOTE: Instructions should be provided in English
                   for best results, regardless of the target voice's language.
     """
@@ -145,10 +137,10 @@ async def generate_ssml(ssml_content: str) -> str:
 @mcp.tool
 async def concatenate_audio(audio_files: list[str]) -> str:
     """Concatenate multiple audio files into one and return the URL."""
-    # Search for files in OUTPUT_DIR and UPLOAD_DIR
+    # Search for files in AUDIO_DIR and UPLOAD_DIR
     input_paths = []
     for f in audio_files:
-        p_out = settings.OUTPUT_DIR / f
+        p_out = settings.AUDIO_DIR / f
         p_up = settings.UPLOAD_DIR / f
 
         if p_out.exists():
@@ -159,7 +151,7 @@ async def concatenate_audio(audio_files: list[str]) -> str:
             return f"Error: File '{f}' not found in output or upload directories."
 
     output_filename = f"concat_{uuid.uuid4()}.wav"
-    output_path = os.path.join(settings.OUTPUT_DIR, output_filename)
+    output_path = os.path.join(settings.AUDIO_DIR, output_filename)
 
     if not SoxAudioProcessor.concatenate_audio(input_paths, output_path):
         return "Error: Concatenation failed."

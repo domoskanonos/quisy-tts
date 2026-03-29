@@ -13,7 +13,7 @@ def get_tts_engine() -> TTSEngine:
 
 def get_cache_service() -> CacheService:
     """Returns the cache service instance."""
-    return FileCacheService(ProjectConfig.get_settings().OUTPUT_DIR)
+    return FileCacheService(ProjectConfig.get_settings().AUDIO_DIR)
 
 
 def get_cleanup_service() -> CleanupService:

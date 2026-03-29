@@ -21,58 +21,30 @@ SUPPORTED_LANGUAGES = [
 class VoiceCreate(BaseModel):
     """Request schema for creating a new voice."""
 
-    name: str = Field(
+    voice_id: str = Field(
         ...,
         min_length=1,
         max_length=100,
-        description="Name of the voice.",
-        json_schema_extra={"example": "Podcast-Sprecher"},
+        description="The ID of the voice.",
+        json_schema_extra={"example": "podcast-speaker"},
     )
-    example_text: str = Field(
+    text: str = Field(
         ...,
         min_length=1,
         max_length=500,
         description="Example sentence for this voice.",
         json_schema_extra={"example": "Hallo, ich bin eine künstliche Stimme."},
     )
-    instruct: str | None = Field(
-        default=None,
+    instruct: str = Field(
+        ...,
         max_length=500,
         description="Instruct text describing the voice style for Qwen TTS.",
         json_schema_extra={"example": "A calm, professional male voice with a warm tone."},
     )
-    # system_prompt removed: not needed for the TTS-only workflow
     language: str = Field(
-        default="german",
-        description="Language of the voice (e.g. german, english).",
-        json_schema_extra={"example": "german"},
-    )
-
-
-class VoiceUpdate(BaseModel):
-    """Request schema for updating a voice."""
-
-    name: str | None = Field(
-        default=None,
-        min_length=1,
-        max_length=100,
-        description="New name for the voice.",
-    )
-    example_text: str | None = Field(
-        default=None,
-        min_length=1,
-        max_length=500,
-        description="New example sentence.",
-    )
-    instruct: str | None = Field(
-        default=None,
-        max_length=500,
-        description="New instruct text for voice style.",
-    )
-    # system_prompt removed: not needed for the TTS-only workflow
-    language: str | None = Field(
-        default=None,
-        description="New language for the voice.",
+        default="de",
+        description="Language of the voice (e.g. de).",
+        json_schema_extra={"example": "de"},
     )
 
 

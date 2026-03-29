@@ -66,7 +66,7 @@ async def generate_audio(
             if chunk_path := service.cache.get(chunk_key):
                 chunk_paths.append(chunk_path)
             else:
-                output_path = ProjectConfig.get_settings().OUTPUT_DIR / f"cache_{chunk_key}.wav"
+                output_path = ProjectConfig.get_settings().AUDIO_DIR / f"cache_{chunk_key}.wav"
                 try:
                     result_path = await service.engine.generate_and_save(chunk_text, str(output_path), params)
                     chunk_path = Path(result_path)

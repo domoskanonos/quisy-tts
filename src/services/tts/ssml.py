@@ -53,6 +53,6 @@ async def generate_from_ssml(service, ssml_content: str, base_params) -> Path:
 
     final_audio = np.concatenate(combined_audio)
     ssml_key = hashlib.sha256(ssml_content.encode()).hexdigest()[:12]
-    output_path = ProjectConfig.get_settings().OUTPUT_DIR / f"ssml_{ssml_key}.wav"
+    output_path = ProjectConfig.get_settings().AUDIO_DIR / f"ssml_{ssml_key}.wav"
     sf.write(str(output_path), final_audio, sample_rate)
     return output_path

@@ -21,9 +21,9 @@ class FileCacheService(CacheService):
         """Initialize the file cache service.
 
         Args:
-            cache_dir: Directory to store cached files. Defaults to OUTPUT_DIR.
+            cache_dir: Directory to store cached files. Defaults to AUDIO_DIR.
         """
-        self.cache_dir = cache_dir or ProjectConfig.get_settings().OUTPUT_DIR
+        self.cache_dir = cache_dir or ProjectConfig.get_settings().AUDIO_DIR
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         # locks per cache key to avoid duplicate generation across processes
         # Use a WeakValueDictionary so locks can be GC'd when no longer referenced.

@@ -25,7 +25,7 @@ class TTSService:
         self.text_splitter = get_text_splitter()
         self.voice_service = VoiceService()
         self.ssml_processor = SSMLProcessor(self.voice_service)
-        self.sfx_service = SoundEffectService(ProjectConfig.get_settings().OUTPUT_DIR)
+        self.sfx_service = SoundEffectService(ProjectConfig.get_settings().AUDIO_DIR)
         self.voice_audio_integrity = VoiceAudioIntegrityService(self.voice_service, engine, cache)
         self._locks: dict[str, asyncio.Lock] = {}
         self._ref_gen_tasks: dict[str, asyncio.Task] = {}

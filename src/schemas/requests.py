@@ -5,6 +5,28 @@ from pydantic import BaseModel, Field
 from config import ProjectConfig
 
 # =============================================================================
+# Generation Schemas
+# =============================================================================
+
+
+class GenerateRequest(BaseModel):
+    """Request for text-to-speech generation."""
+
+    text: str = Field(..., description="The text to convert to speech.")
+    language: str = Field(default="de", description="Language code (e.g., 'de', 'en').")
+    voice_id: str = Field(..., description="The ID of the voice to use.")
+
+
+class CreateVoiceRequest(BaseModel):
+    """Request for creating a new voice and generating its preview audio."""
+
+    voice_id: str = Field(..., description="The ID for the new voice.")
+    instruct: str = Field(..., description="Voice design instruction.")
+    language: str = Field(default="de", description="Language code (e.g., 'de', 'en').")
+    text: str = Field(..., description="The text to generate the preview audio from.")
+
+
+# =============================================================================
 # Base Mode Schemas (Voice Cloning)
 # =============================================================================
 
@@ -18,9 +40,9 @@ class BaseGenerateRequest(BaseModel):
         json_schema_extra={"example": "Hallo, ich bin eine künstliche Stimme."},
     )
     language: str = Field(
-        default="German",
-        description="Language: 'German', 'English', 'French', etc.",
-        json_schema_extra={"example": "German"},
+        default="de",
+        description="Language: 'de', 'en', 'fr', etc.",
+        json_schema_extra={"example": "de"},
     )
     reference_audio: str = Field(
         ...,
@@ -43,9 +65,9 @@ class VoiceDesignRequest(BaseModel):
         json_schema_extra={"example": ("Ich freu mich Sie kennen zu lernen. Gerne leihe ich ihnen meine Stimme.")},
     )
     language: str = Field(
-        default="German",
-        description="Language: 'German', 'English', 'French', etc.",
-        json_schema_extra={"example": "German"},
+        default="de",
+        description="Language: 'de', 'en', 'fr', etc.",
+        json_schema_extra={"example": "de"},
     )
     instruct: str = Field(
         ...,
@@ -68,9 +90,9 @@ class CustomVoiceRequest(BaseModel):
         json_schema_extra={"example": ("Ich freu mich Sie kennen zu lernen. Gerne leihe ich ihnen meine Stimme.")},
     )
     language: str = Field(
-        default="German",
-        description="Language: 'German', 'English', 'French', etc.",
-        json_schema_extra={"example": "German"},
+        default="de",
+        description="Language: 'de', 'en', 'fr', etc.",
+        json_schema_extra={"example": "de"},
     )
     voice_id: str = Field(
         ...,

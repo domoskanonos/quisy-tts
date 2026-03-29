@@ -28,7 +28,7 @@ def parse_args():
 def main():
     args = parse_args()
     settings = ProjectConfig.get_settings()
-    cache_dir = Path(args.dir) if args.dir else settings.OUTPUT_DIR
+    cache_dir = Path(args.dir) if args.dir else settings.AUDIO_DIR
     cache = FileCacheService(cache_dir=cache_dir)
     removed = cache.cleanup_old_files(max_age_hours=args.days * 24)
     print(f"Removed {removed} files from {cache_dir}")

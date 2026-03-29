@@ -46,13 +46,13 @@ async def concatenate_audio(
 ) -> FileResponse:
     """Concatenate multiple audio files into one."""
     output_filename = f"concat_{uuid.uuid4()}.wav"
-    output_path = os.path.join(settings.OUTPUT_DIR, output_filename)
+    output_path = os.path.join(settings.AUDIO_DIR, output_filename)
 
     # Prepend output dir to input filenames.
-    # Check both OUTPUT_DIR and UPLOAD_DIR
+    # Check both AUDIO_DIR and UPLOAD_DIR
     input_paths = []
     for f in request.audio_files:
-        p_out = settings.OUTPUT_DIR / f
+        p_out = settings.AUDIO_DIR / f
         p_up = settings.UPLOAD_DIR / f
 
         if p_out.exists():

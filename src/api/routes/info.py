@@ -2,11 +2,8 @@
 
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends
-
-from api.dependencies import get_cleanup_service
+from fastapi import APIRouter
 from config import ProjectConfig
-from core import CleanupService
 from schemas.languages import LANGUAGE_MAP
 
 logger = ProjectConfig.get_logger()
@@ -31,17 +28,6 @@ def read_root() -> dict[str, Any]:
             "/generate/custom-voice/1.7b",
         ],
     }
-
-
-@router.post("/cleanup", response_model=None)
-async def trigger_cleanup(
-    background_tasks: BackgroundTasks,
-    max_age_hours: int = 24,
-    cleanup: CleanupService = Depends(get_cleanup_service),
-) -> dict[str, str]:
-    """Trigger cleanup of old audio files."""
-    background_tasks.add_task(cleanup.cleanup_old_files, settings.OUTPUT_DIR, max_age_hours)
-    return {"status": "Cleanup scheduled"}
 
 
 @router.get("/languages")

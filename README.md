@@ -195,7 +195,7 @@ All settings are managed via Pydantic and can be overridden by environment varia
 | `PORT` | API listening port | `8045` |
 | `MODELS_DIR` | Directory to store model checkpoints | `models` |
 | `VOICES_DIR` | Directory for reference audio files | `voices` |
-| `OUTPUT_DIR` | Directory for generated audio files | `output` |
+| `AUDIO_DIR` | Directory for generated audio files | `audio` |
 | `APP_DIR` | Application data directory (preload/cache) | `app_data` |
 
 ---

@@ -24,13 +24,9 @@ class ProjectSettings(BaseSettings):
 
     # TTS Settings
     DOWNLOAD_MODELS: str = (
-        "Qwen/Qwen3-TTS-12Hz-1.7B-Base,"
-        "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign,"
-        "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice,"
-        "Qwen/Qwen3-TTS-12Hz-0.6B-Base,"
-        "Qwen/Qwen3-TTS-12Hz-0.6B-VoiceDesign,"
-        "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice"
+        "Qwen/Qwen3-TTS-12Hz-1.7B-Base,Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign,Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
     )
+    TTS_MODEL_SIZE: str = "1.7B"
 
     @property
     def MODELS_DIR(self) -> Path:
@@ -41,8 +37,8 @@ class ProjectSettings(BaseSettings):
         return self.BASE_DATA_DIR / "voices"
 
     @property
-    def OUTPUT_DIR(self) -> Path:
-        return self.BASE_DATA_DIR / "output"
+    def AUDIO_DIR(self) -> Path:
+        return self.BASE_DATA_DIR / "audio"
 
     @property
     def UPLOAD_DIR(self) -> Path:
