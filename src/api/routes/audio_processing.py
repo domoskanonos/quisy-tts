@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 from schemas.requests import ConcatenateAudioRequest
 from audio.processor import SoxAudioProcessor
 from config import ProjectConfig
-from services import CleanupService
+from core import CleanupService
 from api.dependencies import get_cleanup_service
 import os
 import uuid
