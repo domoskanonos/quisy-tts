@@ -63,7 +63,6 @@ class VoiceAudioIntegrityService:
 
         global_key = self.cache.get_key(example_text, gen_params)
         short = global_key[:12]
-        expected_voice_fn = f"voice_{voice_id}_{short}.wav"
 
         existing_audio = voice.get("audio_filename")
         if existing_audio and (global_key in existing_audio or short in existing_audio) and not force:
@@ -100,10 +99,8 @@ class VoiceAudioIntegrityService:
             if not Path(generated_path).exists() or Path(generated_path).stat().st_size == 0:
                 raise AudioGenerationError(f"Generated audio file for voice '{voice_id}' is empty or missing.")
 
-            target_path = Path(self.settings.VOICES_DIR) / expected_voice_fn
-            target_path.write_bytes(Path(generated_path).read_bytes())
-
-            self.voice_service.set_audio(voice_id, target_path.read_bytes(), target_path.name)
+            audio_data = Path(generated_path).read_bytes()
+            self.voice_service.set_audio(voice_id, audio_data, "generated.wav")
             self.logger.info(f"Automatic generation: persisted reference audio for voice {voice_id}")
 
         except Exception as e:
