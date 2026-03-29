@@ -119,7 +119,7 @@ async def stream_base_06b(
     if request.reference_audio:
         if voice_service.get_voice(request.reference_audio) is None:
             raise HTTPException(status_code=400, detail=f"Reference voice id '{request.reference_audio}' not found")
-    return _stream(request, "0.6B", service, voice_service)
+    return await _stream(request, "0.6B", service, voice_service)
 
 
 @router.post("/stream/1.7b", response_model=None)
@@ -132,10 +132,10 @@ async def stream_base_17b(
     if request.reference_audio:
         if voice_service.get_voice(request.reference_audio) is None:
             raise HTTPException(status_code=400, detail=f"Reference voice id '{request.reference_audio}' not found")
-    return _stream(request, "1.7B", service, voice_service)
+    return await _stream(request, "1.7B", service, voice_service)
 
 
-def _stream(
+async def _stream(
     request: BaseGenerateRequest,
     model_size: str,
     service: TTSService,
@@ -149,7 +149,7 @@ def _stream(
             ref_text = voice.get("example_text")
 
     return StreamingResponse(
-        service.generate_stream(
+        content=service.generate_stream(
             text=request.text,
             language=request.language,
             mode="base",
