@@ -45,6 +45,10 @@ class ProjectSettings(BaseSettings):
         return self.BASE_DATA_DIR / "output"
 
     @property
+    def UPLOAD_DIR(self) -> Path:
+        return self.BASE_DATA_DIR / "uploads"
+
+    @property
     def APP_DIR(self) -> Path:
         return self.BASE_DATA_DIR / "app_data"
 

@@ -88,3 +88,13 @@ class CustomVoiceRequest(BaseModel):
         description="Optional style instruction for the speaker (e.g. 'happy', 'sad').",
         json_schema_extra={"example": ("Sprich wie ein professioneller Podcaster mit tiefer, ruhiger Stimme.")},
     )
+
+
+class ConcatenateAudioRequest(BaseModel):
+    """Request for concatenating audio files."""
+
+    audio_files: list[str] = Field(
+        ...,
+        description="List of filenames of audio files to concatenate.",
+        json_schema_extra={"example": ["audio1.wav", "audio2.wav"]},
+    )

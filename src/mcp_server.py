@@ -1,8 +1,11 @@
+import os
+import uuid
+import httpx
 from fastmcp import FastMCP
 from schemas import TTSParams
 from api.dependencies import get_tts_service, get_voice_service
 from config import ProjectConfig
-import os
+from audio.processor import SoxAudioProcessor
 
 # Initialize MCP server
 mcp = FastMCP("QuisyTTS-MCP-Server")
@@ -83,6 +86,32 @@ async def generate_voice(text: str, voice_id: str, language: str = "German", ins
 
 
 @mcp.tool
+async def upload_audio(local_path: str) -> str:
+    """
+    Uploads a local audio file to the server.
+
+    Args:
+        local_path: The absolute path to the local .wav file to upload.
+
+    Returns:
+        The filename of the uploaded file on the server.
+    """
+    if not os.path.exists(local_path):
+        return f"Error: File '{local_path}' not found."
+
+    url = f"http://localhost:{settings.PORT}/api/audio/upload"
+    async with httpx.AsyncClient() as client:
+        with open(local_path, "rb") as f:
+            files = {"file": (os.path.basename(local_path), f, "audio/wav")}
+            response = await client.post(url, files=files)
+
+    if response.status_code != 200:
+        return f"Error: Upload failed with status {response.status_code}: {response.text}"
+
+    return response.json()["filename"]
+
+
+@mcp.tool
 async def generate_ssml(ssml_content: str) -> str:
     """
     Generates audio from SSML markup with strict validation.
@@ -90,7 +119,6 @@ async def generate_ssml(ssml_content: str) -> str:
     Rules:
     - Root: <speak>...</speak>
     - Text: <speaker name="VoiceID">Text</speaker>
-    - Sound Effect: [Description] (e.g. [door creaking]) or [Description{3s}] (e.g. [door bell{3s}]). NOTE: Descriptions MUST be in English.
     - Break (Time): <break time="250ms" /> or <break time="1.5s" />
     - Break (Strength): <break strength="medium" />
     - Invalid XML or missing voices will cause an immediate error.
@@ -98,7 +126,6 @@ async def generate_ssml(ssml_content: str) -> str:
     Example:
     <speak>
         <speaker name="eric">Hallo!</speaker>
-        [door creaking]
         <break time="500ms" />
         <speaker name="Chelsie">Wie geht es dir?</speaker>
     </speak>
@@ -106,3 +133,28 @@ async def generate_ssml(ssml_content: str) -> str:
     base_params = TTSParams(mode="base", model_size="1.7B")
     result_path = await tts_service.generate_from_ssml(ssml_content, base_params)
     return get_audio_url(str(result_path))
+
+
+@mcp.tool
+async def concatenate_audio(audio_files: list[str]) -> str:
+    """Concatenate multiple audio files into one and return the URL."""
+    # Search for files in OUTPUT_DIR and UPLOAD_DIR
+    input_paths = []
+    for f in audio_files:
+        p_out = settings.OUTPUT_DIR / f
+        p_up = settings.UPLOAD_DIR / f
+
+        if p_out.exists():
+            input_paths.append(str(p_out))
+        elif p_up.exists():
+            input_paths.append(str(p_up))
+        else:
+            return f"Error: File '{f}' not found in output or upload directories."
+
+    output_filename = f"concat_{uuid.uuid4()}.wav"
+    output_path = os.path.join(settings.OUTPUT_DIR, output_filename)
+
+    if not SoxAudioProcessor.concatenate_audio(input_paths, output_path):
+        return "Error: Concatenation failed."
+
+    return get_audio_url(output_path)

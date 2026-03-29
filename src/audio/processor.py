@@ -52,6 +52,24 @@ class SoxAudioProcessor:
             logger.error(f"Error during Sox processing: {e}")
             return False
 
+    @staticmethod
+    def concatenate_audio(input_paths: list[str], output_path: str) -> bool:
+        """Concatenates multiple audio files using Sox."""
+        try:
+            command = ["sox"] + input_paths + [output_path]
+            logger.info(f"Concatenating audio with Sox: {' '.join(command)}")
+            subprocess.run(command, check=True, capture_output=True)
+            return True
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Sox concatenation failed: {e.stderr.decode()}")
+            return False
+        except FileNotFoundError:
+            logger.error("Sox binary not found. Please ensure 'sox' is installed.")
+            return False
+        except Exception as e:
+            logger.error(f"Error during Sox concatenation: {e}")
+            return False
+
 
 class AudioUtils:
     """Utilities for audio manipulation."""

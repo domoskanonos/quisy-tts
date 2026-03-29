@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 
-from api.routes import base, info, voice_design, voices_crud, voices_search, websocket, ssml
+from api.routes import audio_processing, base, info, voice_design, voices_crud, voices_search, websocket, ssml
 from config import ProjectConfig
 from mcp_server import mcp
 
@@ -172,6 +172,7 @@ async def runtime_exception_handler(request: Request, exc: RuntimeError) -> JSON
 
 
 api_router = APIRouter()
+api_router.include_router(audio_processing.router, prefix="/audio")
 api_router.include_router(info.router)
 api_router.include_router(base.router, prefix="/generate/base")
 api_router.include_router(voice_design.router, prefix="/generate/voice-design")
