@@ -3,7 +3,6 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
-import asyncio
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -52,38 +51,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Application shutting down...")
 
 
-# Background task: generate missing reference audios without blocking startup
-async def _generate_missing_reference_audio() -> None:
-    try:
-        from services.voice_service import VoiceService
-        from api.dependencies import get_tts_service
-
-        vs = VoiceService()
-        tts = get_tts_service()
-        voices = vs.list_voices()
-
-        # Check physical files and generate missing ones sequentially
-        voices_to_generate: list[str] = []
-        for v in voices:
-            vid = v.get("voice_id") or v.get("id")
-            if not vid:
-                continue
-            audio_path = ProjectConfig.get_settings().VOICES_DIR / f"voice_{vid}.wav"
-            if not audio_path.exists() or audio_path.stat().st_size == 0:
-                voices_to_generate.append(vid)
-
-        if voices_to_generate:
-            logger.info("Background integrity: generating %d missing reference audios", len(voices_to_generate))
-            for voice_id in voices_to_generate:
-                logger.info("Background: generating reference audio for %s", voice_id)
-                try:
-                    await tts.voice_audio_integrity.ensure_audio(voice_id, tts.generate_audio)
-                except Exception:
-                    logger.exception("Background generation failed for %s", voice_id)
-    except Exception:
-        logger.exception("Failed to run background reference audio generation")
-
-
 app: FastAPI = FastAPI(
     title="Cosmo TTS API",
     description="Production-ready Text-to-Speech API.",
@@ -94,11 +61,9 @@ app: FastAPI = FastAPI(
 )
 
 
-# Register startup event to kick off background integrity generation
-@app.on_event("startup")
-async def _startup_background_tasks() -> None:
-    # Launch but do not await background generation to avoid blocking startup
-    asyncio.create_task(_generate_missing_reference_audio())
+# Note: background reference-audio generation intentionally disabled.
+# Missing reference audio will be generated on-demand when a generation
+# request arrives (via VoiceAudioIntegrityService.ensure_audio).
 
 
 # CORS for Angular frontend
