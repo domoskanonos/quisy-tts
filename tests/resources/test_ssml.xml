@@ -1,5 +1,3 @@
 <speak>
-    <s>Das ist ein Test mit SSML.</s>
-    <break time="500ms"/>
-    <s>Hier wird eine Pause gemacht.</s>
+    <speaker name="default_001">Hallo, das ist ein Test.</speaker>
 </speak>

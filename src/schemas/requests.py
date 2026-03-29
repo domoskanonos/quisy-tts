@@ -13,7 +13,10 @@ class GenerateRequest(BaseModel):
     """Request for text-to-speech generation."""
 
     text: str = Field(..., description="The text to convert to speech.")
-    language: str = Field(default="de", description="Language code (e.g., 'de', 'en').")
+    language: str = Field(
+        ...,
+        description="Language name (e.g., 'german', 'english'). Allowed values: 'de','en','fr','es','it','pt','ru','ja','ko','zh' or full names like 'german','english'.",
+    )
     voice_id: str = Field(..., description="The ID of the voice to use.")
 
 
@@ -22,7 +25,10 @@ class CreateVoiceRequest(BaseModel):
 
     voice_id: str = Field(..., description="The ID for the new voice.")
     instruct: str = Field(..., description="Voice design instruction.")
-    language: str = Field(default="de", description="Language code (e.g., 'de', 'en').")
+    language: str = Field(
+        ...,
+        description="Language name (e.g., 'german', 'english'). Allowed values: 'de','en','fr','es','it','pt','ru','ja','ko','zh' or full names like 'german','english'.",
+    )
     text: str = Field(..., description="The text to generate the preview audio from.")
 
 
@@ -40,8 +46,8 @@ class BaseGenerateRequest(BaseModel):
         json_schema_extra={"example": "Hallo, ich bin eine künstliche Stimme."},
     )
     language: str = Field(
-        default="de",
-        description="Language: 'de', 'en', 'fr', etc.",
+        ...,
+        description="Language: short code (e.g. 'de') or full name (e.g. 'german'). Allowed: 'de','en','fr','es','it','pt','ru','ja','ko','zh' or corresponding full names.",
         json_schema_extra={"example": "de"},
     )
     reference_audio: str = Field(
@@ -65,8 +71,8 @@ class VoiceDesignRequest(BaseModel):
         json_schema_extra={"example": ("Ich freu mich Sie kennen zu lernen. Gerne leihe ich ihnen meine Stimme.")},
     )
     language: str = Field(
-        default="de",
-        description="Language: 'de', 'en', 'fr', etc.",
+        ...,
+        description="Language: short code (e.g. 'de') or full name (e.g. 'german'). Allowed: 'de','en','fr','es','it','pt','ru','ja','ko','zh' or corresponding full names.",
         json_schema_extra={"example": "de"},
     )
     instruct: str = Field(
@@ -90,8 +96,8 @@ class CustomVoiceRequest(BaseModel):
         json_schema_extra={"example": ("Ich freu mich Sie kennen zu lernen. Gerne leihe ich ihnen meine Stimme.")},
     )
     language: str = Field(
-        default="de",
-        description="Language: 'de', 'en', 'fr', etc.",
+        ...,
+        description="Language: short code (e.g. 'de') or full name (e.g. 'german'). Allowed: 'de','en','fr','es','it','pt','ru','ja','ko','zh' or corresponding full names.",
         json_schema_extra={"example": "de"},
     )
     voice_id: str = Field(

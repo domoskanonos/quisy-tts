@@ -8,7 +8,9 @@ from schemas.languages import resolve_language
 class TTSParams(BaseModel):
     """Internal parameters for TTS generation."""
 
-    language: str = "german"
+    # The caller (API layer) must provide the language. No default language
+    # is set here to avoid implicit language selection inside services.
+    language: str
     reference_audio: str | None = None
     ref_text: str | None = None
     mode: str = "base"

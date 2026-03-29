@@ -21,13 +21,6 @@ async def generate_audio(
     """Generate audio from text with caching and smart splitting."""
     resolved = resolve_language(language)
     final_instruct = instruct
-    try:
-        if final_instruct and resolved == "german":
-            low = final_instruct.lower()
-            if not ("sprich" in low or "auf deutsch" in low or "in german" in low):
-                final_instruct = "Sprich auf Deutsch. " + final_instruct
-    except Exception:
-        final_instruct = instruct
 
     if not skip_integrity_check and not ref_text and reference_audio:
         vs = VoiceService()
@@ -50,7 +43,9 @@ async def generate_audio(
     if cached_path := service.cache.get(global_key):
         return cached_path
 
-    chunks = service.text_splitter.split(text, params.language or "german")
+    # language must be provided by the caller (API layer). Use the resolved
+    # language from params directly when splitting text.
+    chunks = service.text_splitter.split(text, params.language)
     if not chunks:
         raise AudioGenerationError("Text is empty after splitting")
 

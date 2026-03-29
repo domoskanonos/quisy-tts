@@ -74,7 +74,7 @@ def test_voice_design_17b(client):
     new_payload = {
         "voice_id": "test_voice",
         "instruct": payload["instruct"],
-        "language": payload["language"],
+        "language": "german",  # Updated to full name
         "text": payload["text"],
     }
 

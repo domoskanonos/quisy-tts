@@ -24,11 +24,22 @@ async def generate_from_ssml(service, ssml_content: str, base_params) -> Path:
             params.reference_audio = voice["id"]
             params.instruct = voice.get("instruct")
 
-            await service._ensure_reference_audio(voice["id"])
+            # Ensure the voice entry has the language field
+            lang = voice.get("language")
+            if not lang:
+                # Fallback if language is missing in DB
+                lang = "german"
+
+            # Ensure language is resolved correctly
+            from schemas.languages import resolve_language
+
+            resolved_lang = resolve_language(voice.get("language") or "de")
+
+            await service.voice_audio_integrity.ensure_audio(voice["id"])
 
             chunk_path = await service.generate_audio(
                 task.text,
-                params.language or "German",
+                resolved_lang,
                 "base",
                 params.model_size or "1.7B",
                 reference_audio=voice["id"],
