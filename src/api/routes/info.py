@@ -33,5 +33,5 @@ def read_root() -> dict[str, Any]:
 @router.get("/languages")
 def get_languages() -> dict[str, Any]:
     """Returns the list of supported languages."""
-    languages = sorted(set(LANGUAGE_MAP.values()))
+    languages = sorted(set(LANGUAGE_MAP.keys()))
     return {"languages": languages}

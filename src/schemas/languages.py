@@ -1,10 +1,8 @@
 """Language mapping and resolution for TTS."""
 
 # Map language codes/names to lowercase names expected by qwen-tts
-# qwen-tts expects: chinese, english, french, german, italian,
-#                    japanese, korean, portuguese, russian, spanish
 LANGUAGE_MAP: dict[str, str] = {
-    # ISO codes
+    # ISO codes mapping to qwen-tts expected names
     "de": "german",
     "en": "english",
     "fr": "french",
@@ -15,7 +13,7 @@ LANGUAGE_MAP: dict[str, str] = {
     "ja": "japanese",
     "ko": "korean",
     "zh": "chinese",
-    # English names (case-insensitive via .lower())
+    # Also support direct names
     "german": "german",
     "english": "english",
     "french": "french",
@@ -26,17 +24,6 @@ LANGUAGE_MAP: dict[str, str] = {
     "japanese": "japanese",
     "korean": "korean",
     "chinese": "chinese",
-    # Native language names
-    "deutsch": "german",
-    "englisch": "english",
-    "französisch": "french",
-    "spanisch": "spanish",
-    "italienisch": "italian",
-    "portugiesisch": "portuguese",
-    "russisch": "russian",
-    "japanisch": "japanese",
-    "koreanisch": "korean",
-    "chinesisch": "chinese",
 }
 
 

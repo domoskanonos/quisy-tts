@@ -12,12 +12,24 @@ router: APIRouter = APIRouter(tags=["Audio Processing"])
 settings = ProjectConfig.get_settings()
 
 
-@router.post("/upload", response_model=dict)
+@router.post(
+    "/upload",
+    response_model=dict,
+    summary="Upload an audio file",
+    description="Uploads a WAV file to the server. Returns the public URL to the uploaded file.",
+)
 async def upload_audio(
-    file: UploadFile = File(...),
+    file: UploadFile = File(..., description="The WAV file to upload"),
     cleanup: CleanupService = Depends(get_cleanup_service),
 ) -> dict:
-    """Upload an audio file."""
+    """
+    Upload an audio file.
+
+    Example:
+        POST /api/audio/upload
+        Body: multipart/form-data (file: testaudio.wav)
+        Response: {"url": "http://localhost:8045/audio/uploads/uuid.wav"}
+    """
     if not file.filename or not file.filename.endswith(".wav"):
         raise HTTPException(status_code=400, detail="Only .wav files are allowed.")
 
@@ -42,13 +54,26 @@ async def upload_audio(
     return {"url": url}
 
 
-@router.post("/concatenate", response_model=None)
+@router.post(
+    "/concatenate",
+    response_model=dict,
+    summary="Concatenate audio files",
+    description="Concatenates multiple existing audio files (uploaded or generated) into a single WAV file. Returns the public URL to the concatenated file.",
+)
 async def concatenate_audio(
     request: ConcatenateAudioRequest,
-) -> FileResponse:
-    """Concatenate multiple audio files into one."""
+) -> dict:
+    """
+    Concatenate multiple audio files into one.
+
+    Example:
+        POST /api/audio/concatenate
+        Body: {"audio_files": ["file1.wav", "file2.wav"]}
+        Response: {"url": "http://localhost:8045/audio/concat_uuid.wav"}
+    """
     output_filename = f"concat_{uuid.uuid4()}.wav"
-    output_path = os.path.join(settings.AUDIO_DIR, output_filename)
+    output_path = settings.AUDIO_DIR / output_filename
+    output_path_str = str(output_path)
 
     # Prepend output dir to input filenames.
     # Check both AUDIO_DIR and UPLOAD_DIR
@@ -64,12 +89,9 @@ async def concatenate_audio(
         else:
             raise HTTPException(status_code=404, detail=f"File {f} not found.")
 
-    if not SoxAudioProcessor.concatenate_audio(input_paths, output_path):
+    if not SoxAudioProcessor.concatenate_audio(input_paths, output_path_str):
         raise HTTPException(status_code=500, detail="Concatenation failed.")
 
-    return FileResponse(
-        path=output_path,
-        media_type="audio/wav",
-        filename=output_filename,
-        headers={"Content-Disposition": f"attachment; filename={output_filename}"},
-    )
+    # Return URL
+    url = f"http://{settings.HOST}:{settings.PORT}/audio/{output_filename}"
+    return {"url": url}

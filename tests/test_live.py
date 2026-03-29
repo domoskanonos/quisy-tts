@@ -50,13 +50,26 @@ def client(live_server):
     return httpx.Client(base_url=live_server, timeout=60.0)  # Increased client timeout
 
 
-def test_status_endpoint(client):
+def test_info_endpoints(client):
     """
-    Test the root status endpoint to ensure the API server is up and responding.
+    Test the info endpoints:
+    1. Verify status endpoint.
+    2. Verify languages endpoint returns a list of ISO 639-1 codes.
     """
+    # 1. Status
     response = client.get("/api/")
     assert response.status_code == 200
     assert "message" in response.json()
+
+    # 2. Languages
+    response = client.get("/api/languages")
+    assert response.status_code == 200
+    data = response.json()
+    assert "languages" in data
+    assert "de" in data["languages"]
+    assert "en" in data["languages"]
+    # Ensure full names are supported for mapping
+    assert "german" in data["languages"]
 
 
 def test_voice_design_17b(client):
@@ -115,3 +128,43 @@ def test_audio_upload(client):
     response_download = client.get(download_url)
     assert response_download.status_code == 200
     assert len(response_download.content) == test_wav.stat().st_size
+
+
+def test_audio_concatenate(client):
+    """
+    Test the audio concatenation endpoint:
+    1. Upload two audio files.
+    2. Request concatenation of these files.
+    3. Verify that the API returns a URL to the new concatenated file.
+    4. Download the file from the URL and verify it exists.
+    """
+    test_wav = Path(__file__).parent / "resources" / "testaudio.wav"
+
+    # 1. Upload two files
+    filenames = []
+    for _ in range(2):
+        with open(test_wav, "rb") as f:
+            files = {"file": ("testaudio.wav", f, "audio/wav")}
+            response = client.post("/api/audio/upload", files=files)
+            assert response.status_code == 200
+            url = response.json()["url"]
+            filename = url.split("/")[-1]
+            filenames.append(filename)
+
+    # 2. Concatenate
+    payload = {"audio_files": filenames}
+    response = client.post("/api/audio/concatenate", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert "url" in data
+
+    # 3. Verify download
+    from urllib.parse import urlparse
+
+    parsed = urlparse(data["url"])
+    download_url = parsed.path
+
+    # Use the live_server client to download
+    response_download = client.get(download_url)
+    assert response_download.status_code == 200
+    assert len(response_download.content) > 0
