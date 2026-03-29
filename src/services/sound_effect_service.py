@@ -24,17 +24,17 @@ class SoundEffectService:
 
         print(f"Loading model {self.model_id}...")
         lang_model = GPT2LMHeadModel.from_pretrained(
-            self.model_id, subfolder="language_model", dtype=torch.float16
+            self.model_id, subfolder="language_model", torch_dtype=torch.float16
         )
 
         self.pipe = AudioLDM2Pipeline.from_pretrained(
-            self.model_id, language_model=lang_model, dtype=torch.float16
+            self.model_id, language_model=lang_model, torch_dtype=torch.float16
         )
 
         self.pipe.to("cuda" if torch.cuda.is_available() else "cpu")
         print("Model loaded successfully.")
 
-    async def generate(self, prompt: str) -> Path:
+    async def generate(self, prompt: str, duration: float = 5.0) -> Path:
         """Generate audio from prompt."""
         # Ensure model is loaded (in a thread to not block if first load takes time)
         if self.pipe is None:
@@ -42,13 +42,10 @@ class SoundEffectService:
 
         # Run inference in a thread to keep the event loop responsive
         def _run_inference():
-            if(self.pipe is None):
+            if self.pipe is None:
                 raise RuntimeError("Model pipeline is not loaded.")
-            output = self.pipe(
-                prompt,
-                num_inference_steps=50,
-                guidance_scale=3.5,
-            )
+            print(f"Generating audio with duration: {duration}s")
+            output = self.pipe(prompt, num_inference_steps=50, guidance_scale=3.5, audio_length_in_s=duration)
             # AudioLDM2Pipeline may return a tuple or dict; handle accordingly
             if output is None:
                 raise RuntimeError("Inference did not return any audio.")
@@ -75,6 +72,6 @@ class SoundEffectService:
         output_path = self.output_dir / filename
 
         # Save
-        scipy.io.wavfile.write(str(output_path), rate=16000, data=audio_int16)
+        scipy.io.wavfile.write(str(output_path), rate=44000, data=audio_int16)
 
         return output_path

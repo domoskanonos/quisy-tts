@@ -21,6 +21,7 @@ class SoundEffectTask(BaseModel):
     """
 
     description: str
+    duration_s: float = 5.0
 
 
 Task = Union[TextTask, BreakTask, SoundEffectTask]
@@ -40,8 +41,13 @@ class SSMLProcessor:
         self.voice_service = voice_service
 
     def parse(self, xml_string: str) -> List[Task]:
-        # Replace [text] with <sfx>text</sfx> to make it a valid tag
-        xml_string = re.sub(r"\[(.*?)\]", r"<sfx>\1</sfx>", xml_string)
+        # Replace [text] or [text{3s}] with <sfx duration="3">text</sfx>
+        def _sfx_sub(match):
+            description = match.group(1)
+            duration = match.group(2) if match.group(2) else "5.0"
+            return f'<sfx duration="{duration}">{description}</sfx>'
+
+        xml_string = re.sub(r"\[(.*?)(?:\{(\d+)s\})?\]", _sfx_sub, xml_string)
 
         try:
             root = ElementTree.fromstring(xml_string)
@@ -55,6 +61,7 @@ class SSMLProcessor:
 
         def _process_element(element, current_speaker: str | None):
             if element.tag == "speaker":
+                # ... (rest of speaker processing unchanged)
                 name = element.get("name")
                 if not name:
                     raise ValueError("Speaker tag missing 'name' attribute")
@@ -72,15 +79,11 @@ class SSMLProcessor:
 
                 # Process tail (text after tag)
                 if element.tail:
-                    # Tail text is outside of speaker, so no speaker ID
-                    # We might need to split it if it has [text] or other things,
-                    # but <sfx> tags are already handled.
-                    # Simple approach: add as text task without speaker?
-                    # Actually, the user shouldn't have raw text outside tags.
                     pass
 
             elif element.tag == "sfx":
-                tasks.append(SoundEffectTask(description=element.text or ""))
+                duration = float(element.get("duration", 5.0))
+                tasks.append(SoundEffectTask(description=element.text or "", duration_s=duration))
 
             elif element.tag == "break":
                 time_val = element.get("time")

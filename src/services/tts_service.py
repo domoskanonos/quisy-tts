@@ -230,7 +230,7 @@ class TTSService:
                 silence_samples = int(sample_rate * (task.duration_ms / 1000))
                 combined_audio.append(np.zeros(silence_samples, dtype=np.float32))
             elif isinstance(task, SoundEffectTask):
-                sfx_path = await self.sfx_service.generate(task.description)
+                sfx_path = await self.sfx_service.generate(task.description, duration=task.duration_s)
                 data, sr = sf.read(str(sfx_path))
                 # Resample if needed
                 if sr != sample_rate:
