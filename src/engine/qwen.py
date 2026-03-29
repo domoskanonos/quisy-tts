@@ -14,6 +14,7 @@ from config import ProjectConfig, ProjectSettings
 from core import TTSEngine
 from schemas import TTSParams
 from services.text_splitter import get_text_splitter
+from schemas.languages import resolve_language
 
 logger = ProjectConfig.get_logger()
 
@@ -126,9 +127,13 @@ class QwenTTSBackend:
         }
 
         # Defensive: ensure resolved_language is canonical and log it
-        resolved_lang = (
-            params.resolved_language if hasattr(params, "resolved_language") else (params.language or "german")
-        )
+        # Ensure language is provided and resolved; do not silently fall back.
+        try:
+            resolved_lang = (
+                params.resolved_language if hasattr(params, "resolved_language") else resolve_language(params.language)
+            )
+        except Exception as e:
+            raise ValueError("language must be provided in TTSParams for generation") from e
         logger.debug(f"_generate_single: resolved_language={resolved_lang}, mode={params.mode}")
 
         loop = asyncio.get_running_loop()

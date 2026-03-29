@@ -44,11 +44,16 @@ async def websocket_endpoint(
             if not text:
                 continue
 
+            # Language must be provided by the client; do not default.
+            if "language" not in payload or not payload.get("language"):
+                await websocket.send_text(json.dumps({"error": "language is required"}))
+                continue
+
             logger.info(f"WebSocket generating: {text[:50]}")
 
             stream = service.generate_stream(
                 text=text,
-                language=payload.get("language", "german"),
+                language=payload.get("language"),
                 mode=payload.get("mode", "base"),
                 model_size=model_size,
                 speaker=payload.get("speaker"),

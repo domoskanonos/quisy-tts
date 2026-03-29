@@ -44,7 +44,10 @@ async def generate_stream(
         return
 
     # Process chunks
-    chunks = service.text_splitter.split(text, params.language or "german")
+    if not params.language:
+        raise AudioGenerationError("language is required for streaming generation")
+
+    chunks = service.text_splitter.split(text, params.language)
     for i, chunk_text in enumerate(chunks):
         chunk_key = service.cache.get_key(chunk_text, params)
         chunk_path = service.cache.get(chunk_key)

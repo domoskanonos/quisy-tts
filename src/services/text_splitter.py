@@ -62,13 +62,12 @@ class TextSplitterService:
         if len(text) <= self.max_chunk_chars:
             return [text]
 
-        # Try spaCy first, fall back to regex
+        # Use spaCy for sentence splitting. If spaCy model is not available for
+        # the requested language, fail early — do not fall back to regex.
         sentences = self._split_sentences_spacy(text, language)
         if sentences is None:
-            logger.debug(f"TextSplitter: spaCy unavailable for '{language}', using regex fallback.")
-            sentences = self._split_sentences_regex(text)
-        else:
-            logger.debug(f"TextSplitter: spaCy used for '{language}', {len(sentences)} sentences extracted.")
+            raise RuntimeError(f"No sentence splitter available for language '{language}'.")
+        logger.debug(f"TextSplitter: spaCy used for '{language}', {len(sentences)} sentences extracted.")
 
         # Group sentences into chunks
         return self._group_into_chunks(sentences)

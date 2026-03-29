@@ -66,4 +66,5 @@ async def generate_ssml(request: Request):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.exception("Unexpected error in SSML generation")
         raise HTTPException(status_code=500, detail=str(e))

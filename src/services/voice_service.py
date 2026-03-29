@@ -324,7 +324,30 @@ class VoiceService:
         if not example_text or not example_text.strip():
             raise ValueError("example_text is mandatory for creating a new voice.")
 
-        voice_id = uuid.uuid4().hex[:12]
+        # If the caller provided a friendly identifier (alphanumeric, underscore,
+        # or dash) try to use it as the voice ID so external tools can reference
+        # it predictably. If that ID already exists, append a numeric suffix to
+        # make it unique. Otherwise fall back to a short uuid.
+        import re
+
+        def _id_available(cid: str) -> bool:
+            with self._get_conn() as conn:
+                row = conn.execute("SELECT 1 FROM voices WHERE id = ? LIMIT 1", (cid,)).fetchone()
+                return row is None
+
+        if name and re.match(r"^[a-zA-Z0-9_-]{1,100}$", name) and _id_available(name):
+            voice_id = name
+        elif name and re.match(r"^[a-zA-Z0-9_-]{1,100}$", name):
+            # Try suffixes to find an available id
+            for i in range(1, 1001):
+                candidate = f"{name}-{i}"
+                if _id_available(candidate):
+                    voice_id = candidate
+                    break
+            else:
+                voice_id = uuid.uuid4().hex[:12]
+        else:
+            voice_id = uuid.uuid4().hex[:12]
         now = datetime.now(UTC).isoformat()
 
         with self._get_conn() as conn:

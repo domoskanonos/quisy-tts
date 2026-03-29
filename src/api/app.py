@@ -33,6 +33,27 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Application starting...")
     settings.AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     settings.VOICES_DIR.mkdir(parents=True, exist_ok=True)
+    # Ensure all voices in the DB have reference audio. If audio is missing
+    # generation will be attempted synchronously at startup so subsequent API
+    # calls can rely on presence of reference audio.
+    try:
+        from services.voice_service import VoiceService
+        from api.dependencies import get_tts_service
+
+        vs = VoiceService()
+        tts = get_tts_service()
+        voices = vs.list_voices()
+        for v in voices:
+            try:
+                # Only generate when audio is missing
+                if not v.get("audio_filename"):
+                    # TTSService.voice_audio_integrity will generate the reference
+                    # audio. Use the TTSService API to trigger generation.
+                    await tts.voice_audio_integrity.ensure_audio(v["id"], tts.generate_audio)
+            except Exception as e:
+                logger.error(f"Failed to ensure audio for voice {v.get('id')}: {e}")
+    except Exception as e:
+        logger.warning(f"Startup voice audio verification failed: {e}")
 
     yield
 

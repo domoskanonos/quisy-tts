@@ -44,7 +44,19 @@ async def get_voice_details(voice_id: str) -> str:
 
 @mcp.tool
 async def create_voice(name: str, example_text: str, instruct: str, language: str = "de") -> str:
-    """Create a new voice metadata entry."""
+    """
+    Create a new voice metadata entry.
+
+    - name: Unique voice identifier (DB id).
+    - example_text: Short example sentence used to generate the reference audio.
+    - instruct: Natural language description for voice design (style).
+    - language: Target language for the reference audio. This must be provided by the caller
+      and is not inferred by the service. Allowed values: short codes 'de','en','fr','es','it','pt','ru','ja','ko','zh'
+      or the full names 'german','english', etc. A missing language will cause generation to fail.
+
+    The created voice will be stored in the voices DB and its reference audio should be generated
+    (the application will attempt to generate it on demand or at startup).
+    """
     voice = voice_service.create_voice(
         name=name,
         example_text=example_text,
@@ -59,14 +71,19 @@ async def create_voice(name: str, example_text: str, instruct: str, language: st
 @mcp.tool
 async def generate_voice(text: str, voice_id: str, language: str = "de", instruct: str | None = None) -> str:
     """
-    Generate audio using a specific voice_id (DB) with base mode (1.7B).
+    Generate audio using a specific voice_id (DB) with base mode (voice cloning).
 
-    Args:
-        text: The text to convert to speech.
-        voice_id: The ID of the voice to use.
-        language: The target language (e.g., 'de').
-        instruct: Style instruction for the voice. NOTE: Instructions should be provided in English
-                  for best results, regardless of the target voice's language.
+    Parameters
+    - text: The text to convert to speech.
+    - voice_id: The ID of an existing voice in the DB (must exist).
+    - language: Required target language for synthesis. Provide either short codes
+      ('de','en','fr','es','it','pt','ru','ja','ko','zh') or full names ('german','english', ...).
+      The service will raise an error if language is missing or unknown.
+    - instruct: Optional style instruction. For best cross-language behavior provide
+      style hints in English (e.g. 'speak like a professional newscaster').
+
+    Returns a publicly accessible URL to the generated audio file on success or an
+    error string on failure.
     """
     voice = voice_service.get_voice(voice_id)
     if not voice:
@@ -87,13 +104,12 @@ async def generate_voice(text: str, voice_id: str, language: str = "de", instruc
 @mcp.tool
 async def upload_audio(local_path: str) -> str:
     """
-    Uploads a local audio file to the server.
+    Uploads a local WAV file to the server and returns the stored filename.
 
-    Args:
-        local_path: The absolute path to the local .wav file to upload.
+    - local_path: Absolute path to the local .wav file to upload.
 
-    Returns:
-        The filename of the uploaded file on the server.
+    The upload endpoint validates the file exists and forwards it to the HTTP
+    upload API. Only valid audio files are accepted by the API endpoint.
     """
     if not os.path.exists(local_path):
         return f"Error: File '{local_path}' not found."
@@ -113,21 +129,24 @@ async def upload_audio(local_path: str) -> str:
 @mcp.tool
 async def generate_ssml(ssml_content: str) -> str:
     """
-    Generates audio from SSML markup with strict validation.
+    Generate audio from SSML markup.
 
-    Rules:
-    - Root: <speak>...</speak>
-    - Text: <speaker name="VoiceID">Text</speaker>
-    - Break (Time): <break time="250ms" /> or <break time="1.5s" />
-    - Break (Strength): <break strength="medium" />
-    - Invalid XML or missing voices will cause an immediate error.
+    Expectations & rules
+    - The SSML root element must be <speak>.
+    - All spoken text must be wrapped in <speaker name="VoiceID">...</speaker> elements.
+      The referenced VoiceID must exist in the voices DB and have a language attribute set.
+    - <break> supports either a time attribute (e.g. '250ms' or '1.5s') or a strength
+      attribute ('none','x-weak','weak','medium','strong','x-strong').
+    - <sfx> (sound effect) tags may be used and will trigger the audio SFX service.
 
-    Example:
-    <speak>
-        <speaker name="eric">Hallo!</speaker>
-        <break time="500ms" />
-        <speaker name="Chelsie">Wie geht es dir?</speaker>
-    </speak>
+    Language handling
+    - The language for each speaker is taken from the corresponding voice DB entry.
+      The SSML payload does not need a global language field when speakers carry
+      language information, but every referenced voice must include a non-empty
+      language value (short code or full name). If a referenced voice lacks a
+      language the generation will fail.
+
+    Returns a public URL to the generated audio file on success.
     """
     base_params = TTSParams(mode="base", model_size="1.7B")
     result_path = await tts_service.generate_from_ssml(ssml_content, base_params)
