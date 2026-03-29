@@ -53,7 +53,9 @@ def run() -> None:
     host = os.getenv("UV_HOST") or os.getenv("HOST") or "127.0.0.1"
     port = int(os.getenv("UV_PORT") or os.getenv("PORT") or 8045)
 
-    reload_flag = _to_bool(os.getenv("UV_RELOAD"), True)
+    # Default to no reload to avoid multi-process reloader hiding startup logs.
+    # Developers can still enable reload by setting UV_RELOAD env var to '1'/'true'.
+    reload_flag = _to_bool(os.getenv("UV_RELOAD"), False)
     # sensible defaults to avoid watching large output files
     reload_dirs = _split_list(os.getenv("UV_RELOAD_DIRS")) or [str(_this_dir.parent)]
     reload_excludes = _split_list(os.getenv("UV_RELOAD_EXCLUDES")) or ["output", "*.wav"]

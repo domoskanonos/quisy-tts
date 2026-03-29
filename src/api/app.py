@@ -3,6 +3,7 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
+import asyncio
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,57 +30,58 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Validate mandatory requirements before anything else
     # _validate_startup_requirements() # Uncomment if you have this function
 
-    # Startup
+    # Startup: create directories and write a startup marker. Heavy integrity
+    # generation is intentionally postponed to a background task so the API
+    # becomes responsive immediately.
     logger.info("Application starting...")
+    print("Application starting...")
+    try:
+        settings.APP_DIR.mkdir(parents=True, exist_ok=True)
+        startup_log = settings.APP_DIR / "startup.log"
+        with open(startup_log, "a", encoding="utf-8") as fh:
+            fh.write("Application starting...\n")
+    except Exception:
+        logger.debug("Failed to write startup marker to disk")
+
     settings.AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     settings.VOICES_DIR.mkdir(parents=True, exist_ok=True)
-    # Ensure all voices in the DB have reference audio. If audio is missing
-    # generation will be attempted synchronously at startup so subsequent API
-    # calls can rely on presence of reference audio.
-    try:
-        from services.voice_service import VoiceService
-        from api.dependencies import get_tts_service
-        import asyncio
-
-        vs = VoiceService()
-        tts = get_tts_service()
-        voices = vs.list_voices()
-        logger.info(f"Startup integrity: found {len(voices)} voices in database. VOICES_DIR={settings.VOICES_DIR}")
-        logger.debug("Voice IDs: %s", [v.get("voice_id") for v in voices])
-
-        # Direct integrity check: generate missing reference audio sequentially.
-        # Check for missing physical files (voice_<id>.wav) instead of relying on DB column.
-        voices_to_generate: list[str] = []
-        for v in voices:
-            vid = v.get("voice_id") or v.get("voiceId") or v.get("id")
-            if not vid:
-                continue
-            audio_path = settings.VOICES_DIR / f"voice_{vid}.wav"
-            if not audio_path.exists() or audio_path.stat().st_size == 0:
-                voices_to_generate.append(vid)
-        logger.info(f"Startup integrity: voices_to_generate={len(voices_to_generate)}")
-
-        if voices_to_generate:
-            logger.info(f"Integrity check: generating reference audio for {len(voices_to_generate)} voices...")
-            for voice_id in voices_to_generate:
-                logger.info(f"Generating reference audio for voice: {voice_id}")
-                try:
-                    await tts.voice_audio_integrity.ensure_audio(voice_id, tts.generate_audio)
-                except Exception as e:
-                    logger.error(f"Failed to generate reference audio for {voice_id}: {e}")
-                    # Continue to attempt others but fail startup if any generation fails
-                    raise
-            logger.info("Integrity check completed successfully.")
-
-    except Exception as e:
-        logger.error(f"Startup voice audio verification failed: {e}")
-        # Terminate to fail-fast
-        raise SystemExit(f"Startup failed due to voice integrity issue: {e}") from e
 
     yield
 
     # Shutdown
     logger.info("Application shutting down...")
+
+
+# Background task: generate missing reference audios without blocking startup
+async def _generate_missing_reference_audio() -> None:
+    try:
+        from services.voice_service import VoiceService
+        from api.dependencies import get_tts_service
+
+        vs = VoiceService()
+        tts = get_tts_service()
+        voices = vs.list_voices()
+
+        # Check physical files and generate missing ones sequentially
+        voices_to_generate: list[str] = []
+        for v in voices:
+            vid = v.get("voice_id") or v.get("id")
+            if not vid:
+                continue
+            audio_path = ProjectConfig.get_settings().VOICES_DIR / f"voice_{vid}.wav"
+            if not audio_path.exists() or audio_path.stat().st_size == 0:
+                voices_to_generate.append(vid)
+
+        if voices_to_generate:
+            logger.info("Background integrity: generating %d missing reference audios", len(voices_to_generate))
+            for voice_id in voices_to_generate:
+                logger.info("Background: generating reference audio for %s", voice_id)
+                try:
+                    await tts.voice_audio_integrity.ensure_audio(voice_id, tts.generate_audio)
+                except Exception:
+                    logger.exception("Background generation failed for %s", voice_id)
+    except Exception:
+        logger.exception("Failed to run background reference audio generation")
 
 
 app: FastAPI = FastAPI(
@@ -90,6 +92,13 @@ app: FastAPI = FastAPI(
     docs_url="/api/docs",
     openapi_url="/api/openapi.json",
 )
+
+
+# Register startup event to kick off background integrity generation
+@app.on_event("startup")
+async def _startup_background_tasks() -> None:
+    # Launch but do not await background generation to avoid blocking startup
+    asyncio.create_task(_generate_missing_reference_audio())
 
 
 # CORS for Angular frontend
@@ -127,9 +136,15 @@ static_dir = Path(__file__).parent.parent / "static" / "ui"
 
 
 @app.get("/", include_in_schema=False)
-async def root_redirect() -> RedirectResponse:
-    """Redirect root to /ui."""
-    return RedirectResponse(url="/ui")
+async def root_info():
+    """Root endpoint — return a small JSON payload (no redirect).
+
+    This avoids redirecting to a possibly-missing UI and is friendlier for
+    automated health checks and API clients.
+    """
+    return JSONResponse(
+        status_code=200, content={"status": "ok", "message": "API running. Open /api/docs for Swagger UI."}
+    )
 
 
 # Mount static files (will serve index.html for /ui)
@@ -155,8 +170,6 @@ except Exception:
 
 
 @app.exception_handler(404)
-async def not_found_handler(request: Request, exc: HTTPException) -> JSONResponse | FileResponse:
-    """Deep link support for Angular SPA."""
-    if request.url.path.startswith("/ui") and static_dir.exists():
-        return FileResponse(static_dir / "index.html")
+async def not_found_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    """Return JSON 404 for missing endpoints (no SPA redirect)."""
     return JSONResponse(status_code=404, content={"detail": "Not Found"})
