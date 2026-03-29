@@ -37,7 +37,9 @@ async def upload_audio(
     # Cleanup old files
     cleanup.cleanup_old_files(settings.UPLOAD_DIR, 24)
 
-    return {"filename": filename}
+    # Return URL
+    url = f"http://{settings.HOST}:{settings.PORT}/audio/uploads/{filename}"
+    return {"url": url}
 
 
 @router.post("/concatenate", response_model=None)

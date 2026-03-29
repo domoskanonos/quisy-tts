@@ -51,12 +51,21 @@ def client(live_server):
 
 
 def test_status_endpoint(client):
+    """
+    Test the root status endpoint to ensure the API server is up and responding.
+    """
     response = client.get("/api/")
     assert response.status_code == 200
     assert "message" in response.json()
 
 
 def test_voice_design_17b(client):
+    """
+    Test the Voice Design generation endpoint:
+    1. Creates a new voice entry using the provided payload.
+    2. Triggers audio generation for the new voice.
+    3. Verifies that the voice is successfully created (status: success).
+    """
     payload_path = Path(__file__).parent / "resources" / "voice_design_payload.json"
     with open(payload_path, "r", encoding="utf-8") as f:
         payload = json.load(f)
@@ -73,3 +82,36 @@ def test_voice_design_17b(client):
     assert response.status_code == 200
     assert response.json()["status"] == "success"
     assert "voice_id" in response.json()
+
+
+def test_audio_upload(client):
+    """
+    Test the audio upload endpoint:
+    1. Uploads a dummy WAV file.
+    2. Verifies that the API returns a valid public URL for the uploaded file.
+    3. Downloads the file from the returned URL and verifies its integrity (size match).
+    """
+    # Create a small dummy WAV file
+    test_wav = Path(__file__).parent / "resources" / "testaudio.wav"
+
+    with open(test_wav, "rb") as f:
+        files = {"file": ("testaudio.wav", f, "audio/wav")}
+        response = client.post("/api/audio/upload", files=files)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "url" in data
+
+    # Verify we can download it
+    url = data["url"]
+
+    # Extract the path part of the URL to download it
+    from urllib.parse import urlparse
+
+    parsed = urlparse(url)
+    download_url = parsed.path
+
+    # Use the live_server client to download
+    response_download = client.get(download_url)
+    assert response_download.status_code == 200
+    assert len(response_download.content) == test_wav.stat().st_size
