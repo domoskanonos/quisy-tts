@@ -15,6 +15,11 @@ class BreakTask(BaseModel):
 
 
 class SoundEffectTask(BaseModel):
+    """
+    Represents a sound effect task.
+    NOTE: Descriptions MUST be in English for best results with the AudioLDM2 model.
+    """
+
     description: str
 
 
