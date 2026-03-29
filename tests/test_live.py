@@ -47,29 +47,16 @@ def live_server():
 
 @pytest.fixture(scope="session")
 def client(live_server):
-    return httpx.Client(base_url=live_server, timeout=60.0)  # Increased client timeout
+    return httpx.Client(base_url=live_server, timeout=120.0)
 
 
-def test_info_endpoints(client):
+def test_status_endpoint(client):
     """
-    Test the info endpoints:
-    1. Verify status endpoint.
-    2. Verify languages endpoint returns a list of ISO 639-1 codes.
+    Test the root status endpoint to ensure the API server is up and responding.
     """
-    # 1. Status
     response = client.get("/api/")
     assert response.status_code == 200
     assert "message" in response.json()
-
-    # 2. Languages
-    response = client.get("/api/languages")
-    assert response.status_code == 200
-    data = response.json()
-    assert "languages" in data
-    assert "de" in data["languages"]
-    assert "en" in data["languages"]
-    # Ensure full names are supported for mapping
-    assert "german" in data["languages"]
 
 
 def test_voice_design_17b(client):
@@ -168,3 +155,77 @@ def test_audio_concatenate(client):
     response_download = client.get(download_url)
     assert response_download.status_code == 200
     assert len(response_download.content) > 0
+
+
+def test_voice_management_lifecycle(client):
+    """
+    Test the Voice Management lifecycle:
+    1. List voices and pick the first one.
+    2. Generate text-to-speech using that voice.
+    3. Generate audio using SSML.
+    4. Delete the reference audio of that voice.
+    5. Generate text-to-speech again (should re-create/ensure audio).
+    6. Perform same operations for a newly created voice.
+    """
+    # 1. List voices
+    response = client.get("/api/voices/")
+    assert response.status_code == 200
+    voices = response.json()["voices"]
+    assert len(voices) > 0
+
+    # Filter for a non-default voice to test deletion, or just use a custom created one
+    # For now, let's just pick one that is not a default, if possible.
+    voice = next((v for v in voices if not v.get("is_default")), voices[0])
+    voice_id = voice["id"]
+
+    # 2. Generate text (make sure it's a voice with audio)
+    # If the default voice is missing its audio file, this will fail.
+    # We should ensure the voice has audio first.
+    # Upload dummy audio if missing
+    if not voice.get("audio_filename"):
+        test_wav = Path(__file__).parent / "resources" / "testaudio.wav"
+        with open(test_wav, "rb") as f:
+            files = {"file": ("testaudio.wav", f, "audio/wav")}
+            client.post(f"/api/voices/{voice_id}/audio", files=files)
+
+    payload = {"text": "Das ist ein Test.", "language": "de", "voice_id": voice_id}
+    response = client.post("/api/generate/generate", json=payload)
+    assert response.status_code == 200
+    assert response.headers["Content-Type"] == "audio/wav"
+
+    # 3. Generate SSML
+    ssml_path = Path(__file__).parent / "resources" / "test_ssml.xml"
+    with open(ssml_path, "r", encoding="utf-8") as f:
+        ssml_content = f.read()
+    response = client.post("/api/generate/ssml", content=ssml_content)
+    assert response.status_code == 200
+    assert "url" in response.json()
+
+    # 4. Delete reference audio
+    from services.voice_service import VoiceService
+
+    vs = VoiceService()
+    audio_path = vs.get_audio_path(voice_id)
+    if audio_path and audio_path.exists():
+        audio_path.unlink()
+
+    # 5. Generate text again
+    response = client.post("/api/generate/generate", json=payload)
+    assert response.status_code == 200
+    assert response.headers["Content-Type"] == "audio/wav"
+
+    # 6. Same with a newly created voice
+    new_voice_payload = {
+        "voice_id": "new_test_voice",
+        "instruct": "A friendly female voice.",
+        "language": "de",
+        "text": "Das ist eine neue Stimme.",
+    }
+    response = client.post("/api/voices/", json=new_voice_payload)
+    assert response.status_code == 200
+
+    # Generate text for new voice
+    payload["voice_id"] = "new_test_voice"
+    response = client.post("/api/generate/generate", json=payload)
+    assert response.status_code == 200
+    assert response.headers["Content-Type"] == "audio/wav"

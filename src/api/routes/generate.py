@@ -53,7 +53,11 @@ async def generate_ssml(request: Request):
 
     try:
         # Base parameters for the generation
-        base_params = TTSParams(mode="custom_voice", model_size=settings.TTS_MODEL_SIZE)
+        # Set language to "de" as requested by the user, and ensure it maps to "german"
+        from schemas.languages import resolve_language
+
+        lang = resolve_language("de")
+        base_params = TTSParams(mode="custom_voice", model_size=settings.TTS_MODEL_SIZE, language=lang)
 
         result_path = await tts_service.generate_from_ssml(ssml_content.decode("utf-8"), base_params)
 

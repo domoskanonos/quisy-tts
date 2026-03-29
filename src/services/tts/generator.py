@@ -34,7 +34,7 @@ async def generate_audio(
         voice = vs.get_voice(reference_audio)
         if voice:
             ref_text = voice.get("example_text")
-            await service._ensure_reference_audio(reference_audio)
+            # await service._ensure_reference_audio(reference_audio)
 
     params = TTSParams(
         language=resolved,
