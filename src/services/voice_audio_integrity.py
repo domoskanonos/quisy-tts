@@ -17,6 +17,13 @@ class VoiceAudioIntegrityService:
         self.settings = ProjectConfig.get_settings()
         self.logger = ProjectConfig.get_logger()
 
+    def _is_file_valid(self, voice: dict) -> bool:
+        filename = voice.get("audio_filename")
+        if not filename:
+            return False
+        path = Path(self.settings.VOICES_DIR) / filename
+        return path.exists() and path.stat().st_size > 0
+
     async def ensure_audio(
         self, voice_id: str, generator_callback: Callable[[str, str, str, str, str | None], Any], force: bool = False
     ) -> None:
@@ -26,6 +33,13 @@ class VoiceAudioIntegrityService:
         voice = self.voice_service.get_voice(voice_id)
         if voice is None:
             raise ReferenceAudioNotFoundError(f"Voice '{voice_id}' not found in database.")
+
+        # Check physical existence if audio is already linked in DB
+        if voice.get("audio_filename") and not self._is_file_valid(voice):
+            self.logger.warning(
+                f"Voice '{voice_id}' has DB entry '{voice.get('audio_filename')}' but file is missing. Forcing regeneration."
+            )
+            force = True
 
         example_text = voice.get("example_text")
         if not example_text:
