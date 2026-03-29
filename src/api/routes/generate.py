@@ -29,6 +29,9 @@ async def generate_audio(
     if voice_service.get_voice(request.voice_id) is None:
         raise HTTPException(status_code=400, detail=f"Voice ID '{request.voice_id}' not found")
 
+    # Ensure reference audio exists before generation
+    await service.voice_audio_integrity.ensure_audio(request.voice_id, service.generate_audio)
+
     result_path = await service.generate_audio(
         text=request.text,
         language=request.language,

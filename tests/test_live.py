@@ -229,3 +229,6 @@ def test_voice_management_lifecycle(client):
     response = client.post("/api/generate/generate", json=payload)
     assert response.status_code == 200
     assert response.headers["Content-Type"] == "audio/wav"
+
+    # Cleanup: delete the newly created voice
+    client.delete(f"/api/voices/new_test_voice")

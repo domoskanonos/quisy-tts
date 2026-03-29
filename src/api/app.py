@@ -39,21 +39,34 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     try:
         from services.voice_service import VoiceService
         from api.dependencies import get_tts_service
+        import asyncio
 
         vs = VoiceService()
         tts = get_tts_service()
         voices = vs.list_voices()
+
+        # Queue-based integrity check
+        queue = asyncio.Queue()
         for v in voices:
-            try:
-                # Only generate when audio is missing
-                if not v.get("audio_filename"):
-                    # TTSService.voice_audio_integrity will generate the reference
-                    # audio. Use the TTSService API to trigger generation.
-                    await tts.voice_audio_integrity.ensure_audio(v["id"], tts.generate_audio)
-            except Exception as e:
-                logger.error(f"Failed to ensure audio for voice {v.get('id')}: {e}")
+            if not v.get("audio_filename"):
+                queue.put_nowait(v["id"])
+
+        # Worker to process the queue serially
+        async def worker():
+            while not queue.empty():
+                voice_id = await queue.get()
+                await tts.voice_audio_integrity.ensure_audio(voice_id, tts.generate_audio)
+                queue.task_done()
+
+        if not queue.empty():
+            logger.info(f"Integrity check: generating reference audio for {queue.qsize()} voices...")
+            await worker()
+            logger.info("Integrity check completed successfully.")
+
     except Exception as e:
-        logger.warning(f"Startup voice audio verification failed: {e}")
+        logger.error(f"Startup voice audio verification failed: {e}")
+        # Terminate to fail-fast
+        raise SystemExit(f"Startup failed due to voice integrity issue: {e}") from e
 
     yield
 
