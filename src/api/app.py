@@ -45,22 +45,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         tts = get_tts_service()
         voices = vs.list_voices()
 
-        # Queue-based integrity check
-        queue = asyncio.Queue()
-        for v in voices:
-            if not v.get("audio_filename"):
-                queue.put_nowait(v["id"])
+        # Direct integrity check without queue
+        voices_to_generate = [v["voice_id"] for v in voices if not v.get("audio_filename")]
 
-        # Worker to process the queue serially
-        async def worker():
-            while not queue.empty():
-                voice_id = await queue.get()
+        if voices_to_generate:
+            logger.info(f"Integrity check: generating reference audio for {len(voices_to_generate)} voices...")
+            for voice_id in voices_to_generate:
                 await tts.voice_audio_integrity.ensure_audio(voice_id, tts.generate_audio)
-                queue.task_done()
-
-        if not queue.empty():
-            logger.info(f"Integrity check: generating reference audio for {queue.qsize()} voices...")
-            await worker()
             logger.info("Integrity check completed successfully.")
 
     except Exception as e:

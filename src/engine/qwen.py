@@ -95,7 +95,7 @@ class QwenTTSBackend:
         except ImportError:
             torch = None
 
-        kwargs: dict[str, Any] = {"device_map": "auto"}
+        kwargs: dict[str, Any] = {"device_map": "auto", "attn_implementation": "sdpa"}
         if torch is not None:
             # Set dtype only if torch exposes the attribute
             dtype = getattr(torch, "bfloat16", None)
