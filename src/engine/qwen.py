@@ -50,21 +50,17 @@ class QwenTTSBackend:
         self._text_splitter = get_text_splitter()
 
     async def ensure_loaded(self, mode: str = "base") -> Qwen3TTSModel:
-        """Ensure the model for a given mode is loaded. Safe to call concurrently.
-
-        Args:
-            mode: Generation mode (base, voice_design, custom_voice).
-
-        Returns:
-            The loaded Qwen3TTSModel for the requested mode.
-        """
+        """Ensure the model for a given mode is loaded. Safe to call concurrently."""
+        logger.info(f"Debug: ensure_loaded called for mode: {mode}")
         if mode in self._models:
+            logger.info(f"Debug: mode {mode} already loaded")
             return self._models[mode]
 
         lock = self._locks.get(mode)
         if lock is None:
             raise ValueError(f"Unknown mode: {mode}. Available: {list(MODEL_MAP.keys())}")
 
+        logger.info(f"Debug: acquiring lock for mode: {mode}")
         async with lock:
             # Double-check after acquiring lock
             if mode in self._models:
@@ -76,13 +72,13 @@ class QwenTTSBackend:
 
             # Run blocking model load in thread pool
             loop = asyncio.get_running_loop()
+            logger.info("Debug: calling run_in_executor for _load_model_sync")
             model = await loop.run_in_executor(None, self._load_model_sync, model_name)
+            logger.info("Debug: run_in_executor finished")
             self._models[mode] = model
 
             elapsed = time.time() - start_time
             logger.info(f"Qwen3-TTS model '{mode}' loaded successfully in {elapsed:.2f}s")
-            # Log concrete model type for diagnostics (helps detect local stubs/mocks)
-            logger.debug("Loaded model instance: %s", type(model))
             return model
 
     def _load_model_sync(self, model_name: str) -> Qwen3TTSModel:
@@ -172,12 +168,14 @@ class QwenTTSBackend:
         start = time.time()
         try:
             if params.mode == "voice_design":
+                logger.info("Calling model.generate_voice_design...")
                 result = model.generate_voice_design(
                     text=text,
                     language=params.resolved_language,
                     instruct=params.instruct or "",
                     **gen_kwargs,
                 )
+                logger.info("model.generate_voice_design finished.")
             else:
                 # Base mode = voice clone
                 ref_audio_path = self._resolve_ref_audio(params)
