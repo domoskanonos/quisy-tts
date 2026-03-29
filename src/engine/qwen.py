@@ -126,13 +126,15 @@ class QwenTTSBackend:
             "repetition_penalty": QWEN_GENERATION_CONFIG["repetition_penalty"],
         }
 
+        # Defensive: ensure resolved_language is canonical and log it
+        # Ensure language is provided and resolved; do not silently fall back.
         try:
-            # params.language might be Optional[str], ensure it's a string
-            lang = params.language or "german"
+            if not params.language:
+                raise ValueError("language must be provided in TTSParams for generation")
             resolved_lang = (
                 params.resolved_language
                 if hasattr(params, "resolved_language") and params.resolved_language
-                else resolve_language(lang)
+                else resolve_language(params.language)
             )
         except Exception as e:
             raise ValueError("language must be provided in TTSParams for generation") from e
