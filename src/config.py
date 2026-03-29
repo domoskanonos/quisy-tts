@@ -162,7 +162,7 @@ class ProjectConfig:
                     try:
                         conn = sqlite3.connect(str(resource_db))
                         cur = conn.cursor()
-                        cur.execute("SELECT 1 FROM voices WHERE id = ? LIMIT 1", (default_voice_id,))
+                        cur.execute("SELECT 1 FROM voices WHERE voice_id = ? LIMIT 1", (default_voice_id,))
                         row = cur.fetchone()
                         conn.close()
                         if not row:

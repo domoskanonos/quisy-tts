@@ -126,11 +126,13 @@ class QwenTTSBackend:
             "repetition_penalty": QWEN_GENERATION_CONFIG["repetition_penalty"],
         }
 
-        # Defensive: ensure resolved_language is canonical and log it
-        # Ensure language is provided and resolved; do not silently fall back.
         try:
+            # params.language might be Optional[str], ensure it's a string
+            lang = params.language or "german"
             resolved_lang = (
-                params.resolved_language if hasattr(params, "resolved_language") else resolve_language(params.language)
+                params.resolved_language
+                if hasattr(params, "resolved_language") and params.resolved_language
+                else resolve_language(lang)
             )
         except Exception as e:
             raise ValueError("language must be provided in TTSParams for generation") from e
@@ -164,6 +166,7 @@ class QwenTTSBackend:
 
     def _generate_sync(self, model: Qwen3TTSModel, text: str, params: TTSParams, gen_kwargs: dict) -> tuple[list, int]:
         """Synchronous generation logic."""
+        logger.info("Generation started")
         start = time.time()
         try:
             if params.mode == "voice_design":
@@ -192,6 +195,8 @@ class QwenTTSBackend:
                 )
 
             elapsed = time.time() - start
+            logger.info(f"Generation finished in {elapsed:.3f}s")
+
             # result expected: (wavs, sr)
             try:
                 wavs, sr = result
