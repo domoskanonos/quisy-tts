@@ -119,7 +119,7 @@ class VoiceService:
 
         # Normalize existing language values to canonical form (resolve_language)
         try:
-            rows = conn.execute("SELECT id, language FROM voices").fetchall()
+            rows = conn.execute("SELECT voice_id, language FROM voices").fetchall()
             for r in rows:
                 vid = r[0]
                 lang = (r[1] or "").strip()
@@ -128,7 +128,7 @@ class VoiceService:
                 resolved = resolve_language(lang)
                 if resolved != lang.lower():
                     logger.info(f"Normalizing language for voice {vid}: '{lang}' -> '{resolved}'")
-                    conn.execute("UPDATE voices SET language = ? WHERE id = ?", (resolved, vid))
+                    conn.execute("UPDATE voices SET language = ? WHERE voice_id = ?", (resolved, vid))
             conn.commit()
         except Exception as e:
             logger.warning(f"Failed to normalize voice languages during migration: {e}")
