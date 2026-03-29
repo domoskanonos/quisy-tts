@@ -12,24 +12,46 @@ from config import ProjectConfig
 class GenerateRequest(BaseModel):
     """Request for text-to-speech generation."""
 
-    text: str = Field(..., description="The text to convert to speech.")
+    text: str = Field(
+        ...,
+        description="The text to convert to speech.",
+        json_schema_extra={"example": "Hallo, das ist ein kurzer Test."},
+    )
     language: str = Field(
         ...,
         description="Language name (e.g., 'german', 'english'). Allowed values: 'de','en','fr','es','it','pt','ru','ja','ko','zh' or full names like 'german','english'.",
+        json_schema_extra={"example": "de"},
     )
-    voice_id: str = Field(..., description="The ID of the voice to use.")
+    voice_id: str = Field(
+        ...,
+        description="The ID of the voice to use.",
+        json_schema_extra={"example": "default_001"},
+    )
 
 
 class CreateVoiceRequest(BaseModel):
     """Request for creating a new voice and generating its preview audio."""
 
-    voice_id: str = Field(..., description="The ID for the new voice.")
-    instruct: str = Field(..., description="Voice design instruction.")
+    voice_id: str = Field(
+        ...,
+        description="The ID for the new voice.",
+        json_schema_extra={"example": "my_custom_voice"},
+    )
+    instruct: str = Field(
+        ...,
+        description="Voice design instruction.",
+        json_schema_extra={"example": "Eine warme, freundliche Stimme, geeignet für Podcasts."},
+    )
     language: str = Field(
         ...,
         description="Language name (e.g., 'german', 'english'). Allowed values: 'de','en','fr','es','it','pt','ru','ja','ko','zh' or full names like 'german','english'.",
+        json_schema_extra={"example": "de"},
     )
-    text: str = Field(..., description="The text to generate the preview audio from.")
+    text: str = Field(
+        ...,
+        description="The text to generate the preview audio from.",
+        json_schema_extra={"example": "Dies ist ein kurzes Beispiel für die Vorschau der Stimme."},
+    )
 
 
 # =============================================================================

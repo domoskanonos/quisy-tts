@@ -44,14 +44,31 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         vs = VoiceService()
         tts = get_tts_service()
         voices = vs.list_voices()
+        logger.info(f"Startup integrity: found {len(voices)} voices in database. VOICES_DIR={settings.VOICES_DIR}")
+        logger.debug("Voice IDs: %s", [v.get("voice_id") for v in voices])
 
-        # Direct integrity check without queue
-        voices_to_generate = [v["voice_id"] for v in voices if not v.get("audio_filename")]
+        # Direct integrity check: generate missing reference audio sequentially.
+        # Check for missing physical files (voice_<id>.wav) instead of relying on DB column.
+        voices_to_generate: list[str] = []
+        for v in voices:
+            vid = v.get("voice_id") or v.get("voiceId") or v.get("id")
+            if not vid:
+                continue
+            audio_path = settings.VOICES_DIR / f"voice_{vid}.wav"
+            if not audio_path.exists() or audio_path.stat().st_size == 0:
+                voices_to_generate.append(vid)
+        logger.info(f"Startup integrity: voices_to_generate={len(voices_to_generate)}")
 
         if voices_to_generate:
             logger.info(f"Integrity check: generating reference audio for {len(voices_to_generate)} voices...")
             for voice_id in voices_to_generate:
-                await tts.voice_audio_integrity.ensure_audio(voice_id, tts.generate_audio)
+                logger.info(f"Generating reference audio for voice: {voice_id}")
+                try:
+                    await tts.voice_audio_integrity.ensure_audio(voice_id, tts.generate_audio)
+                except Exception as e:
+                    logger.error(f"Failed to generate reference audio for {voice_id}: {e}")
+                    # Continue to attempt others but fail startup if any generation fails
+                    raise
             logger.info("Integrity check completed successfully.")
 
     except Exception as e:
