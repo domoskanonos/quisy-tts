@@ -1,11 +1,9 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse
 from schemas.requests import ConcatenateAudioRequest
 from audio.processor import SoxAudioProcessor
 from config import ProjectConfig
 from core import CleanupService
 from api.dependencies import get_cleanup_service
-import os
 import uuid
 
 router: APIRouter = APIRouter(tags=["Audio Processing"])

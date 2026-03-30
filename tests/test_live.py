@@ -12,7 +12,7 @@ src_dir = str(Path(__file__).resolve().parent.parent / "src")
 if src_dir not in sys.path:
     sys.path.insert(0, src_dir)
 
-from api.app import app
+from api.app import app  # noqa: E402
 
 # Port for the test server
 TEST_PORT = 8046
@@ -230,7 +230,7 @@ def test_voice_management_lifecycle(client):
     assert response.headers["Content-Type"] == "audio/wav"
 
     # Cleanup: delete the newly created voice
-    response = client.delete(f"/api/voices/new_test_voice")
+    response = client.delete("/api/voices/new_test_voice")
     assert response.status_code == 204
 
     # Verify it's gone
