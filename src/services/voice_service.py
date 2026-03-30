@@ -226,7 +226,10 @@ class VoiceService:
             "updated_at": row["updated_at"],
         }
 
-    # ─── CRUD Operations ─────────────────────────────────────────
+    @staticmethod
+    def get_voice_filename(voice_id: str) -> str:
+        """Centralized naming convention for voice files."""
+        return f"voice_{voice_id}.wav"
 
     def list_voices(self) -> list[dict]:
         """Return all voices, defaults first then by creation date."""
@@ -423,7 +426,7 @@ class VoiceService:
             return False
 
         # Remove audio file if exists
-        audio_path = self._voices_dir / f"voice_{voice_id}.wav"
+        audio_path = self._voices_dir / self.get_voice_filename(voice_id)
         if audio_path.exists():
             audio_path.unlink()
             logger.info(f"Audio file deleted: {audio_path}")
@@ -444,7 +447,7 @@ class VoiceService:
             return None
 
         # Always use voice_{voice_id}.wav
-        final_filename = f"voice_{voice_id}.wav"
+        final_filename = self.get_voice_filename(voice_id)
         audio_path = self._voices_dir / final_filename
         audio_path.write_bytes(audio_data)
 

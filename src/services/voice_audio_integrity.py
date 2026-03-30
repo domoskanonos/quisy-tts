@@ -18,10 +18,10 @@ class VoiceAudioIntegrityService:
         self.logger = ProjectConfig.get_logger()
 
     def _is_file_valid(self, voice: dict) -> bool:
-        filename = voice.get("audio_filename")
-        if not filename:
+        voice_id = voice.get("voice_id")
+        if not voice_id:
             return False
-        path = Path(self.settings.VOICES_DIR) / filename
+        path = Path(self.settings.VOICES_DIR) / VoiceService.get_voice_filename(voice_id)
         return path.exists() and path.stat().st_size > 0
 
     async def ensure_audio(
@@ -37,12 +37,15 @@ class VoiceAudioIntegrityService:
         if voice is None:
             raise ReferenceAudioNotFoundError(f"Voice '{voice_id}' not found in database.")
 
-        # Check physical existence if audio is already linked in DB
+        # Check physical existence.
         # The filename is now strictly voice_{voice_id}.wav
-        audio_path = Path(self.settings.VOICES_DIR) / f"voice_{voice_id}.wav"
-        if not audio_path.exists() or audio_path.stat().st_size == 0:
-            self.logger.warning(f"Voice '{voice_id}' has no reference audio file. Forcing regeneration.")
-            force = True
+        audio_path = Path(self.settings.VOICES_DIR) / VoiceService.get_voice_filename(voice_id)
+
+        # If it exists and is not forced, we are done!
+        if audio_path.exists() and audio_path.stat().st_size > 0 and not force:
+            return
+
+        self.logger.warning(f"Voice '{voice_id}' has no valid reference audio file. Forcing regeneration.")
 
         example_text = voice.get("example_text")
         if not example_text:
@@ -54,42 +57,28 @@ class VoiceAudioIntegrityService:
             # The voice must have an explicit language set — don't fall back.
             raise ReferenceAudioNotFoundError(f"Voice '{voice_id}' has no language set")
 
-        gen_params = TTSParams(
-            language=lang,
-            instruct=voice.get("instruct") or "A clear and natural voice.",
-            mode="voice_design",
-            model_size="1.7B",
-        )
-
-        global_key = self.cache.get_key(example_text, gen_params)
-        short = global_key[:12]
-
-        existing_audio = voice.get("audio_filename")
-        if existing_audio and (global_key in existing_audio or short in existing_audio) and not force:
-            return
-
-        # Bypass the callback and generate directly using the engine if we are in this service,
-        # or use a simplified generator that doesn't trigger the full TTSService pipeline
-        # to avoid deadlocks (locks on TTSService).
+        # Bypass the callback and generate directly using the engine
         try:
             self.logger.info(f"Automatic generation: starting reference audio generation for voice {voice_id}")
 
-            # Simple direct generation using the engine to avoid TTSService re-entrancy
-            tmp_fn = f"voice_gen_{voice_id}.wav"
-            tmp_path = Path(self.settings.AUDIO_DIR) / tmp_fn
+            # Define path directly according to convention
+            target_path = Path(self.settings.VOICES_DIR) / VoiceService.get_voice_filename(voice_id)
 
             # Build params object for engine directly
-            params = TTSParams(language=lang, instruct=gen_params.instruct, mode="voice_design", model_size="1.7B")
+            params = TTSParams(
+                language=lang,
+                instruct=voice.get("instruct") or "A clear and natural voice.",
+                mode="voice_design",
+                model_size="1.7B",
+            )
 
             # Use engine directly
-            generated_path = await self.engine.generate_and_save(example_text, str(tmp_path), params)
-            self.logger.info(f"Generated ref audio directly at: {generated_path}")
+            await self.engine.generate_and_save(example_text, str(target_path), params)
+            self.logger.info(f"Generated ref audio directly at: {target_path}")
 
-            if not Path(generated_path).exists() or Path(generated_path).stat().st_size == 0:
+            if not target_path.exists() or target_path.stat().st_size == 0:
                 raise AudioGenerationError(f"Generated audio file for voice '{voice_id}' is empty or missing.")
 
-            audio_data = Path(generated_path).read_bytes()
-            self.voice_service.set_audio(voice_id, audio_data, "generated.wav")
             self.logger.info(f"Automatic generation: persisted reference audio for voice {voice_id}")
 
         except Exception as e:

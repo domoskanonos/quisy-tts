@@ -24,6 +24,32 @@ async def generate_from_ssml(service, ssml_content: str, base_params) -> Path:
             params.reference_audio = voice["voice_id"]
             params.instruct = voice.get("instruct")
 
+    # Ensure reference audio exists; provide the service.generate_audio
+    # callback so the integrity service can invoke generation if needed.
+    # Move integrity check outside the loop to ensure it runs only once per SSML generation.
+    unique_speakers = {task.speaker for task in tasks if isinstance(task, TextTask)}
+    for speaker in unique_speakers:
+        voice = service.voice_service.get_voice(speaker)
+        if not voice:
+            raise AudioGenerationError(f"Speaker ID {speaker} not found")
+        service.logger.info(f"Debug: SSML checking integrity for {voice['voice_id']}")
+        try:
+            await service.voice_audio_integrity.ensure_audio(voice["voice_id"], service.generate_audio)
+        except Exception as e:
+            service.logger.error(f"Debug: SSML integrity check FAILED for {voice['voice_id']}: {e}")
+            raise
+
+    for task in tasks:
+        if isinstance(task, TextTask):
+            voice = service.voice_service.get_voice(task.speaker)
+            if not voice:
+                raise AudioGenerationError(f"Speaker ID {task.speaker} not found")
+
+            params = base_params.model_copy()
+            params.mode = "base"
+            params.reference_audio = voice["voice_id"]
+            params.instruct = voice.get("instruct")
+
             # Ensure the voice entry has the language field — it must exist.
             lang = voice.get("language")
             if not lang:
@@ -33,16 +59,6 @@ async def generate_from_ssml(service, ssml_content: str, base_params) -> Path:
             from schemas.languages import resolve_language
 
             resolved_lang = resolve_language(lang)
-
-            # Ensure reference audio exists; provide the service.generate_audio
-            # callback so the integrity service can invoke generation if needed.
-            service.logger.info(f"Debug: SSML checking integrity for {voice['voice_id']}")
-            try:
-                await service.voice_audio_integrity.ensure_audio(voice["voice_id"], service.generate_audio)
-            except Exception as e:
-                service.logger.error(f"Debug: SSML integrity check FAILED for {voice['voice_id']}: {e}")
-                raise
-            service.logger.info(f"Debug: SSML integrity check finished for {voice['voice_id']}")
 
             chunk_path = await service.generate_audio(
                 task.text,

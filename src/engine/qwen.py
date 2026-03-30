@@ -20,7 +20,7 @@ logger = ProjectConfig.get_logger()
 
 # Centralized generation config for consistency
 QWEN_GENERATION_CONFIG = {
-    "temperature": 0.9,
+    "temperature": 0.8,
     "top_p": 1.0,
     "top_k": 50,
     "repetition_penalty": 1.05,
@@ -150,6 +150,9 @@ class QwenTextToSpeech(TTSEngine):
 
         # Base/Custom mode = voice clone
         ref_audio_path = self._resolve_ref_audio(params)
+        logger.debug(
+            f"Debug: _generate_sync | ref_audio_path: {ref_audio_path} | ref_text length: {len(params.ref_text or '')} | ref_text: '{params.ref_text}'"
+        )
         if not ref_audio_path:
             from core.exceptions import ReferenceAudioNotFoundError
 
@@ -187,19 +190,19 @@ class QwenTextToSpeech(TTSEngine):
 
     def _resolve_ref_audio(self, params: TTSParams) -> str | None:
         """Resolve reference audio path."""
+        from services.voice_service import VoiceService
+
         if params.reference_audio:
-            path = self.settings.VOICES_DIR / f"voice_{params.reference_audio}.wav"
+            path = self.settings.VOICES_DIR / VoiceService.get_voice_filename(params.reference_audio)
             if path.exists():
                 return str(path)
 
         default_voice_id = getattr(self.settings, "DEFAULT_VOICE_ID", None)
         if default_voice_id:
-            from services.voice_service import VoiceService
-
             vs = VoiceService(self.settings.VOICES_DIR)
             voice = vs.get_voice(default_voice_id)
-            if voice and voice.get("audio_filename"):
-                path = self.settings.VOICES_DIR / voice["audio_filename"]
+            if voice:
+                path = self.settings.VOICES_DIR / VoiceService.get_voice_filename(default_voice_id)
                 if path.exists():
                     return str(path)
 
