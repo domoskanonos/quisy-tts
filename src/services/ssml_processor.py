@@ -15,11 +15,6 @@ class BreakTask(BaseModel):
 
 
 class SoundEffectTask(BaseModel):
-    """
-    Represents a sound effect task.
-    NOTE: Descriptions MUST be in English for best results with the AudioLDM2 model.
-    """
-
     description: str
     duration_s: float = 5.0
 
@@ -41,7 +36,6 @@ class SSMLProcessor:
         self.voice_service = voice_service
 
     def parse(self, xml_string: str) -> List[Task]:
-        # Replace [text] or [text{3s}] with <sfx duration="3">text</sfx>
         def _sfx_sub(match):
             description = match.group(1)
             duration = match.group(2) if match.group(2) else "5.0"
@@ -60,26 +54,29 @@ class SSMLProcessor:
         tasks = []
 
         def _process_element(element, current_speaker: str | None):
+            # Skip comments
+            if element.tag == "!--":
+                return
+
+            # Process tag logic
             if element.tag == "speaker":
-                # ... (rest of speaker processing unchanged)
                 name = element.get("name")
                 if not name:
                     raise ValueError("Speaker tag missing 'name' attribute")
                 voice = self.voice_service.get_voice(name)
                 if not voice:
                     raise ValueError(f"Unknown speaker ID: {name}")
+                current_speaker = voice["voice_id"]
 
-                # Process text in this tag
+                # Process text within this tag
                 if element.text and element.text.strip():
-                    tasks.append(TextTask(text=element.text.strip(), speaker=voice["voice_id"]))
+                    if current_speaker is None:
+                        raise ValueError("Text found without a speaker")
+                    tasks.append(TextTask(text=element.text.strip(), speaker=current_speaker))
 
-                # Recurse for children (like <sfx>)
+                # Recurse for children
                 for child in element:
-                    _process_element(child, voice["voice_id"])
-
-                # Process tail (text after tag)
-                if element.tail:
-                    pass
+                    _process_element(child, current_speaker)
 
             elif element.tag == "sfx":
                 duration = float(element.get("duration", 5.0))
@@ -104,6 +101,13 @@ class SSMLProcessor:
             else:
                 raise ValueError(f"Unsupported tag: {element.tag}")
 
+            # Process tail (text after tag)
+            if element.tail and element.tail.strip():
+                if current_speaker is None:
+                    raise ValueError("Text found without a speaker")
+                tasks.append(TextTask(text=element.tail.strip(), speaker=current_speaker))
+
+        # Start traversal from root
         for child in root:
             _process_element(child, None)
 
