@@ -1,3 +1,4 @@
+from audio.processor import SoxAudioProcessor
 from pathlib import Path
 from config import ProjectConfig
 from core import AudioGenerationError
@@ -70,5 +71,12 @@ async def generate_audio(
                 except Exception as e:
                     raise AudioGenerationError(f"Chunk generation failed: {e}") from e
 
-    # ... (Concatenation logic remains here in generator for now to be moved if needed)
+    if len(chunk_paths) > 1:
+        combined_output_path = ProjectConfig.get_settings().AUDIO_DIR / f"cache_{global_key}.wav"
+        if not combined_output_path.exists():
+            if not SoxAudioProcessor.concatenate_audio([str(p) for p in chunk_paths], str(combined_output_path)):
+                raise AudioGenerationError("Concatenation failed")
+            service.cache.set(global_key, combined_output_path)
+        return combined_output_path
+
     return chunk_paths[0]
