@@ -29,6 +29,7 @@ dependencies = [
 gpu = [
     "torch>=2.0.0",
     "torchaudio>=2.0.0",
+    "flash-attn>=2.0.0",
 ]
 
 [build-system]
