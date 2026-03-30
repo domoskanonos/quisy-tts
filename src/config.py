@@ -27,6 +27,7 @@ class ProjectSettings(BaseSettings):
         "Qwen/Qwen3-TTS-12Hz-1.7B-Base,Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign,Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
     )
     TTS_MODEL_SIZE: str = "1.7B"
+    MODEL: str = "1.7"
 
     @property
     def MODELS_DIR(self) -> Path:

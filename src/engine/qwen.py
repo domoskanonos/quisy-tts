@@ -29,12 +29,6 @@ QWEN_GENERATION_CONFIG = {
     "max_new_tokens": 2048,
 }
 
-# Model mapping: each generation mode requires a dedicated model
-MODEL_MAP = {
-    "base": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
-    "voice_design": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
-}
-
 # Silence duration between chunks in seconds
 INTER_CHUNK_SILENCE_SECS = 0.15
 
@@ -46,7 +40,25 @@ class QwenTTSBackend:
         """Initialize backend without loading any models."""
         self.settings = settings
         self._models: dict[str, Qwen3TTSModel] = {}
-        self._locks: dict[str, asyncio.Lock] = {mode: asyncio.Lock() for mode in MODEL_MAP}
+
+        # Determine model map based on configured version
+        version = self.settings.MODEL
+        if version == "1.7":
+            self.model_map = {
+                "base": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+                "voice_design": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+                "custom": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+            }
+        elif version == "0.6":
+            self.model_map = {
+                "base": "Qwen/Qwen3-TTS-12Hz-0.6B-Base",
+                "voice_design": "Qwen/Qwen3-TTS-12Hz-0.6B-VoiceDesign",
+                "custom": "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice",
+            }
+        else:
+            raise ValueError(f"Unsupported model version: {version}")
+
+        self._locks: dict[str, asyncio.Lock] = {mode: asyncio.Lock() for mode in self.model_map}
         self._text_splitter = get_text_splitter()
 
     async def ensure_loaded(self, mode: str = "base") -> Qwen3TTSModel:
@@ -58,7 +70,7 @@ class QwenTTSBackend:
 
         lock = self._locks.get(mode)
         if lock is None:
-            raise ValueError(f"Unknown mode: {mode}. Available: {list(MODEL_MAP.keys())}")
+            raise ValueError(f"Unknown mode: {mode}. Available: {list(self.model_map.keys())}")
 
         logger.info(f"Debug: acquiring lock for mode: {mode}")
         async with lock:
@@ -66,7 +78,7 @@ class QwenTTSBackend:
             if mode in self._models:
                 return self._models[mode]
 
-            model_name = MODEL_MAP[mode]
+            model_name = self.model_map[mode]
             logger.info(f"Loading Qwen3-TTS model for mode '{mode}': {model_name}...")
             start_time = time.time()
 
