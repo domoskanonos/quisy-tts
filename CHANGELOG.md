@@ -1,6 +1,9 @@
 # CHANGELOG
 
 
+## v0.18.0 (2026-03-30)
+
+
 ## v0.17.1 (2026-03-30)
 
 ### Bug Fixes
@@ -15,6 +18,11 @@
 
 - Generate reference audio on-demand only (remove startup background task)
   ([`d450d51`](https://github.com/domoskanonos/quisy-tts/commit/d450d51c94b8643b24b9a59793da0aea80cda220))
+
+### Features
+
+- Add flash attention
+  ([`c35dbd3`](https://github.com/domoskanonos/quisy-tts/commit/c35dbd3445a46fbb696d52ae66d234274c04efbe))
 
 ### Refactoring
 
