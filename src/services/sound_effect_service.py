@@ -31,7 +31,9 @@ class SoundEffectService:
             self.model_id, language_model=lang_model, torch_dtype=torch.float16
         )
 
-        self.pipe.to("cuda" if torch.cuda.is_available() else "cpu")
+        # self.pipe.to("cuda" if torch.cuda.is_available() else "cpu")
+        if self.pipe is not None:
+            self.pipe.to("cuda" if torch.cuda.is_available() else "cpu")
         print("Model loaded successfully.")
 
     async def generate(self, prompt: str, duration: float = 5.0) -> Path:
@@ -45,19 +47,23 @@ class SoundEffectService:
             if self.pipe is None:
                 raise RuntimeError("Model pipeline is not loaded.")
             print(f"Generating audio with duration: {duration}s")
+            # AudioLDM2Pipeline.call() returns an object, which we need to access
             output = self.pipe(prompt, num_inference_steps=50, guidance_scale=3.5, audio_length_in_s=duration)
-            # AudioLDM2Pipeline may return a tuple or dict; handle accordingly
-            if output is None:
-                raise RuntimeError("Inference did not return any audio.")
-            # Try to extract audio from output
-            if isinstance(output, dict) and "audios" in output and len(output["audios"]) > 0:
-                return output["audios"][0]
-            elif isinstance(output, (tuple, list)) and len(output) > 0:
+
+            # The output can be a dict, or an object with an 'audios' attribute.
+            if isinstance(output, dict):
+                audios = output.get("audios")
+            elif hasattr(output, "audios"):
+                audios = getattr(output, "audios")
+            elif isinstance(output, (list, tuple)) and len(output) > 0:
                 return output[0]
-            elif hasattr(output, "audios") and len(output.audios) > 0:
-                return output.audios[0]
             else:
-                raise RuntimeError("Inference did not return any audio.")
+                audios = None
+
+            if audios is not None and len(audios) > 0:
+                return audios[0]
+
+            raise RuntimeError("Inference did not return any audio.")
 
         audio = await asyncio.to_thread(_run_inference)
 
