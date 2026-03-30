@@ -9,7 +9,8 @@ ENV PYTHONUNBUFFERED=1 \
     UV_COMPILE_BYTECODE=1 \
     UV_PYTHON_DOWNLOADS=never \
     UV_PYTHON=python3.12 \
-    UV_NO_CACHE=1
+    UV_NO_CACHE=1 \
+    TORCH_CUDA_ARCH_LIST="8.6"
 
 # Install minimal build dependencies and Python 3.12
 RUN apt-get update && apt-get install -y --no-install-recommends \
