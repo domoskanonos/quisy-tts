@@ -20,6 +20,10 @@ async def generate_audio(
     skip_integrity_check: bool = False,
 ) -> Path:
     """Generate audio from text with caching and smart splitting."""
+    voice_or_speaker = reference_audio or speaker or "default"
+    service.logger.info(f"Generating with voice: {voice_or_speaker}")
+    service.logger.info(f"Text: {text}")
+
     resolved = resolve_language(language)
     final_instruct = instruct
 
@@ -29,6 +33,14 @@ async def generate_audio(
         if voice:
             ref_text = voice.get("example_text")
             await service.voice_audio_integrity.ensure_audio(reference_audio)
+
+    # Validate that instruction text is provided when reference audio (voice cloning) is used
+    if reference_audio and not instruct:
+        raise AudioGenerationError("Instruction text is required when using reference audio for voice cloning.")
+
+    # Log voice cloning attempt
+    if reference_audio and instruct:
+        service.logger.info(f"Voice cloning with instruct text and voice: ID={reference_audio}, Instruct='{instruct}'")
 
     params = TTSParams(
         language=resolved,

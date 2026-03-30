@@ -44,7 +44,6 @@ async def generate_from_ssml(service, ssml_content: str, base_params) -> Path:
                 raise
             service.logger.info(f"Debug: SSML integrity check finished for {voice['voice_id']}")
 
-            service.logger.info(f"Debug: SSML generating audio for {task.speaker}")
             chunk_path = await service.generate_audio(
                 task.text,
                 resolved_lang,
@@ -53,6 +52,7 @@ async def generate_from_ssml(service, ssml_content: str, base_params) -> Path:
                 reference_audio=voice["voice_id"],
                 ref_text=voice.get("example_text"),
                 instruct=params.instruct,
+                speaker=voice["voice_id"],
             )
             service.logger.info(f"Debug: SSML audio generated at {chunk_path}")
 

@@ -30,7 +30,7 @@ LANGUAGE_TO_SPACY_MODEL: dict[str, str] = {
 # Default max characters per chunk.
 # ~300 chars ≈ 2-3 German sentences — enough context for natural prosody,
 # short enough to prevent the model from speeding up.
-DEFAULT_MAX_CHUNK_CHARS = 300
+DEFAULT_MAX_CHUNK_CHARS = 500
 
 
 class TextSplitterService:
