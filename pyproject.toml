@@ -23,13 +23,13 @@ dependencies = [
     "spacy>=3.7.0",
     "diffusers>=0.25.0",
     "fastmcp>=2.1.0",
+    "flash-attn>=2.0.0; sys_platform != 'win32'",
 ]
 
 [project.optional-dependencies]
 gpu = [
     "torch>=2.0.0",
     "torchaudio>=2.0.0",
-    "flash-attn>=2.0.0",
 ]
 
 [build-system]
@@ -73,7 +73,6 @@ upload_to_pypi = false
 
 [tool.uv]
 override-dependencies = ["numba>=0.59.0", "llvmlite>=0.42.0", "librosa>=0.10.0"]
-extra-build-dependencies = { flash-attn = ["torch"] }
 
 [[tool.uv.index]]
 name = "pytorch-cu128"
