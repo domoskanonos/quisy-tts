@@ -1,6 +1,9 @@
 # CHANGELOG
 
 
+## v0.21.0 (2026-03-30)
+
+
 ## v0.20.1 (2026-03-30)
 
 ### Bug Fixes
@@ -15,6 +18,11 @@
 
 - Update model version to 1.7 and bump package version to 0.20.0
   ([`10c8aa2`](https://github.com/domoskanonos/quisy-tts/commit/10c8aa2c17dd9dd9092f4077520bec8dc0b86b3f))
+
+### Features
+
+- Modified
+  ([`1ec0cb3`](https://github.com/domoskanonos/quisy-tts/commit/1ec0cb360329810cbbcd23f6496b114e6eba3bba))
 
 ### Refactoring
 
