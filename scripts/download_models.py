@@ -28,7 +28,7 @@ def download_model(model_id: str, models_dir: Path) -> None:
 def main() -> None:
     """Main downloader loop."""
     settings = ProjectConfig.get_settings()
-    models_to_download = [m.strip() for m in settings.DOWNLOAD_MODELS.replace("\n", "").split(",") if m.strip()]
+    models_to_download = settings.MODELS_TO_DOWNLOAD
     models_dir = settings.MODELS_DIR.resolve()
     models_dir.mkdir(parents=True, exist_ok=True)
 

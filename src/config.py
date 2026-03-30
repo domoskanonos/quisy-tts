@@ -23,11 +23,26 @@ class ProjectSettings(BaseSettings):
     BASE_DATA_DIR: Path = BASE_DIR / "data"
 
     # TTS Settings
-    DOWNLOAD_MODELS: str = (
-        "Qwen/Qwen3-TTS-12Hz-1.7B-Base,Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign,Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
-    )
     TTS_MODEL_SIZE: str = "1.7B"
     MODEL: str = "1.7"
+
+    @property
+    def MODELS_TO_DOWNLOAD(self) -> list[str]:
+        """Returns the list of model IDs to download based on the configured model version."""
+        if self.MODEL == "1.7":
+            return [
+                "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+                "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+                "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+            ]
+        elif self.MODEL == "0.6":
+            return [
+                "Qwen/Qwen3-TTS-12Hz-0.6B-Base",
+                "Qwen/Qwen3-TTS-12Hz-0.6B-VoiceDesign",
+                "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice",
+            ]
+        else:
+            raise ValueError(f"Unsupported model version: {self.MODEL}")
 
     @property
     def MODELS_DIR(self) -> Path:
@@ -80,9 +95,7 @@ class _RequiredEnv:
     error message to avoid silent misconfiguration.
     """
 
-    VARS = [
-        "DOWNLOAD_MODELS",
-    ]
+    VARS = []
 
 
 class ProjectConfig:
