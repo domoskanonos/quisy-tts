@@ -23,8 +23,16 @@ class ProjectSettings(BaseSettings):
     BASE_DATA_DIR: Path = BASE_DIR / "data"
 
     # TTS Settings
-    TTS_MODEL_SIZE: str = "1.7B"
     MODEL: str = "1.7"
+
+    @property
+    def DEFAULT_MODEL_SIZE(self) -> str:
+        """Returns the model size (e.g., '1.7B') based on the configured model version."""
+        if self.MODEL == "1.7":
+            return "1.7B"
+        elif self.MODEL == "0.6":
+            return "0.6B"
+        raise ValueError(f"Unsupported model version: {self.MODEL}")
 
     @property
     def MODELS_TO_DOWNLOAD(self) -> list[str]:

@@ -36,7 +36,7 @@ async def generate_audio(
         text=request.text,
         language=request.language,
         mode="base",
-        model_size=settings.TTS_MODEL_SIZE,
+        model_size=settings.DEFAULT_MODEL_SIZE,
         reference_audio=request.voice_id,
     )
     background_tasks.add_task(cleanup.cleanup_old_files, settings.AUDIO_DIR, 24)
@@ -58,7 +58,7 @@ async def generate_ssml(request: Request):
         # Base parameters for the generation. The SSML must include speaker
         # elements with explicit voice IDs. Language is always provided via
         # API calls or SSML speakers; do not hardcode a language here.
-        base_params = TTSParams(mode="custom_voice", model_size=settings.TTS_MODEL_SIZE)
+        base_params = TTSParams(mode="custom_voice", model_size=settings.DEFAULT_MODEL_SIZE)
 
         result_path = await tts_service.generate_from_ssml(ssml_content.decode("utf-8"), base_params)
 

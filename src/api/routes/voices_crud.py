@@ -62,7 +62,7 @@ async def create_voice(
             text=data.text,
             language=data.language,
             mode="voice_design",
-            model_size=settings.TTS_MODEL_SIZE,
+            model_size=settings.DEFAULT_MODEL_SIZE,
             instruct=data.instruct,
         )
         # 3. Associate audio with the new voice
