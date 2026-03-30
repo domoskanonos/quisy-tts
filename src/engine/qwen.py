@@ -113,6 +113,52 @@ class QwenTextToSpeech(TTSEngine):
         model = await self.ensure_loaded(params.mode)
         return await self._generate_single(model, text, params)
 
+    async def _generate_single(self, model: Qwen3TTSModel, text: str, params: TTSParams) -> tuple[Any, int]:
+        """Generate audio for a single text chunk."""
+        gen_kwargs = {
+            "max_new_tokens": QWEN_GENERATION_CONFIG["max_new_tokens"],
+            "temperature": QWEN_GENERATION_CONFIG["temperature"],
+            "top_p": QWEN_GENERATION_CONFIG["top_p"],
+            "top_k": QWEN_GENERATION_CONFIG["top_k"],
+            "repetition_penalty": QWEN_GENERATION_CONFIG["repetition_penalty"],
+        }
+
+        if not params.language:
+            raise ValueError("language must be provided in TTSParams for generation")
+
+        resolved_lang = getattr(params, "resolved_language", None) or resolve_language(params.language)
+
+        loop = asyncio.get_running_loop()
+        wavs, sr = await loop.run_in_executor(
+            None,
+            lambda: self._generate_sync(model, text, params, resolved_lang, gen_kwargs),
+        )
+
+        import torch
+
+        audio_tensor = torch.from_numpy(wavs[0]).float().unsqueeze(0)
+        return audio_tensor, sr
+
+    def _generate_sync(
+        self, model: Qwen3TTSModel, text: str, params: TTSParams, resolved_lang: str, gen_kwargs: dict
+    ) -> tuple[list, int]:
+        """Synchronous generation logic."""
+        if params.mode == "voice_design":
+            return model.generate_voice_design(
+                text=text, language=resolved_lang, instruct=params.instruct or "", **gen_kwargs
+            )
+
+        # Base/Custom mode = voice clone
+        ref_audio_path = self._resolve_ref_audio(params)
+        if not ref_audio_path:
+            from core.exceptions import ReferenceAudioNotFoundError
+
+            raise ReferenceAudioNotFoundError("No reference audio found.")
+
+        return model.generate_voice_clone(
+            text=text, language=resolved_lang, ref_audio=ref_audio_path, ref_text=params.ref_text or "", **gen_kwargs
+        )
+
     async def generate_and_save(self, text: str, output_path: str, params: Any = None) -> str:
         """Generates audio and saves it to a file (async)."""
         if params is None:
