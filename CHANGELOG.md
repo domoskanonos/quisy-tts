@@ -1,7 +1,15 @@
 # CHANGELOG
 
 
+## v0.19.0 (2026-03-30)
+
+
 ## v0.18.0 (2026-03-30)
+
+### Features
+
+- Add extra build dependencies for flash attention
+  ([`061b370`](https://github.com/domoskanonos/quisy-tts/commit/061b370a8a98bc0d21c155c31a23fc2de878daaa))
 
 
 ## v0.17.1 (2026-03-30)
