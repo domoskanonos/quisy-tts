@@ -23,7 +23,6 @@ dependencies = [
     "spacy>=3.7.0",
     "diffusers>=0.25.0",
     "fastmcp>=2.1.0",
-    "flash-attn>=2.0.0; sys_platform != 'win32'",
 ]
 
 [project.optional-dependencies]
