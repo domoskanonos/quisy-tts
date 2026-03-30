@@ -1,9 +1,33 @@
 # CHANGELOG
 
 
+## v0.20.1 (2026-03-30)
+
+### Bug Fixes
+
+- Remove --no-optional flag from uv sync command in pipeline
+  ([`3efd196`](https://github.com/domoskanonos/quisy-tts/commit/3efd196d3fd130e7b8a0104e9b1feb70a62700ee))
+
+- Update Dockerfile to include TORCH_CUDA_ARCH_LIST and modify uv sync command in pipeline
+  ([`4a45fc5`](https://github.com/domoskanonos/quisy-tts/commit/4a45fc597939146817da8a4bd32902ecd4113eee))
+
+### Chores
+
+- Update model version to 1.7 and bump package version to 0.20.0
+  ([`10c8aa2`](https://github.com/domoskanonos/quisy-tts/commit/10c8aa2c17dd9dd9092f4077520bec8dc0b86b3f))
+
+### Refactoring
+
+- Reduce default max chunk size from 500 to 200 for improved text splitting
+  ([`503a2fd`](https://github.com/domoskanonos/quisy-tts/commit/503a2fd86a0fa2838ea413b92b8dbd4941814633))
+
+
 ## v0.20.0 (2026-03-30)
 
 ### Refactoring
+
+- Increase default max chunk size for text splitting and enhance logging in audio generation
+  ([`b63765b`](https://github.com/domoskanonos/quisy-tts/commit/b63765b474b61eded5b933e3103ee38d57c105f9))
 
 - Remove unused imports and update package version to 0.19.0
   ([`0f97a0a`](https://github.com/domoskanonos/quisy-tts/commit/0f97a0ae016f7e3751e673ecde1fb8fdbbf1880e))
