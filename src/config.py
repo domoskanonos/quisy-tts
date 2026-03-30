@@ -46,7 +46,7 @@ class ProjectSettings(BaseSettings):
         elif self.MODEL == "0.6":
             return [
                 "Qwen/Qwen3-TTS-12Hz-0.6B-Base",
-                "Qwen/Qwen3-TTS-12Hz-0.6B-VoiceDesign",
+                "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
                 "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice",
             ]
         else:
