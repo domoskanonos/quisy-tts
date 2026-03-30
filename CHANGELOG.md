@@ -1,6 +1,27 @@
 # CHANGELOG
 
 
+## v0.17.1 (2026-03-30)
+
+### Bug Fixes
+
+- Ensure model is moved to GPU only if loaded and handle audio output correctly
+  ([`32e860d`](https://github.com/domoskanonos/quisy-tts/commit/32e860da37e26522d5e50722cf9820f158e33f6a))
+
+### Chores
+
+- Clean up code structure and remove unused code blocks
+  ([`db183ce`](https://github.com/domoskanonos/quisy-tts/commit/db183ceb52b1eec4723753eea4ff7748cd549c8d))
+
+- Generate reference audio on-demand only (remove startup background task)
+  ([`d450d51`](https://github.com/domoskanonos/quisy-tts/commit/d450d51c94b8643b24b9a59793da0aea80cda220))
+
+### Refactoring
+
+- Clean up imports and remove unused test file
+  ([`6828b2f`](https://github.com/domoskanonos/quisy-tts/commit/6828b2f27385bcd11f5a1f6fcfc96cc8cc3554e6))
+
+
 ## v0.17.0 (2026-03-27)
 
 
