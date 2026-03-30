@@ -1,9 +1,7 @@
-import pytest
 from services.text_splitter import get_text_splitter
 from services.cache_service import FileCacheService
 from schemas import TTSParams
 from pathlib import Path
-import numpy as np
 
 
 def test_spacy_splitting():

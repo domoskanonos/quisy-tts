@@ -3,7 +3,6 @@ import sys
 sys.path.append("C:/_dev/repositories/quisy-tts/src")
 
 from audio.processor import SoxAudioProcessor
-from pathlib import Path
 
 
 # List of files in generation order (oldest to newest)
