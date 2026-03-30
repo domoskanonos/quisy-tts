@@ -1,7 +1,43 @@
 # CHANGELOG
 
 
+## v0.20.0 (2026-03-30)
+
+### Refactoring
+
+- Remove unused imports and update package version to 0.19.0
+  ([`0f97a0a`](https://github.com/domoskanonos/quisy-tts/commit/0f97a0ae016f7e3751e673ecde1fb8fdbbf1880e))
+
+
 ## v0.19.0 (2026-03-30)
+
+### Features
+
+- Add model version configuration and update version to 0.18.0
+  ([`af387c2`](https://github.com/domoskanonos/quisy-tts/commit/af387c2a22e0151c1859f5c6797eb021d84b73fe))
+
+### Refactoring
+
+- Clean up SSMLProcessor and enhance speaker handling logic
+  ([`1d18bde`](https://github.com/domoskanonos/quisy-tts/commit/1d18bded1c57e772f068c1e59aa0f48b5d8d3fb4))
+
+- Enhance audio generation logic and add language validation in QwenTextToSpeech
+  ([`cb62caf`](https://github.com/domoskanonos/quisy-tts/commit/cb62caf5f3c53f53f4ee07811f66ca955a7c1473))
+
+- Implement audio concatenation functionality and enhance error handling in generator
+  ([`9d8e1fe`](https://github.com/domoskanonos/quisy-tts/commit/9d8e1fe36ae4a76a348b60f04b1d07b0dd88a6c7))
+
+- Remove hardcoded model download list and implement dynamic model retrieval
+  ([`f32a250`](https://github.com/domoskanonos/quisy-tts/commit/f32a2508d1440a878497750a6c56f4b702f60d00))
+
+- Streamline QwenTextToSpeech class and improve model loading logic
+  ([`0c48163`](https://github.com/domoskanonos/quisy-tts/commit/0c4816355e31794117feb305bd9d9a109fe175e2))
+
+- Update model handling and remove deprecated configurations
+  ([`2dc7939`](https://github.com/domoskanonos/quisy-tts/commit/2dc7939ce763b5d4f003579ff542dc1df27ddf41))
+
+- Update model version in QwenTextToSpeech and enhance error handling during model loading
+  ([`30299a8`](https://github.com/domoskanonos/quisy-tts/commit/30299a8c8660342ed3c667ba54ce77f714e836ca))
 
 
 ## v0.18.0 (2026-03-30)
