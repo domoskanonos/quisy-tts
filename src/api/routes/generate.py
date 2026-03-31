@@ -38,6 +38,7 @@ async def generate_audio(
         mode="base",
         model_size=settings.DEFAULT_MODEL_SIZE,
         reference_audio=request.voice_id,
+        instruct=request.instruct,
     )
     background_tasks.add_task(cleanup.cleanup_old_files, settings.AUDIO_DIR, 24)
     return FileResponse(

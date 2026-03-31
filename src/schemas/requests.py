@@ -26,6 +26,11 @@ class GenerateRequest(BaseModel):
         description="The ID of the voice to use.",
         json_schema_extra={"example": "german_audiobook_male_narrator_01"},
     )
+    instruct: str | None = Field(
+        default=None,
+        description="Optional style instruction for the speaker (e.g. 'happy', 'sad').",
+        json_schema_extra={"example": ("Sprich wie ein professioneller Podcaster mit tiefer, ruhiger Stimme.")},
+    )
 
 
 class CreateVoiceRequest(BaseModel):
