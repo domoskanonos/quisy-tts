@@ -24,7 +24,7 @@ class GenerateRequest(BaseModel):
     voice_id: str = Field(
         ...,
         description="The ID of the voice to use.",
-        json_schema_extra={"example": "default_001"},
+        json_schema_extra={"example": "german_audiobook_male_narrator_01"},
     )
 
 
@@ -73,8 +73,8 @@ class BaseGenerateRequest(BaseModel):
     )
     reference_audio: str = Field(
         ...,
-        description="Voice ID to use as reference (e.g. 'default_001').",
-        json_schema_extra={"example": "default_001"},
+        description="Voice ID to use as reference (e.g. 'german_audiobook_male_narrator_01').",
+        json_schema_extra={"example": "german_audiobook_male_narrator_01"},
     )
 
 
@@ -124,7 +124,7 @@ class CustomVoiceRequest(BaseModel):
     voice_id: str = Field(
         ...,
         description="Predefined voice ID (use /voices search to find).",
-        json_schema_extra={"example": "default_001"},
+        json_schema_extra={"example": "german_audiobook_male_narrator_01"},
     )
     instruct: str | None = Field(
         default=None,

@@ -79,7 +79,7 @@ class ProjectSettings(BaseSettings):
     DEFAULT_LANGUAGE: str = "de"
 
     # When set, this should be a voice `id` existing in the SQLite voices
-    # database (e.g. the seeded ids `default_001`, ...). If provided, the
+    # database (e.g. the seeded ids `german_audiobook_male_narrator_01`, ...). If provided, the
     # engine will prefer the audio file attached to that voice as the default
     # reference for voice cloning. If unset, the system will fall back to
     # selecting the first available `.wav` in `VOICES_DIR`.

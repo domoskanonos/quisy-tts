@@ -20,7 +20,7 @@ logger = ProjectConfig.get_logger()
 
 # Centralized generation config for consistency
 QWEN_GENERATION_CONFIG = {
-    "temperature": 0.8,
+    "temperature": 0.9,
     "top_p": 1.0,
     "top_k": 50,
     "repetition_penalty": 1.05,
