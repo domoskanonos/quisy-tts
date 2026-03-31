@@ -98,7 +98,7 @@ class QwenTextToSpeech(TTSEngine):
         """Synchronous model loading (runs in thread)."""
         import torch
 
-        kwargs: dict[str, Any] = {"device_map": "auto", "attn_implementation": "sdpa"}
+        kwargs: dict[str, Any] = {"device_map": "auto"}
         dtype = getattr(torch, "bfloat16", None)
         if dtype is not None:
             kwargs["dtype"] = dtype
