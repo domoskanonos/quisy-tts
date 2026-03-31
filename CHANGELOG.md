@@ -1,6 +1,15 @@
 # CHANGELOG
 
 
+## v0.22.0 (2026-03-31)
+
+### Features
+
+- Aktualisiere Standard-Stimmen-ID auf 'german_audiobook_male_narrator_01' und erhöhe die Temperatur
+  auf 0.9; passe Beispiele in den Anforderungs-Schemas an; aktualisiere Versionsnummer auf 0.21.0.
+  ([`4f2aff0`](https://github.com/domoskanonos/quisy-tts/commit/4f2aff06e870447e032a2934444fcf927603966e))
+
+
 ## v0.21.0 (2026-03-30)
 
 
