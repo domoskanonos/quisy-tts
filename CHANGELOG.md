@@ -1,7 +1,20 @@
 # CHANGELOG
 
 
+## v0.23.0 (2026-03-31)
+
+
 ## v0.22.1 (2026-03-31)
+
+### Bug Fixes
+
+- Füge 'instruct' Feld zu GenerateRequest hinzu, um Voice-Cloning zu ermöglichen
+  ([`3370ce8`](https://github.com/domoskanonos/quisy-tts/commit/3370ce8ab7ae29384ae8d552a5f838bfc0c2c811))
+
+### Features
+
+- Aktualisiere Versionsnummer auf 0.22.0
+  ([`2f9f093`](https://github.com/domoskanonos/quisy-tts/commit/2f9f09381dc05fc69f24b11c07f23a1fc34e1e9f))
 
 
 ## v0.22.0 (2026-03-31)
