@@ -1,7 +1,15 @@
 # CHANGELOG
 
 
+## v0.22.1 (2026-03-31)
+
+
 ## v0.22.0 (2026-03-31)
+
+### Bug Fixes
+
+- Entferne nicht benötigte 'attn_implementation' aus den Modell-Lade-Argumenten
+  ([`1d1a67c`](https://github.com/domoskanonos/quisy-tts/commit/1d1a67cb6dd8291f155186a9d2abca161b482022))
 
 ### Features
 
