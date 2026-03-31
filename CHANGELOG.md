@@ -1,7 +1,15 @@
 # CHANGELOG
 
 
+## v0.23.1 (2026-03-31)
+
+
 ## v0.23.0 (2026-03-31)
+
+### Bug Fixes
+
+- Aktualisiere CUDA-Version auf 12.4.1 für Builder und Runtime
+  ([`f4a2a6a`](https://github.com/domoskanonos/quisy-tts/commit/f4a2a6aa47369a8a3e4b68068752592a4f004f4f))
 
 
 ## v0.22.1 (2026-03-31)
