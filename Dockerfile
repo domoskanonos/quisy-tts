@@ -1,5 +1,5 @@
 # Stage 1: Backend Builder
-FROM nvidia/cuda:12.1.0-devel-ubuntu22.04 AS builder
+FROM nvidia/cuda:12.4.1-devel-ubuntu22.04 AS builder
 
 # Set environment variables for build
 ENV PYTHONUNBUFFERED=1 \
@@ -52,7 +52,7 @@ RUN .venv/bin/python -m ensurepip --upgrade && \
     .venv/bin/python -m spacy download en_core_web_sm
 
 # Stage 2: Runtime (uses NVIDIA runtime image for GPU inference)
-FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04 AS runtime
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04 AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
