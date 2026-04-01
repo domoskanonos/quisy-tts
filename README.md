@@ -19,8 +19,6 @@ Quisy TTS is a modern, high-performance Text-to-Speech API powered by **Qwen3-TT
   - **WebSocket**: Full-duplex real-time TTS generation.
 - **Optimized for GPU**: Native CUDA support with automatic fallback to CPU.
 - **Modern Stack**: Built with FastAPI, Pydantic Settings, and [uv](https://github.com/astral-sh/uv).
-- **Sox Integration**: High-quality audio post-processing (normalization, equalization).
-
 ---
 
 ## 🛠 Prerequisites
@@ -39,10 +37,6 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 The application performs runtime validations on startup and will fail early if mandatory dependencies are missing. The most important requirements are:
 
 - `qwen-tts` Python package (model runtime adapter). Install with `pip install qwen-tts`.
-- `sox` binary for optional high-quality audio post-processing (normalization, equalization).
-  - **Windows**: `scoop install sox`, `choco install sox`, or download from SourceForge.
-  - **macOS**: `brew install sox`
-  - **Linux**: `sudo apt install sox libsox-fmt-all`
 - CUDA-capable NVIDIA GPU and matching `torch` build when running on `DEVICE=cuda`. The application currently checks `torch.cuda.is_available()` at startup and will raise an error if a CUDA device is required but not available.
 
 If you want to run without GPU in development, set `DEVICE=cpu`, but note that performance and some generation modes may be substantially slower or unsupported depending on available models.

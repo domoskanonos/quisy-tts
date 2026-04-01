@@ -2526,7 +2526,7 @@ wheels = [
 
 [[package]]
 name = "quisy-tts"
-version = "0.22.0"
+version = "0.23.1"
 source = { editable = "." }
 dependencies = [
     { name = "diffusers" },
@@ -2542,7 +2542,6 @@ dependencies = [
     { name = "qwen-tts" },
     { name = "requests" },
     { name = "soundfile" },
-    { name = "sox" },
     { name = "spacy" },
     { name = "uvicorn" },
     { name = "websockets" },
@@ -2581,7 +2580,6 @@ requires-dist = [
     { name = "qwen-tts", specifier = ">=0.1.1" },
     { name = "requests", specifier = ">=2.31.0" },
     { name = "soundfile", specifier = ">=0.12.1" },
-    { name = "sox", specifier = ">=1.0.5" },
     { name = "spacy", specifier = ">=3.7.0" },
     { name = "torch", marker = "extra == 'gpu'", specifier = ">=2.0.0", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torchaudio", marker = "extra == 'gpu'", specifier = ">=2.0.0", index = "https://download.pytorch.org/whl/cu128" },

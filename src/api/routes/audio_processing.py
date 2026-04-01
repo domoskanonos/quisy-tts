@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from schemas.requests import ConcatenateAudioRequest
-from audio.processor import SoxAudioProcessor
+from audio.processor import AudioProcessor
 from config import ProjectConfig
 from core import CleanupService
 from api.dependencies import get_cleanup_service
@@ -87,7 +87,7 @@ async def concatenate_audio(
         else:
             raise HTTPException(status_code=404, detail=f"File {f} not found.")
 
-    if not SoxAudioProcessor.concatenate_audio(input_paths, output_path_str):
+    if not AudioProcessor.concatenate_audio(input_paths, output_path_str):
         raise HTTPException(status_code=500, detail="Concatenation failed.")
 
     # Return URL

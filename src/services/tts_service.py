@@ -12,7 +12,6 @@ from services.voice_audio_integrity import VoiceAudioIntegrityService
 from services.text_splitter import get_text_splitter
 from schemas import TTSParams
 from services.tts import ssml, generator, streamer
-from audio.processor import SoxAudioProcessor
 
 logger = ProjectConfig.get_logger()
 
@@ -21,9 +20,7 @@ class TTSService:
     """Orchestrates TTS generation."""
 
     def __init__(self, engine: TTSEngine, cache: CacheService) -> None:
-        # Check if Sox is available at initialization
-        SoxAudioProcessor.check_availability()
-
+        # Check if engine is available at initialization
         self.engine = engine
         self.cache = cache
         self.text_splitter = get_text_splitter()

@@ -5,7 +5,7 @@ from fastmcp import FastMCP
 from schemas import TTSParams
 from api.dependencies import get_tts_service, get_voice_service
 from config import ProjectConfig
-from audio.processor import SoxAudioProcessor
+from audio.processor import AudioProcessor
 
 # Initialize MCP server
 mcp = FastMCP("QuisyTTS-MCP-Server")
@@ -172,7 +172,7 @@ async def concatenate_audio(audio_files: list[str]) -> str:
     output_filename = f"concat_{uuid.uuid4()}.wav"
     output_path = os.path.join(settings.AUDIO_DIR, output_filename)
 
-    if not SoxAudioProcessor.concatenate_audio(input_paths, output_path):
+    if not AudioProcessor.concatenate_audio(input_paths, output_path):
         return "Error: Concatenation failed."
 
     return get_audio_url(output_path)

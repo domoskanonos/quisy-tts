@@ -2,7 +2,7 @@ import sys
 
 sys.path.append("C:/_dev/repositories/quisy-tts/src")
 
-from audio.processor import SoxAudioProcessor
+from audio.processor import AudioProcessor
 
 
 # List of files in generation order (oldest to newest)
@@ -24,7 +24,7 @@ file_list = [
 
 output_path = "data/audio/concatenated_result.wav"
 
-if SoxAudioProcessor.concatenate_audio(file_list, output_path):
+if AudioProcessor.concatenate_audio(file_list, output_path):
     print(f"Successfully concatenated to {output_path}")
 else:
     print("Concatenation failed")

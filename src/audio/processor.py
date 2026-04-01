@@ -1,85 +1,56 @@
-import subprocess
-import time
 import os
-import shutil
+import time
+from typing import Any
 
+import numpy as np
 import soundfile as sf
-from typing import Any, Optional
+
 from config import ProjectConfig
 
 logger = ProjectConfig.get_logger()
 
 
-class SoxNotFoundError(RuntimeError):
-    """Raised when the Sox binary is not found on the system."""
-
-    pass
-
-
-class SoxAudioProcessor:
-    """Handles audio post-processing using Sox."""
-
-    _is_available: Optional[bool] = None
-
-    @classmethod
-    def check_availability(cls) -> None:
-        """Checks if Sox is installed and in the PATH. Raises SoxNotFoundError if not."""
-        if cls._is_available is True:
-            return
-
-        if shutil.which("sox") is None:
-            cls._is_available = False
-            msg = (
-                "Sox binary not found. This application requires Sox for high-quality audio processing.\n"
-                "Please install Sox via: 'choco install sox' (Windows), 'brew install sox' (macOS) or 'apt install sox' (Linux)."
-            )
-            logger.error(msg)
-            raise SoxNotFoundError(msg)
-
-        cls._is_available = True
-
-    @staticmethod
-    def apply_effects(input_path: str, output_path: str) -> bool:
-        """Applies normalization and subtle effects to the audio using Sox."""
-        SoxAudioProcessor.check_availability()
-        try:
-            command = [
-                "sox",
-                input_path,
-                output_path,
-                "norm",
-                "-3",
-                "treble",
-                "1",
-                "channels",
-                "1",
-            ]
-            logger.info(f"Applying Sox post-processing: {' '.join(command)}")
-            start_time = time.time()
-            subprocess.run(command, check=True, capture_output=True)
-            logger.debug(f"Sox processing took {time.time() - start_time:.4f}s")
-            return True
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Sox processing failed: {e.stderr.decode()}")
-            return False
-        except Exception as e:
-            logger.error(f"Error during Sox processing: {e}")
-            return False
+class AudioProcessor:
+    """Handles audio post-processing using native Python tools (soundfile/numpy)."""
 
     @staticmethod
     def concatenate_audio(input_paths: list[str], output_path: str) -> bool:
-        """Concatenates multiple audio files using Sox."""
-        SoxAudioProcessor.check_availability()
+        """Concatenates multiple audio files using soundfile."""
         try:
-            command = ["sox"] + input_paths + [output_path]
-            logger.info(f"Concatenating audio with Sox: {' '.join(command)}")
-            subprocess.run(command, check=True, capture_output=True)
+            if not input_paths:
+                logger.error("No input paths provided for concatenation.")
+                return False
+
+            logger.info(f"Concatenating {len(input_paths)} audio files to {output_path}")
+            start_time = time.time()
+
+            # Read all files and collect data and samplerates
+            data_list = []
+            samplerates = []
+
+            for path in input_paths:
+                data, sr = sf.read(path)
+                data_list.append(data)
+                samplerates.append(sr)
+
+            if not data_list:
+                return False
+
+            # Ensure all files have the same samplerate (using the first one as reference)
+            target_sr = samplerates[0]
+            if any(sr != target_sr for sr in samplerates):
+                logger.warning("Varying samplerates detected during concatenation. Using first file's rate.")
+
+            # Concatenate arrays along the first axis
+            combined_data = np.concatenate(data_list, axis=0)
+
+            # Write the result
+            sf.write(output_path, combined_data, target_sr)
+
+            logger.debug(f"Concatenation took {time.time() - start_time:.4f}s")
             return True
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Sox concatenation failed: {e.stderr.decode()}")
-            return False
         except Exception as e:
-            logger.error(f"Error during Sox concatenation: {e}")
+            logger.error(f"Error during audio concatenation: {e}")
             return False
 
 
@@ -91,8 +62,6 @@ class AudioUtils:
         """Saves a waveform tensor to a file."""
         # Accept both numpy arrays and torch tensors
         data = waveform
-        # Lazy check for torch if it was intended to be used,
-        # but in this context we just handle the waveform data.
         if hasattr(waveform, "cpu"):
             data = waveform.squeeze().cpu().numpy()
         elif hasattr(waveform, "squeeze") and not isinstance(waveform, (bytes, str)):
@@ -103,6 +72,7 @@ class AudioUtils:
 
         logger.info(f"Saving waveform with shape: {data.shape if hasattr(data, 'shape') else 'unknown'}")
         sf.write(path, data, sr)
+
         # Verify the file was written successfully
         if os.path.exists(path) and os.path.getsize(path) == 0:
             logger.error(f"Saved audio file {path} is empty (0 bytes).")
