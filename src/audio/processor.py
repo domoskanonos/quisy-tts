@@ -1,30 +1,47 @@
 import subprocess
 import time
+import os
+import shutil
 
 import soundfile as sf
 from typing import Any, Optional
 from config import ProjectConfig
 
-# Import torch lazily in functions that need it to allow running tests without
-# an installed torch wheel in lightweight environments
-torch: Optional[Any] = None
-try:
-    import torch as _torch
-
-    torch = _torch
-except ImportError:
-    pass
-
-
 logger = ProjectConfig.get_logger()
+
+
+class SoxNotFoundError(RuntimeError):
+    """Raised when the Sox binary is not found on the system."""
+
+    pass
 
 
 class SoxAudioProcessor:
     """Handles audio post-processing using Sox."""
 
+    _is_available: Optional[bool] = None
+
+    @classmethod
+    def check_availability(cls) -> None:
+        """Checks if Sox is installed and in the PATH. Raises SoxNotFoundError if not."""
+        if cls._is_available is True:
+            return
+
+        if shutil.which("sox") is None:
+            cls._is_available = False
+            msg = (
+                "Sox binary not found. This application requires Sox for high-quality audio processing.\n"
+                "Please install Sox via: 'choco install sox' (Windows), 'brew install sox' (macOS) or 'apt install sox' (Linux)."
+            )
+            logger.error(msg)
+            raise SoxNotFoundError(msg)
+
+        cls._is_available = True
+
     @staticmethod
     def apply_effects(input_path: str, output_path: str) -> bool:
         """Applies normalization and subtle effects to the audio using Sox."""
+        SoxAudioProcessor.check_availability()
         try:
             command = [
                 "sox",
@@ -45,9 +62,6 @@ class SoxAudioProcessor:
         except subprocess.CalledProcessError as e:
             logger.error(f"Sox processing failed: {e.stderr.decode()}")
             return False
-        except FileNotFoundError:
-            logger.error("Sox binary not found. Please ensure 'sox' is installed and in PATH.")
-            return False
         except Exception as e:
             logger.error(f"Error during Sox processing: {e}")
             return False
@@ -55,6 +69,7 @@ class SoxAudioProcessor:
     @staticmethod
     def concatenate_audio(input_paths: list[str], output_path: str) -> bool:
         """Concatenates multiple audio files using Sox."""
+        SoxAudioProcessor.check_availability()
         try:
             command = ["sox"] + input_paths + [output_path]
             logger.info(f"Concatenating audio with Sox: {' '.join(command)}")
@@ -62,9 +77,6 @@ class SoxAudioProcessor:
             return True
         except subprocess.CalledProcessError as e:
             logger.error(f"Sox concatenation failed: {e.stderr.decode()}")
-            return False
-        except FileNotFoundError:
-            logger.error("Sox binary not found. Please ensure 'sox' is installed.")
             return False
         except Exception as e:
             logger.error(f"Error during Sox concatenation: {e}")
@@ -79,7 +91,9 @@ class AudioUtils:
         """Saves a waveform tensor to a file."""
         # Accept both numpy arrays and torch tensors
         data = waveform
-        if torch is not None and hasattr(waveform, "cpu"):
+        # Lazy check for torch if it was intended to be used,
+        # but in this context we just handle the waveform data.
+        if hasattr(waveform, "cpu"):
             data = waveform.squeeze().cpu().numpy()
         elif hasattr(waveform, "squeeze") and not isinstance(waveform, (bytes, str)):
             try:
@@ -90,8 +104,6 @@ class AudioUtils:
         logger.info(f"Saving waveform with shape: {data.shape if hasattr(data, 'shape') else 'unknown'}")
         sf.write(path, data, sr)
         # Verify the file was written successfully
-        import os
-
         if os.path.exists(path) and os.path.getsize(path) == 0:
             logger.error(f"Saved audio file {path} is empty (0 bytes).")
             raise IOError(f"Audio file {path} is empty.")
