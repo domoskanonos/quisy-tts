@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v0.24.0 (2026-04-01)
+
+### Features
+
+- Enforce Sox requirement for audio processing
+  ([`18c37ee`](https://github.com/domoskanonos/quisy-tts/commit/18c37ee19df38bcefdb00736868bf5fe745ba2ac))
+
+### Refactoring
+
+- Replace SoxAudioProcessor with AudioProcessor for audio handling and remove Sox dependencies
+  ([`5ff9cc0`](https://github.com/domoskanonos/quisy-tts/commit/5ff9cc02a6b7193c7b46d22eb8b40221b95125a8))
+
+
 ## v0.23.1 (2026-03-31)
 
 
