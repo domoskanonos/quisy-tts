@@ -1,6 +1,23 @@
 # CHANGELOG
 
 
+## v0.25.0 (2026-04-03)
+
+### Features
+
+- Ensure reference audio exists before voice generation in generate_voice function
+  ([`f51b8d7`](https://github.com/domoskanonos/quisy-tts/commit/f51b8d7789c2365ea644eb50c0fdc600b1430eb1))
+
+- Update SSML endpoint to accept body content and improve audio generation logic; bump version to
+  0.24.0
+  ([`4c39561`](https://github.com/domoskanonos/quisy-tts/commit/4c3956193e24619ee55afcc5569d073bc96e405e))
+
+### Refactoring
+
+- Update MCP server initialization and enhance docstrings for voice-related functions
+  ([`26edf95`](https://github.com/domoskanonos/quisy-tts/commit/26edf957e106110e3268313c38fa2061b3002676))
+
+
 ## v0.24.0 (2026-04-01)
 
 ### Features
