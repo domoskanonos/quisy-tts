@@ -7,7 +7,6 @@ from config import ProjectConfig
 from core import CacheService, TTSEngine
 from services.voice_service import VoiceService
 from services.ssml_processor import SSMLProcessor
-from services.sound_effect_service import SoundEffectService
 from services.voice_audio_integrity import VoiceAudioIntegrityService
 from services.text_splitter import get_text_splitter
 from schemas import TTSParams
@@ -26,7 +25,6 @@ class TTSService:
         self.text_splitter = get_text_splitter()
         self.voice_service = VoiceService()
         self.ssml_processor = SSMLProcessor(self.voice_service)
-        self.sfx_service = SoundEffectService(ProjectConfig.get_settings().AUDIO_DIR)
         self.voice_audio_integrity = VoiceAudioIntegrityService(self.voice_service, engine, cache)
         self._locks: dict[str, asyncio.Lock] = {}
         self.logger = logger

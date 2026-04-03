@@ -14,21 +14,7 @@ class BreakTask(BaseModel):
     duration_ms: int
 
 
-class SoundEffectTask(BaseModel):
-    description: str
-    duration_s: float = 5.0
-
-
-Task = Union[TextTask, BreakTask, SoundEffectTask]
-
-STRENGTH_TO_MS = {
-    "none": 0,
-    "x-weak": 50,
-    "weak": 100,
-    "medium": 250,
-    "strong": 500,
-    "x-strong": 750,
-}
+Task = Union[TextTask, BreakTask]
 
 
 class SSMLProcessor:
@@ -36,13 +22,6 @@ class SSMLProcessor:
         self.voice_service = voice_service
 
     def parse(self, xml_string: str) -> List[Task]:
-        def _sfx_sub(match):
-            description = match.group(1)
-            duration = match.group(2) if match.group(2) else "5.0"
-            return f'<sfx duration="{duration}">{description}</sfx>'
-
-        xml_string = re.sub(r"\[(.*?)(?:\{(\d+)s\})?\]", _sfx_sub, xml_string)
-
         try:
             root = ElementTree.fromstring(xml_string)
         except ElementTree.ParseError as e:
@@ -78,13 +57,8 @@ class SSMLProcessor:
                 for child in element:
                     _process_element(child, current_speaker)
 
-            elif element.tag == "sfx":
-                duration = float(element.get("duration", 5.0))
-                tasks.append(SoundEffectTask(description=element.text or "", duration_s=duration))
-
             elif element.tag == "break":
                 time_val = element.get("time")
-                strength = element.get("strength")
                 if time_val:
                     if not re.match(r"^\d+(\.\d+)?(ms|s)$", time_val):
                         raise ValueError(f"Invalid break time format: {time_val}")
@@ -92,12 +66,8 @@ class SSMLProcessor:
                     unit = re.findall(r"ms|s", time_val)[0]
                     duration_ms = int(value * 1000 if unit == "s" else value)
                     tasks.append(BreakTask(duration_ms=duration_ms))
-                elif strength:
-                    if strength not in STRENGTH_TO_MS:
-                        raise ValueError(f"Invalid break strength: {strength}")
-                    tasks.append(BreakTask(duration_ms=STRENGTH_TO_MS[strength]))
                 else:
-                    raise ValueError("Break tag missing 'time' or 'strength' attribute")
+                    raise ValueError("Break tag missing 'time' attribute")
             else:
                 raise ValueError(f"Unsupported tag: {element.tag}")
 
