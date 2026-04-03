@@ -96,6 +96,11 @@ async def generate_voice(text: str, voice_id: str, language: str = "german", ins
     if not voice:
         return f"Error: Voice '{voice_id}' not found."
 
+    # Ensure reference audio exists before generation
+    print(f"DEBUG: Ensuring audio for voice {voice_id}")
+    await tts_service.voice_audio_integrity.ensure_audio(voice_id, tts_service.generate_audio)
+    print(f"DEBUG: Audio ensured for voice {voice_id}")
+
     result_path = await tts_service.generate_audio(
         text=text,
         language=language,
