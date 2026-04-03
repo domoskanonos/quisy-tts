@@ -1,6 +1,6 @@
 """Generation routes for voice management."""
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException
 from fastapi.responses import FileResponse
 from api.dependencies import get_tts_service, get_cleanup_service, get_voice_service
 from config import ProjectConfig
@@ -50,9 +50,16 @@ async def generate_audio(
 
 
 @router.post("/ssml")
-async def generate_ssml(request: Request):
+async def generate_ssml(
+    ssml: str = Body(
+        ...,
+        description="The SSML content to generate audio from.",
+        examples=[
+            '<speak><speaker name="german_audiobook_male_narrator_01">Hallo, dies ist ein Test mit SSML.</speaker></speak>'
+        ],
+    ),
+):
     """Generate audio from SSML."""
-    ssml_content = await request.body()
     tts_service = get_tts_service()
 
     try:
@@ -61,7 +68,7 @@ async def generate_ssml(request: Request):
         # API calls or SSML speakers; do not hardcode a language here.
         base_params = TTSParams(mode="custom_voice", model_size=settings.DEFAULT_MODEL_SIZE)
 
-        result_path = await tts_service.generate_from_ssml(ssml_content.decode("utf-8"), base_params)
+        result_path = await tts_service.generate_from_ssml(ssml, base_params)
 
         # Return URL
         filename = os.path.basename(result_path)
