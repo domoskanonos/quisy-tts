@@ -145,7 +145,7 @@ async def generate_ssml(ssml_content: str) -> str:
     Rules:
     - Root element must be `<speak>`.
     - Spoken text must be wrapped in `<speaker name="VoiceID">...</speaker>`.
-    - `<break>` and `<sfx>` tags are supported.
+    - `<break>` tags are supported with `time` (e.g., "250ms", "1.5s") or `strength` ("none", "x-weak", "weak", "medium", "strong", "x-strong") attributes.
     - Speaker language is derived from voice settings.
 
     Returns the public URL to the generated audio file.
