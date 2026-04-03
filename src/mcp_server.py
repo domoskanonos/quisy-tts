@@ -8,7 +8,7 @@ from config import ProjectConfig
 from audio.processor import AudioProcessor
 
 # Initialize MCP server
-mcp = FastMCP("QuisyTTS-MCP-Server")
+mcp = FastMCP("QuisyTTS-Voice-Engine")
 
 # Services
 tts_service = get_tts_service()
@@ -27,7 +27,16 @@ def get_audio_url(file_path: str) -> str:
 
 @mcp.tool
 async def search_voices(q: str | None = None, terms: str | None = None, limit: int = 20, offset: int = 0) -> str:
-    """Search voices by free text query and optional comma-separated terms."""
+    """
+    Search for available voices based on a free text query and optional comma-separated terms.
+
+    - q: Optional free text search query.
+    - terms: Optional comma-separated search terms for filtering (e.g., 'male,narrator,calm').
+    - limit: Maximum number of results to return (default 20).
+    - offset: Pagination offset (default 0).
+
+    Returns a string representation of the matching voices.
+    """
     term_list = [t.strip() for t in terms.split(",")] if terms else []
     results = voice_service.search(term_list, q, limit=limit, offset=offset)
     return str(results)
@@ -35,7 +44,13 @@ async def search_voices(q: str | None = None, terms: str | None = None, limit: i
 
 @mcp.tool
 async def get_voice_details(voice_id: str) -> str:
-    """Get detailed information about a specific voice."""
+    """
+    Retrieve detailed metadata for a specific voice by its ID.
+
+    - voice_id: The unique identifier of the voice.
+
+    Returns a string representation of the voice details or an error message if not found.
+    """
     voice = voice_service.get_voice(voice_id)
     if not voice:
         return f"Error: Voice '{voice_id}' not found."
@@ -43,19 +58,16 @@ async def get_voice_details(voice_id: str) -> str:
 
 
 @mcp.tool
-async def create_voice(name: str, example_text: str, instruct: str, language: str = "de") -> str:
+async def create_voice(name: str, example_text: str, instruct: str, language: str = "german") -> str:
     """
-    Create a new voice metadata entry.
+    Create a new voice metadata entry and queue generation of its reference audio.
 
     - name: Unique voice identifier (DB id).
     - example_text: Short example sentence used to generate the reference audio.
-    - instruct: Natural language description for voice design (style).
-    - language: Target language for the reference audio. This must be provided by the caller
-      and is not inferred by the service. Allowed values: short codes 'de','en','fr','es','it','pt','ru','ja','ko','zh'
-      or the full names 'german','english', etc. A missing language will cause generation to fail.
+    - instruct: Natural language description for the voice style (e.g., 'warm, professional').
+    - language: Target language (e.g., 'german', 'english').
 
-    The created voice will be stored in the voices DB and its reference audio should be generated
-    (the application will attempt to generate it on demand or at startup).
+    Returns a string representation of the created voice metadata or an error message.
     """
     voice = voice_service.create_voice(
         name=name,
@@ -69,21 +81,16 @@ async def create_voice(name: str, example_text: str, instruct: str, language: st
 
 
 @mcp.tool
-async def generate_voice(text: str, voice_id: str, language: str = "de", instruct: str | None = None) -> str:
+async def generate_voice(text: str, voice_id: str, language: str = "german", instruct: str | None = None) -> str:
     """
-    Generate audio using a specific voice_id (DB) with base mode (voice cloning).
+    Generate audio from text using a specific voice via base mode (voice cloning).
 
-    Parameters
     - text: The text to convert to speech.
-    - voice_id: The ID of an existing voice in the DB (must exist).
-    - language: Required target language for synthesis. Provide either short codes
-      ('de','en','fr','es','it','pt','ru','ja','ko','zh') or full names ('german','english', ...).
-      The service will raise an error if language is missing or unknown.
-    - instruct: Optional style instruction. For best cross-language behavior provide
-      style hints in English (e.g. 'speak like a professional newscaster').
+    - voice_id: The ID of an existing, registered voice.
+    - language: Target language (e.g., 'german', 'english').
+    - instruct: Optional style instructions in English (e.g., 'speak softly').
 
-    Returns a publicly accessible URL to the generated audio file on success or an
-    error string on failure.
+    Returns the public URL to the generated audio file, or an error message if generation fails.
     """
     voice = voice_service.get_voice(voice_id)
     if not voice:
@@ -104,12 +111,11 @@ async def generate_voice(text: str, voice_id: str, language: str = "de", instruc
 @mcp.tool
 async def upload_audio(local_path: str) -> str:
     """
-    Uploads a local WAV file to the server and returns the stored filename.
+    Upload a local WAV file to the server for use in subsequent operations.
 
-    - local_path: Absolute path to the local .wav file to upload.
+    - local_path: Absolute path to the local .wav file.
 
-    The upload endpoint validates the file exists and forwards it to the HTTP
-    upload API. Only valid audio files are accepted by the API endpoint.
+    Returns the filename of the uploaded file on the server, or an error message.
     """
     if not os.path.exists(local_path):
         return f"Error: File '{local_path}' not found."
@@ -131,22 +137,13 @@ async def generate_ssml(ssml_content: str) -> str:
     """
     Generate audio from SSML markup.
 
-    Expectations & rules
-    - The SSML root element must be <speak>.
-    - All spoken text must be wrapped in <speaker name="VoiceID">...</speaker> elements.
-      The referenced VoiceID must exist in the voices DB and have a language attribute set.
-    - <break> supports either a time attribute (e.g. '250ms' or '1.5s') or a strength
-      attribute ('none','x-weak','weak','medium','strong','x-strong').
-    - <sfx> (sound effect) tags may be used and will trigger the audio SFX service.
+    Rules:
+    - Root element must be `<speak>`.
+    - Spoken text must be wrapped in `<speaker name="VoiceID">...</speaker>`.
+    - `<break>` and `<sfx>` tags are supported.
+    - Speaker language is derived from voice settings.
 
-    Language handling
-    - The language for each speaker is taken from the corresponding voice DB entry.
-      The SSML payload does not need a global language field when speakers carry
-      language information, but every referenced voice must include a non-empty
-      language value (short code or full name). If a referenced voice lacks a
-      language the generation will fail.
-
-    Returns a public URL to the generated audio file on success.
+    Returns the public URL to the generated audio file.
     """
     base_params = TTSParams(mode="base", model_size="1.7B")
     result_path = await tts_service.generate_from_ssml(ssml_content, base_params)
@@ -155,7 +152,13 @@ async def generate_ssml(ssml_content: str) -> str:
 
 @mcp.tool
 async def concatenate_audio(audio_files: list[str]) -> str:
-    """Concatenate multiple audio files into one and return the URL."""
+    """
+    Concatenate multiple audio files into a single WAV file.
+
+    - audio_files: A list of filenames existing in the server's audio or upload directories.
+
+    Returns the public URL to the concatenated audio file, or an error message.
+    """
     # Search for files in AUDIO_DIR and UPLOAD_DIR
     input_paths = []
     for f in audio_files:
