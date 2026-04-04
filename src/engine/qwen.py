@@ -10,11 +10,9 @@ import numpy as np
 from qwen_tts import Qwen3TTSModel
 
 from audio.processor import AudioUtils
-from config import ProjectConfig
 from core import TTSEngine
 from schemas import TTSParams
 from schemas.languages import resolve_language
-from services.text_splitter import get_text_splitter
 
 # Centralized generation config for consistency
 QWEN_GENERATION_CONFIG = {

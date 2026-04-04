@@ -2,7 +2,6 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock
 from pathlib import Path
 from services.tts_service import TTSService
-from schemas import TTSParams
 import services.tts.generator
 
 
@@ -53,7 +52,6 @@ async def test_generate_audio_calls_generator():
     )
 
     # We need to mock the generator module function
-    import services.tts.generator
 
     services.tts.generator.generate_audio = AsyncMock(return_value=Path("test.wav"))
 
