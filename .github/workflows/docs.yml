@@ -12,19 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install mdBook
+      - name: Install dependencies
         run: |
-          curl -L https://github.com/rust-lang/mdBook/releases/download/v0.4.35/mdbook-v0.4.35-x86_64-unknown-linux-gnu.tar.gz | tar -xz
-          sudo mv mdbook /usr/local/bin/
+          pip install mkdocs mkdocs-material mkdocs-plantuml
       - name: Build Docs
         run: |
-          cd docs/arc42
-          # In a real setup, we'd initialize an mdbook book here.
-          # For now, this step confirms the CI setup is valid.
-          mdbook init . --force
-          mdbook build
+          mkdocs build
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: arc42-docs
-          path: docs/arc42/book/
+          name: site
+          path: site/

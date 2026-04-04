@@ -16,8 +16,6 @@ from schemas import TTSParams
 from schemas.languages import resolve_language
 from services.text_splitter import get_text_splitter
 
-logger = ProjectConfig.get_logger()
-
 # Centralized generation config for consistency
 QWEN_GENERATION_CONFIG = {
     "temperature": 0.9,
@@ -36,10 +34,11 @@ class QwenTextToSpeech(TTSEngine):
     Loads separate models per generation mode lazily on first use.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, settings: Any, logger: Any, text_splitter: Any) -> None:
         """Initialize the Qwen Text-to-Speech engine."""
-        self.settings = ProjectConfig.get_settings()
-        logger.info("Initializing Qwen3-TTS backend (Lazy, multi-model)...")
+        self.settings = settings
+        self.logger = logger
+        self.logger.info("Initializing Qwen3-TTS backend (Lazy, multi-model)...")
 
         self._models: dict[str, Qwen3TTSModel] = {}
 
@@ -61,7 +60,7 @@ class QwenTextToSpeech(TTSEngine):
             raise ValueError(f"Unsupported model version: {version}")
 
         self._locks: dict[str, asyncio.Lock] = {mode: asyncio.Lock() for mode in self.model_map}
-        self._text_splitter = get_text_splitter()
+        self._text_splitter = text_splitter
 
     async def ensure_loaded(self, mode: str = "base") -> Qwen3TTSModel:
         """Ensure the model for a given mode is loaded. Safe to call concurrently."""
@@ -77,7 +76,7 @@ class QwenTextToSpeech(TTSEngine):
                 return self._models[mode]
 
             model_name = self.model_map[mode]
-            logger.info(f"Loading Qwen3-TTS model for mode '{mode}': {model_name}...")
+            self.logger.info(f"Loading Qwen3-TTS model for mode '{mode}': {model_name}...")
             start_time = time.time()
 
             # Run blocking model load in thread pool
@@ -85,13 +84,13 @@ class QwenTextToSpeech(TTSEngine):
             try:
                 model = await loop.run_in_executor(None, self._load_model_sync, model_name)
             except OSError as e:
-                logger.error(f"Failed to load model {model_name}: {e}")
+                self.logger.error(f"Failed to load model {model_name}: {e}")
                 raise ValueError(f"Could not load model {model_name}. Please verify the model identifier.") from e
 
             self._models[mode] = model
 
             elapsed = time.time() - start_time
-            logger.info(f"Qwen3-TTS model '{mode}' loaded successfully in {elapsed:.2f}s")
+            self.logger.info(f"Qwen3-TTS model '{mode}' loaded successfully in {elapsed:.2f}s")
             return model
 
     def _load_model_sync(self, model_name: str) -> Qwen3TTSModel:
@@ -109,7 +108,7 @@ class QwenTextToSpeech(TTSEngine):
         if params is None:
             params = TTSParams()
 
-        logger.info(f"Starting audio generation | Mode: {params.mode} | Text Length: {len(text)}")
+        self.logger.info(f"Starting audio generation | Mode: {params.mode} | Text Length: {len(text)}")
         model = await self.ensure_loaded(params.mode)
         return await self._generate_single(model, text, params)
 
@@ -150,7 +149,7 @@ class QwenTextToSpeech(TTSEngine):
 
         # Base/Custom mode = voice clone
         ref_audio_path = self._resolve_ref_audio(params)
-        logger.debug(
+        self.logger.debug(
             f"Debug: _generate_sync | ref_audio_path: {ref_audio_path} | ref_text length: {len(params.ref_text or '')} | ref_text: '{params.ref_text}'"
         )
         if not ref_audio_path:

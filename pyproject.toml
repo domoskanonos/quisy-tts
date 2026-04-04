@@ -46,6 +46,9 @@ dev = [
     "types-requests>=2.31.0",
     "ruff>=0.3.0",
     "httpx>=0.27.0",
+    "mkdocs>=1.6.0",
+    "mkdocs-material>=9.5.0",
+    "mkdocs-plantuml>=0.1.0",
 ]
 
 

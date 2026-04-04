@@ -1,17 +1,15 @@
-# arc42 Documentation - Quisy TTS API
+# 01. Introduction and Goals
 
-Welcome to the documentation for the Quisy TTS API. This documentation follows the arc42 standard.
+## Objective
+The goal of Quisy TTS is to provide a production-ready, highly available, and easily extensible Text-to-Speech API, specifically optimized for low-latency audio synthesis using state-of-the-art TTS engines like Qwen3-TTS.
 
-## 01. Introduction and Goals
-- **Objective:** Production-ready Text-to-Speech API.
-- **Key Quality Goals:** Modularity, Testability, Resilience.
+## Key Quality Goals
+* **Modularity:** Hexagonal architecture to decouple business logic from infrastructure.
+* **Testability:** High code coverage and unit tests parallel to the code.
+* **Resilience:** Centralized error handling and graceful degradation.
+* **Performance:** Optimized for streaming and low-latency response times.
 
-## 02. System Scope and Context
-- The API interacts with LLM engines (Qwen) and audio processing tools (Sox).
-- Voice metadata (voices DB) is authoritative for speaker languages; the API requires callers to provide the target language for synthesis.
-
-## 03. Building Block View
- - **API Layer:** FastAPI routes, dependency injection. All generation endpoints require an explicit `language` parameter; SSML may carry language implicitly via speaker IDs but each voice must have a language set in the DB.
- - **Services:** Core business logic (TTSService orchestration, voice integrity, text splitting, SFX).
- - **Core:** Interfaces and shared exceptions (engine and cache interfaces).
- - **Infrastructure:** Adapters for external engines/audio (Qwen backend, Sox audio processing, File cache).
+## Stakeholders
+* API Consumers
+* Maintainers/Developers
+* DevOps/Operations Team
