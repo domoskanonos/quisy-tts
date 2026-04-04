@@ -1,9 +1,65 @@
 # CHANGELOG
 
 
-## v0.25.0 (2026-04-03)
+## v0.26.0 (2026-04-04)
+
+### Bug Fixes
+
+- Refactor code structure for improved readability and maintainability
+  ([`1e209b1`](https://github.com/domoskanonos/quisy-tts/commit/1e209b1df298b0e2ad20d4550f3e8b4caf082562))
 
 ### Features
+
+- Add mkdocs-plantuml dependency and installation step in pipeline
+  ([`4038bdb`](https://github.com/domoskanonos/quisy-tts/commit/4038bdba0da893b5ebf0fef86ce109f33afed526))
+
+### Refactoring
+
+- Remove unused imports and clean up test file
+  ([`c6e98ff`](https://github.com/domoskanonos/quisy-tts/commit/c6e98ff0ab0279fcf8ebde56bcc06f8f541bff1b))
+
+
+## v0.25.0 (2026-04-03)
+
+### Bug Fixes
+
+- Revert model version to 0.6 and enhance SSML generation documentation
+  ([`88ecc49`](https://github.com/domoskanonos/quisy-tts/commit/88ecc49aa559d43216ce19fc82e41ea96a5bdb8a))
+
+### Features
+
+- Add Definition of Done and Team structure documentation
+  ([`7f85836`](https://github.com/domoskanonos/quisy-tts/commit/7f85836e154ed4d15e6fd009cafbacff3a17241a))
+
+- Created .dod.md to outline the Definition of Done for project tasks, including code quality,
+  testing, documentation, workflow, and security standards. - Established team roles and
+  communication guidelines in .team.md.
+
+feat: Implement Voice model and API testing
+
+- Added Voice model in src/domain/voice/models.py with methods for instantiation from database rows
+  and filename generation. - Created tests for the Voice model in tests/domain/test_voice_models.py.
+
+test: Enhance API endpoint testing for audio generation
+
+- Developed tests for the audio generation endpoint in tests/api/test_generate_route.py, including
+  success and failure scenarios.
+
+test: Implement cleanup service tests
+
+- Added tests for the FileCleanupService in tests/services/test_cleanup_service.py to verify old
+  file removal functionality.
+
+test: Add tests for TTS service and default voices
+
+- Created tests for TTSService initialization and audio generation in
+  tests/services/test_tts_service.py. - Added a test for the count of default voices in
+  tests/services/test_default_voices.py.
+
+test: Implement schema tests for TTSParams
+
+- Added tests for TTSParams functionality in tests/schemas/test_internal.py to ensure parameter
+  copying and language resolution.
 
 - Ensure reference audio exists before voice generation in generate_voice function
   ([`f51b8d7`](https://github.com/domoskanonos/quisy-tts/commit/f51b8d7789c2365ea644eb50c0fdc600b1430eb1))
@@ -13,6 +69,9 @@
   ([`4c39561`](https://github.com/domoskanonos/quisy-tts/commit/4c3956193e24619ee55afcc5569d073bc96e405e))
 
 ### Refactoring
+
+- Remove SoundEffectService and related functionality; update SSML processing logic
+  ([`6641f32`](https://github.com/domoskanonos/quisy-tts/commit/6641f32a955540146a8af62b40ad5ee099f85f60))
 
 - Update MCP server initialization and enhance docstrings for voice-related functions
   ([`26edf95`](https://github.com/domoskanonos/quisy-tts/commit/26edf957e106110e3268313c38fa2061b3002676))
