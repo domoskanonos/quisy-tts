@@ -22,7 +22,7 @@ class VoiceAudioIntegrityService:
         voice_id = voice.get("voice_id")
         if not voice_id:
             return False
-        path = Path(self.settings.VOICES_DIR) / self.voice_service.get_voice_filename(voice_id)
+        path = Path(self.settings.VOICES_DIR) / VoiceService.get_voice_filename(voice_id)
         return path.exists() and path.stat().st_size > 0
 
     async def ensure_audio(

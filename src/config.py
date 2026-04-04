@@ -103,7 +103,7 @@ class _RequiredEnv:
     error message to avoid silent misconfiguration.
     """
 
-    VARS = []
+    VARS: list[str] = []
 
 
 class ProjectConfig:

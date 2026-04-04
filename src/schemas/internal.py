@@ -1,5 +1,7 @@
 """Internal TTS parameters used by engine."""
 
+from typing import Any
+from typing import Any
 from pydantic import BaseModel
 
 from schemas.languages import resolve_language
@@ -19,18 +21,6 @@ class TTSParams(BaseModel):
     instruct: str | None = None
     speaker: str | None = None
     model_size: str = "1.7B"
-
-    def model_copy(self) -> "TTSParams":
-        """Return a shallow copy usable for per-chunk overrides."""
-        return TTSParams(
-            language=self.language,
-            reference_audio=self.reference_audio,
-            ref_text=self.ref_text,
-            mode=self.mode,
-            instruct=self.instruct,
-            speaker=self.speaker,
-            model_size=self.model_size,
-        )
 
     @property
     def resolved_language(self) -> str:

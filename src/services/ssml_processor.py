@@ -33,7 +33,7 @@ class SSMLProcessor:
         if root.text and root.text.strip():
             raise ValueError("Text found without a speaker")
 
-        tasks = []
+        tasks: List[Task] = []
 
         def _process_element(element, current_speaker: str | None):
             # Skip comments

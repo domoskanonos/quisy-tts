@@ -50,9 +50,19 @@ dev = [
     "mkdocs-material>=9.5.0",
     "mkdocs-plantuml>=0.1.0",
     "pytest-cov>=7.1.0",
+    "mypy>=1.8.0",
 ]
 
 
+
+[tool.mypy]
+python_version = "3.12"
+check_untyped_defs = true
+ignore_missing_imports = true
+# Mypy soll von der Projekt-Root aus suchen
+# (kein mypy_path oder nur '.')
+# und wir müssen die Pfade der Imports berücksichtigen.
+# PYTHONPATH ist oft wichtiger als mypy_path.
 
 [tool.ruff]
 line-length = 120

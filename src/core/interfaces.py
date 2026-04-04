@@ -132,7 +132,7 @@ class TTSServiceInterface(ABC):
         ...
 
     @abstractmethod
-    async def generate_stream(self, *args, **kwargs) -> AsyncGenerator[bytes, None]:
+    def generate_stream(self, *args, **kwargs) -> AsyncGenerator[bytes, None]:
         """Generate audio stream."""
         ...
 
