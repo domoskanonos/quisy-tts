@@ -2,15 +2,16 @@ from pathlib import Path
 from typing import Callable, Awaitable, Optional, Union
 
 from config import ProjectConfig
-from core import AudioGenerationError, ReferenceAudioNotFoundError, CacheService, TTSEngine
-from services.voice_service import VoiceService
+from src.core.exceptions import AudioGenerationError, ReferenceAudioNotFoundError
+from src.core.interfaces import CacheService, TTSEngine, VoiceServiceInterface
+from src.services.voice_service import VoiceService
 from schemas import TTSParams
 
 logger = ProjectConfig.get_logger()
 
 
 class VoiceAudioIntegrityService:
-    def __init__(self, voice_service: VoiceService, engine: TTSEngine, cache: CacheService):
+    def __init__(self, voice_service: VoiceServiceInterface, engine: TTSEngine, cache: CacheService):
         self.voice_service = voice_service
         self.engine = engine
         self.cache = cache
@@ -21,7 +22,7 @@ class VoiceAudioIntegrityService:
         voice_id = voice.get("voice_id")
         if not voice_id:
             return False
-        path = Path(self.settings.VOICES_DIR) / VoiceService.get_voice_filename(voice_id)
+        path = Path(self.settings.VOICES_DIR) / self.voice_service.get_voice_filename(voice_id)
         return path.exists() and path.stat().st_size > 0
 
     async def ensure_audio(

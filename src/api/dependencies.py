@@ -2,7 +2,7 @@
 
 import logging
 from config import ProjectConfig
-from core import CacheService, CleanupService, TTSEngine
+from src.core.interfaces import CacheService, CleanupService, TTSEngine, TTSServiceInterface, VoiceServiceInterface
 from engine import QwenTextToSpeech
 from services.cache_service import FileCacheService
 from services.cleanup_service import FileCleanupService
@@ -47,7 +47,7 @@ def get_voice_audio_integrity() -> VoiceAudioIntegrityService:
     return VoiceAudioIntegrityService(get_voice_service(), get_tts_engine(), get_cache_service())
 
 
-def get_tts_service() -> TTSService:
+def get_tts_service() -> TTSServiceInterface:
     """Returns the TTS service instance."""
     return TTSService(
         engine=get_tts_engine(),

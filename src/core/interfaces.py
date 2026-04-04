@@ -116,3 +116,79 @@ class CleanupService(ABC):
             Number of files removed.
         """
         ...
+
+
+class TTSServiceInterface(ABC):
+    """Abstract interface for the TTS orchestration service."""
+
+    @abstractmethod
+    async def generate_from_ssml(self, ssml_content: str, base_params: Any) -> Path:
+        """Generate audio from SSML."""
+        ...
+
+    @abstractmethod
+    async def generate_audio(self, *args, **kwargs) -> Path:
+        """Generate audio."""
+        ...
+
+    @abstractmethod
+    async def generate_stream(self, *args, **kwargs) -> AsyncGenerator[bytes, None]:
+        """Generate audio stream."""
+        ...
+
+
+class VoiceServiceInterface(ABC):
+    """Abstract interface for the voice management service."""
+
+    @abstractmethod
+    def list_voices(self) -> list[dict]:
+        """List all voices."""
+        ...
+
+    @abstractmethod
+    def get_voice(self, voice_id: str) -> dict | None:
+        """Get voice by ID."""
+        ...
+
+    @abstractmethod
+    def get_voice_by_name(self, name: str) -> dict | None:
+        """Get voice by name."""
+        ...
+
+    @abstractmethod
+    def create_voice(
+        self,
+        name: str,
+        example_text: str,
+        instruct: str | None = None,
+        language: str = "german",
+    ) -> dict | None:
+        """Create voice."""
+        ...
+
+    @abstractmethod
+    def update_voice(
+        self,
+        voice_id: str,
+        name: str | None = None,
+        example_text: str | None = None,
+        instruct: str | None = None,
+        language: str | None = None,
+    ) -> dict | None:
+        """Update voice."""
+        ...
+
+    @abstractmethod
+    def delete_voice(self, voice_id: str) -> bool:
+        """Delete voice."""
+        ...
+
+    @abstractmethod
+    def set_audio(self, voice_id: str, audio_data: bytes, original_filename: str) -> dict | None:
+        """Set voice audio."""
+        ...
+
+    @abstractmethod
+    def get_audio_path(self, voice_id: str) -> Path | None:
+        """Get audio path."""
+        ...

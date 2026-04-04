@@ -6,10 +6,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from config import ProjectConfig
+from src.core.interfaces import VoiceServiceInterface
+from src.schemas.languages import resolve_language
+from domain.voice.models import Voice
 
-# NOTE: default voices are imported lazily inside _seed_defaults to avoid
-# package-level circular imports during test-time module loading.
-from schemas.languages import resolve_language
 
 logger = ProjectConfig.get_logger()
 
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS voices (
 """
 
 
-class VoiceService:
+class VoiceService(VoiceServiceInterface):
     """Service for managing voices with SQLite persistence."""
 
     def __init__(self, voices_dir: Path | None = None, db_path: Path | None = None) -> None:
@@ -229,7 +229,7 @@ class VoiceService:
     @staticmethod
     def get_voice_filename(voice_id: str) -> str:
         """Centralized naming convention for voice files."""
-        return f"voice_{voice_id}.wav"
+        return Voice.get_filename(voice_id)
 
     def list_voices(self) -> list[dict]:
         """Return all voices, defaults first then by creation date."""

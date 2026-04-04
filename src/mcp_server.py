@@ -3,7 +3,7 @@ import uuid
 import httpx
 from fastmcp import FastMCP
 from schemas import TTSParams
-from api.dependencies import get_tts_service, get_voice_service
+from api.dependencies import get_tts_service, get_voice_service, get_voice_audio_integrity
 from config import ProjectConfig
 from audio.processor import AudioProcessor
 
@@ -13,6 +13,7 @@ mcp = FastMCP("QuisyTTS-Voice-Engine")
 # Services
 tts_service = get_tts_service()
 voice_service = get_voice_service()
+voice_audio_integrity_service = get_voice_audio_integrity()
 settings = ProjectConfig.get_settings()
 
 # Base URL for audio files
@@ -98,7 +99,7 @@ async def generate_voice(text: str, voice_id: str, language: str = "german", ins
 
     # Ensure reference audio exists before generation
     print(f"DEBUG: Ensuring audio for voice {voice_id}")
-    await tts_service.voice_audio_integrity.ensure_audio(voice_id, tts_service.generate_audio)
+    await voice_audio_integrity_service.ensure_audio(voice_id, generator_callback=tts_service.generate_audio)
     print(f"DEBUG: Audio ensured for voice {voice_id}")
 
     result_path = await tts_service.generate_audio(

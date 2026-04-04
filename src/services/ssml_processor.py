@@ -1,7 +1,7 @@
 from xml.etree import ElementTree
 from typing import List, Union
 from pydantic import BaseModel
-from services.voice_service import VoiceService
+from src.core.interfaces import VoiceServiceInterface
 import re
 
 
@@ -18,7 +18,7 @@ Task = Union[TextTask, BreakTask]
 
 
 class SSMLProcessor:
-    def __init__(self, voice_service: VoiceService):
+    def __init__(self, voice_service: VoiceServiceInterface):
         self.voice_service = voice_service
 
     def parse(self, xml_string: str) -> List[Task]:
@@ -29,6 +29,9 @@ class SSMLProcessor:
 
         if root.tag != "speak":
             raise ValueError("Root tag must be <speak>")
+
+        if root.text and root.text.strip():
+            raise ValueError("Text found without a speaker")
 
         tasks = []
 

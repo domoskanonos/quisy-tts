@@ -1,33 +1,33 @@
 """TTS orchestration service - Application layer."""
 
+from __future__ import annotations
 from typing import Any
 from pathlib import Path
 from collections.abc import AsyncGenerator
 import asyncio
-from core import CacheService, TTSEngine
-from services.voice_service import VoiceService
-from services.ssml_processor import SSMLProcessor
-from services.voice_audio_integrity import VoiceAudioIntegrityService
+from src.core.interfaces import CacheService, TTSEngine, TTSServiceInterface, VoiceServiceInterface
+from src.services.ssml_processor import SSMLProcessor
+from src.services.voice_audio_integrity import VoiceAudioIntegrityService
 from services.text_splitter import get_text_splitter
 from schemas import TTSParams
 from services.tts import ssml, generator, streamer
 
 
-class TTSService:
+class TTSService(TTSServiceInterface):
     """Orchestrates TTS generation."""
 
     def __init__(
         self,
         engine: TTSEngine,
         cache: CacheService,
-        voice_service: VoiceService,
+        voice_service: VoiceServiceInterface,
         ssml_processor: SSMLProcessor,
         voice_audio_integrity: VoiceAudioIntegrityService,
         logger: Any,
     ) -> None:
         self.engine = engine
         self.cache = cache
-        self.voice_service = voice_service
+        self.voice_service: VoiceServiceInterface = voice_service
         self.ssml_processor = ssml_processor
         self.voice_audio_integrity = voice_audio_integrity
         self.logger = logger
