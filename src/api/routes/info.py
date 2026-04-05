@@ -15,20 +15,7 @@ router: APIRouter = APIRouter(tags=["Info"])
 @router.get("/")
 def read_root() -> dict[str, Any]:
     """Returns the API status."""
-    return {
-        "message": "Cosmo TTS API is running",
-        "version": "3.0.0",
-        "architecture": "Clean Architecture (Hexagonal)",
-        "backend": "qwen-tts",
-        "available_endpoints": [
-            "/api/generate/generate",
-            "/api/generate/ssml",
-            "/api/voices/",
-            "/api/voices/search",
-            "/api/voices/terms",
-            "/api/audio",
-        ],
-    }
+    return {"status": "ok", "message": "Cosmo TTS API is running. See /api/docs for documentation.", "version": "3.0.0"}
 
 
 @router.get("/languages")
