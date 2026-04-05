@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v0.27.0 (2026-04-05)
+
+### Chores
+
+- Update quisy-tts version to 0.26.0
+  ([`e142600`](https://github.com/domoskanonos/quisy-tts/commit/e142600f581c0b1f99e5bfad71b4e8cd68994d5e))
+
+### Features
+
+- Update language identifiers to full names and remove default voices
+  ([`e96046d`](https://github.com/domoskanonos/quisy-tts/commit/e96046d786e717749e567e5e7fb6cd44529cac14))
+
+
 ## v0.26.0 (2026-04-04)
 
 ### Bug Fixes
