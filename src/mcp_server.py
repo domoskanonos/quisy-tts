@@ -29,14 +29,17 @@ def get_audio_url(file_path: str) -> str:
 @mcp.tool
 async def search_voices(q: str | None = None, terms: str | None = None, limit: int = 20, offset: int = 0) -> str:
     """
-    Search for available voices based on a free text query and optional comma-separated terms.
+    Search for available voices in the QuisyTTS database.
+    This tool is essential for finding the correct 'voice_id' before generating audio.
 
-    - q: Optional free text search query.
-    - terms: Optional comma-separated search terms for filtering (e.g., 'male,narrator,calm').
-    - limit: Maximum number of results to return (default 20).
-    - offset: Pagination offset (default 0).
+    Args:
+        q: Optional free text search query. Searches through voice names, descriptions, and example texts.
+        terms: Optional comma-separated list of style terms to filter by (e.g., 'male,narrator,calm,professional').
+        limit: Maximum number of voices to return (default 20, max 200).
+        offset: Pagination offset for browsing large result sets.
 
-    Returns a string representation of the matching voices.
+    Returns:
+        A JSON-formatted string containing a list of matching voice objects (metadata like voice_id, name, instruct, language).
     """
     term_list = [t.strip() for t in terms.split(",")] if terms else []
     results = voice_service.search(term_list, q, limit=limit, offset=offset)
@@ -46,11 +49,14 @@ async def search_voices(q: str | None = None, terms: str | None = None, limit: i
 @mcp.tool
 async def get_voice_details(voice_id: str) -> str:
     """
-    Retrieve detailed metadata for a specific voice by its ID.
+    Retrieve full metadata for a specific voice.
+    Use this to understand a voice's style (instruct) or language before using it for generation.
 
-    - voice_id: The unique identifier of the voice.
+    Args:
+        voice_id: The unique identifier of the voice (e.g., 'german_audiobook_female_narrator_01').
 
-    Returns a string representation of the voice details or an error message if not found.
+    Returns:
+        A JSON-formatted string of the voice details or an error message if the ID is invalid.
     """
     voice = voice_service.get_voice(voice_id)
     if not voice:
@@ -61,14 +67,17 @@ async def get_voice_details(voice_id: str) -> str:
 @mcp.tool
 async def create_voice(name: str, example_text: str, instruct: str, language: str = "german") -> str:
     """
-    Create a new voice metadata entry and queue generation of its reference audio.
+    Create a completely new custom voice (Voice Design).
+    This tool triggers the Qwen-TTS 1.7B VoiceDesign model to 'dream' up a new voice based on your description.
 
-    - name: Unique voice identifier (DB id).
-    - example_text: Short example sentence used to generate the reference audio.
-    - instruct: Natural language description for the voice style (e.g., 'warm, professional').
-    - language: Target language (e.g., 'german', 'english').
+    Args:
+        name: A unique, descriptive name/ID for the new voice (e.g., 'mysterious_storyteller').
+        example_text: A short sentence that the new voice will speak to generate its initial reference audio.
+        instruct: A detailed natural language description of the voice style (e.g., 'A raspy, old male voice with a mysterious and slow-paced tone').
+        language: The target language of the voice. Use full names like 'german', 'english', etc.
 
-    Returns a string representation of the created voice metadata or an error message.
+    Returns:
+        A JSON string of the newly created voice metadata. The voice is immediately ready for use in 'generate_voice'.
     """
     voice = voice_service.create_voice(
         name=name,
@@ -84,23 +93,28 @@ async def create_voice(name: str, example_text: str, instruct: str, language: st
 @mcp.tool
 async def generate_voice(text: str, voice_id: str, language: str = "german", instruct: str | None = None) -> str:
     """
-    Generate audio from text using a specific voice via base mode (voice cloning).
+    Convert text to speech using an existing voice (Voice Cloning / Zero-shot TTS).
+    This is the primary tool for high-quality audio generation.
 
-    - text: The text to convert to speech.
-    - voice_id: The ID of an existing, registered voice.
-    - language: Target language (e.g., 'german', 'english').
-    - instruct: Optional style instructions in English (e.g., 'speak softly').
+    Args:
+        text: The text to be spoken. Keep it under 500 characters for optimal performance.
+        voice_id: The ID of the voice to use (find IDs via 'search_voices').
+        language: The language of the text. Must match the voice's capabilities. Use full names (e.g., 'german').
+        instruct: Optional. Overwrite or refine the voice's style. If omitted, the 'instruct' (style description)
+                  from the voice's database entry is used automatically.
 
-    Returns the public URL to the generated audio file, or an error message if generation fails.
+    Returns:
+        A public URL to the generated WAV audio file.
     """
     voice = voice_service.get_voice(voice_id)
     if not voice:
         return f"Error: Voice '{voice_id}' not found."
 
+    # Use instruct from DB if not provided via tool call
+    final_instruct = instruct or voice.get("instruct")
+
     # Ensure reference audio exists before generation
-    print(f"DEBUG: Ensuring audio for voice {voice_id}")
     await voice_audio_integrity_service.ensure_audio(voice_id, generator_callback=tts_service.generate_audio)
-    print(f"DEBUG: Audio ensured for voice {voice_id}")
 
     result_path = await tts_service.generate_audio(
         text=text,
@@ -109,47 +123,34 @@ async def generate_voice(text: str, voice_id: str, language: str = "german", ins
         model_size="1.7B",
         reference_audio=voice_id,
         ref_text=voice.get("example_text"),
-        instruct=instruct,
+        instruct=final_instruct,
     )
     return get_audio_url(str(result_path))
 
 
 @mcp.tool
-async def upload_audio(local_path: str) -> str:
-    """
-    Upload a local WAV file to the server for use in subsequent operations.
-
-    - local_path: Absolute path to the local .wav file.
-
-    Returns the filename of the uploaded file on the server, or an error message.
-    """
-    if not os.path.exists(local_path):
-        return f"Error: File '{local_path}' not found."
-
-    url = f"http://localhost:{settings.PORT}/api/audio/upload"
-    async with httpx.AsyncClient() as client:
-        with open(local_path, "rb") as f:
-            files = {"file": (os.path.basename(local_path), f, "audio/wav")}
-            response = await client.post(url, files=files)
-
-    if response.status_code != 200:
-        return f"Error: Upload failed with status {response.status_code}: {response.text}"
-
-    return response.json()["filename"]
-
-
-@mcp.tool
 async def generate_ssml(ssml_content: str) -> str:
     """
-    Generate audio from SSML markup.
+    Generate complex audio using SSML (Speech Synthesis Markup Language).
+    Use this for multi-speaker dialogs, precise timing, or emotional control.
 
-    Rules:
-    - Root element must be `<speak>`.
-    - Spoken text must be wrapped in `<speaker name="VoiceID">...</speaker>`.
-    - `<break>` tags are supported with `time` (e.g., "250ms", "1.5s") attributes.
-    - Speaker language is derived from voice settings.
+    Required Format:
+    - Root: `<speak>...</speak>`
+    - Speaker: Wrap text in `<speaker name="VoiceID">...</speaker>`
+    - Pauses: Use `<break time="500ms"/>` or `<break time="1.5s"/>`
 
-    Returns the public URL to the generated audio file.
+    Example:
+    <speak>
+      <speaker name="voice_a">Hello!</speaker>
+      <break time="1s"/>
+      <speaker name="voice_b">Hi there, how are you?</speaker>
+    </speak>
+
+    Args:
+        ssml_content: The full SSML markup string.
+
+    Returns:
+        A public URL to the resulting multi-speaker WAV file.
     """
     base_params = TTSParams(mode="base", model_size="1.7B")
     result_path = await tts_service.generate_from_ssml(ssml_content, base_params)
@@ -159,11 +160,14 @@ async def generate_ssml(ssml_content: str) -> str:
 @mcp.tool
 async def concatenate_audio(audio_files: list[str]) -> str:
     """
-    Concatenate multiple audio files into a single WAV file.
+    Merge multiple existing audio files into one single long WAV file.
+    Useful for combining several generated sentences or adding intros/outros.
 
-    - audio_files: A list of filenames existing in the server's audio or upload directories.
+    Args:
+        audio_files: A list of filenames (e.g., ['file1.wav', 'file2.wav']) that already exist on the server (either generated or uploaded).
 
-    Returns the public URL to the concatenated audio file, or an error message.
+    Returns:
+        A public URL to the final concatenated WAV file.
     """
     # Search for files in AUDIO_DIR and UPLOAD_DIR
     input_paths = []
