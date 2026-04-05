@@ -1,6 +1,6 @@
 [project]
 name = "quisy-tts"
-version = "0.26.0"
+version = "0.26.1"
 description = "Quisy TTS as an MCP system tool."
 authors = [{ name = "Dominik Bruhn", email = "dominikbruhn@googlemail.com" }]
 license = "MIT"
