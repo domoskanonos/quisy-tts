@@ -1,7 +1,7 @@
 from pathlib import Path
-from config import ProjectConfig
-from core import AudioGenerationError
-from services.ssml_processor import TextTask, BreakTask
+from quisy_tts.config import ProjectConfig
+from quisy_tts.core import AudioGenerationError
+from quisy_tts.services.ssml_processor import TextTask, BreakTask
 import hashlib
 import numpy as np
 import soundfile as sf
@@ -40,7 +40,7 @@ async def generate_from_ssml(service, ssml_content: str, base_params) -> Path:
                 raise AudioGenerationError(f"Voice '{voice['voice_id']}' has no language set")
 
             # Ensure language is resolved correctly
-            from schemas.languages import resolve_language
+            from quisy_tts.schemas.languages import resolve_language
 
             resolved_lang = resolve_language(lang)
 

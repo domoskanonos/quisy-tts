@@ -1,10 +1,10 @@
-from audio.processor import AudioProcessor
+from quisy_tts.audio.processor import AudioProcessor
 from pathlib import Path
-from config import ProjectConfig
-from core import AudioGenerationError
-from schemas import TTSParams
-from schemas.languages import resolve_language
-from services.voice_service import VoiceService
+from quisy_tts.config import ProjectConfig
+from quisy_tts.core import AudioGenerationError
+from quisy_tts.schemas import TTSParams
+from quisy_tts.schemas.languages import resolve_language
+from quisy_tts.services.voice_service import VoiceService
 
 
 async def generate_audio(

@@ -9,10 +9,10 @@ from typing import Any
 import numpy as np
 from qwen_tts import Qwen3TTSModel
 
-from audio.processor import AudioUtils
-from core import TTSEngine
-from schemas import TTSParams
-from schemas.languages import resolve_language
+from quisy_tts.audio.processor import AudioUtils
+from quisy_tts.core import TTSEngine
+from quisy_tts.schemas import TTSParams
+from quisy_tts.schemas.languages import resolve_language
 
 # Centralized generation config for consistency
 QWEN_GENERATION_CONFIG = {
@@ -151,7 +151,7 @@ class QwenTextToSpeech(TTSEngine):
             f"Debug: _generate_sync | ref_audio_path: {ref_audio_path} | ref_text length: {len(params.ref_text or '')} | ref_text: '{params.ref_text}'"
         )
         if not ref_audio_path:
-            from core.exceptions import ReferenceAudioNotFoundError
+            from quisy_tts.core.exceptions import ReferenceAudioNotFoundError
 
             raise ReferenceAudioNotFoundError("No reference audio found.")
 
@@ -187,7 +187,7 @@ class QwenTextToSpeech(TTSEngine):
 
     def _resolve_ref_audio(self, params: TTSParams) -> str | None:
         """Resolve reference audio path."""
-        from services.voice_service import VoiceService
+        from quisy_tts.services.voice_service import VoiceService
 
         if params.reference_audio:
             path = self.settings.VOICES_DIR / VoiceService.get_voice_filename(params.reference_audio)

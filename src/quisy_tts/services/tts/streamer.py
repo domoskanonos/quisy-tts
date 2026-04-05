@@ -2,10 +2,10 @@ import numpy as np
 import soundfile as sf
 from pathlib import Path
 from collections.abc import AsyncGenerator
-from config import ProjectConfig
-from core import AudioGenerationError
-from schemas import TTSParams
-from schemas.languages import resolve_language
+from quisy_tts.config import ProjectConfig
+from quisy_tts.core import AudioGenerationError
+from quisy_tts.schemas import TTSParams
+from quisy_tts.schemas.languages import resolve_language
 
 
 async def generate_stream(

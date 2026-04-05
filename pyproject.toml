@@ -1,44 +1,36 @@
 [project]
-name = "quisy-mcp-system-tools"
+name = "quisy-tts"
 version = "0.26.0"
 description = "Quisy TTS as an MCP system tool."
 authors = [{ name = "Dominik Bruhn", email = "dominikbruhn@googlemail.com" }]
-license = { text = "MIT" }
+license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
     "python-dotenv>=1.1.1",
     "pytest>=8.4.2",
     "pytest-asyncio>=0.23.0",
-    "pydantic-settings>=2.12.0",
+    "pydantic-settings>=2.13.0",
     "qwen-tts>=0.1.1",
-    "requests>=2.31.0",
-    "huggingface-hub>=0.20.0",
-    "soundfile>=0.12.1",
-    "numpy>=1.26.0",
-    "spacy>=3.8.0",
-    "fastmcp>=2.1.0",
+    "requests>=2.32.5",
+    "huggingface-hub>=0.26.2",
+    "soundfile>=0.13.1",
+    "numpy>=2.2.3",
+    "spacy>=3.8.3",
+    "fastmcp>=3.2.0",
     "mkdocs-plantuml>=0.1.1",
 ]
 
 [project.scripts]
-quisy-mcp-system-tools = "quisy_tts.mcp_bridge:main"
-
-
-[project.optional-dependencies]
-gpu = [
-    "torch>=2.0.0",
-    "torchaudio>=2.0.0",
-]
-mcp = [
-    "fastmcp>=2.1.0",
-]
+quisy-tts-mcp = "quisy_tts.mcp_bridge:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["src/quisy_tts"]
+
+
 
 [dependency-groups]
 dev = [
@@ -87,6 +79,7 @@ build_command = "python -m pip install uv && uv build"
 upload_to_pypi = false
 
 [tool.uv]
+package = true
 override-dependencies = ["numba>=0.59.0", "llvmlite>=0.42.0", "librosa>=0.10.0"]
 
 [[tool.uv.index]]

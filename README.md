@@ -4,9 +4,23 @@ Quisy TTS is a modern, high-performance Text-to-Speech library powered by **Qwen
 
 ---
 
+## 📦 Installation (PyPI)
+
+You can install Quisy TTS directly from PyPI using your preferred Python package manager:
+
+```bash
+# Using pip
+pip install quisy-tts
+
+# Using uv
+uv add quisy-tts
+```
+
+---
+
 ## ✨ Features
 
-- **Qwen3-TTS Powered**: Utilizes the state-of-the-art Qwen3-TTS models (1.7B and 0.6B versions).
+- **Qwen3-TTS Powered**: Utilizes the state-of-the-art Qwen3-TTS models.
 - **Multiple Generation Modes**:
   - **Base (Voice Cloning)**: Clone any voice with just a short reference audio.
   - **VoiceDesign**: Generate voices based on natural language instructions.
@@ -16,54 +30,29 @@ Quisy TTS is a modern, high-performance Text-to-Speech library powered by **Qwen
 
 ---
 
-## 🛠 Prerequisites
-
-This project requires **uv**.
-
-```bash
-# Windows
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-
-# macOS/Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
----
-
-## 🚀 Quick Start
-
-1. **Clone & Setup**:
-   ```bash
-   git clone https://github.com/domoskanonos/quisy-tts.git
-   cd quisy-tts
-   uv sync
-   ```
-
-2. **Run the MCP Server**:
-   You can run the MCP server directly using python:
-   ```bash
-   python src/mcp_server.py
-   ```
-
-   This will start the MCP server, ready for connection by your MCP client (e.g., Cursor, Claude Desktop).
-
----
-
-## 🤖 MCP Server (Model Context Protocol)
+## 🤖 MCP Usage
 
 Quisy TTS includes a built-in MCP server that allows LLMs to interact with TTS features directly using natural language.
 
-### Usage with MCP Clients
-Configure your MCP client to use the `mcp_server.py` file:
+### Usage with MCP Clients (Cursor, Claude Desktop)
+After installing the package via PyPI, you can run the MCP server using `uvx` (to execute without full installation) or directly via the command installed with the package:
 
-- **Command**: `python`
-- **Args**: `[PATH_TO_PROJECT]/src/mcp_server.py`
+#### Option 1: Via `uvx` (Recommended)
+Configure your MCP client to use the `uvx` command to run the tool:
+
+- **Command**: `uvx`
+- **Args**: `quisy-tts`
+
+#### Option 2: Installed directly
+If you have installed the package in your environment:
+
+- **Command**: `quisy-tts-mcp`
 
 ---
 
 ## ⚙️ Configuration
 
-All settings are managed via Pydantic and can be overridden by environment variables:
+All settings are managed via environment variables:
 
 | Variable | Description | Default |
 |----------|-------------|---------|

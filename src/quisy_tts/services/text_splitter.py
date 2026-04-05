@@ -9,7 +9,7 @@ import subprocess
 import sys
 from typing import Any, Optional
 
-from config import ProjectConfig
+from quisy_tts.config import ProjectConfig
 
 logger = ProjectConfig.get_logger()
 

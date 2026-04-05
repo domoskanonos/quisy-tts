@@ -5,12 +5,12 @@ from typing import Any
 from pathlib import Path
 from collections.abc import AsyncGenerator
 import asyncio
-from src.core.interfaces import CacheService, TTSEngine, TTSServiceInterface, VoiceServiceInterface
-from src.services.ssml_processor import SSMLProcessor
-from src.services.voice_audio_integrity import VoiceAudioIntegrityService
-from services.text_splitter import get_text_splitter
-from schemas import TTSParams
-from services.tts import ssml, generator, streamer
+from quisy_tts.core.interfaces import CacheService, TTSEngine, TTSServiceInterface, VoiceServiceInterface
+from quisy_tts.services.ssml_processor import SSMLProcessor
+from quisy_tts.services.voice_audio_integrity import VoiceAudioIntegrityService
+from quisy_tts.services.text_splitter import get_text_splitter
+from quisy_tts.schemas import TTSParams
+from quisy_tts.services.tts import ssml, generator, streamer
 
 
 class TTSService(TTSServiceInterface):

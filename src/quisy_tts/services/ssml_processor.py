@@ -1,7 +1,7 @@
 from xml.etree import ElementTree
 from typing import List, Union
 from pydantic import BaseModel
-from src.core.interfaces import VoiceServiceInterface
+from quisy_tts.core.interfaces import VoiceServiceInterface
 import re
 
 

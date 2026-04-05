@@ -1,11 +1,11 @@
 from pathlib import Path
 from typing import Callable, Awaitable, Optional, Union
 
-from config import ProjectConfig
-from src.core.exceptions import AudioGenerationError, ReferenceAudioNotFoundError
-from src.core.interfaces import CacheService, TTSEngine, VoiceServiceInterface
-from src.services.voice_service import VoiceService
-from schemas import TTSParams
+from quisy_tts.config import ProjectConfig
+from quisy_tts.core.exceptions import AudioGenerationError, ReferenceAudioNotFoundError
+from quisy_tts.core.interfaces import CacheService, TTSEngine, VoiceServiceInterface
+from quisy_tts.services.voice_service import VoiceService
+from quisy_tts.schemas import TTSParams
 
 logger = ProjectConfig.get_logger()
 

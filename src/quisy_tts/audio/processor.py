@@ -5,7 +5,7 @@ from typing import Any
 import numpy as np
 import soundfile as sf
 
-from config import ProjectConfig
+from quisy_tts.config import ProjectConfig
 
 logger = ProjectConfig.get_logger()
 

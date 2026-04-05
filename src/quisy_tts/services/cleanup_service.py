@@ -3,8 +3,8 @@
 import time
 from pathlib import Path
 
-from config import ProjectConfig
-from core import CleanupService
+from quisy_tts.config import ProjectConfig
+from quisy_tts.core import CleanupService
 
 
 logger = ProjectConfig.get_logger()

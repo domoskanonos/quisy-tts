@@ -7,16 +7,16 @@ without requiring a running FastAPI/MCP server.
 
 import logging
 from typing import Any
-from src.config import ProjectConfig
-from src.core.interfaces import CacheService, CleanupService, TTSEngine, TTSServiceInterface
-from src.engine import QwenTextToSpeech
-from src.services.cache_service import FileCacheService
-from src.services.cleanup_service import FileCleanupService
-from src.services.ssml_processor import SSMLProcessor
-from src.services.tts_service import TTSService
-from src.services.voice_audio_integrity import VoiceAudioIntegrityService
-from src.services.voice_service import VoiceService
-from src.services.text_splitter import get_text_splitter
+from quisy_tts.config import ProjectConfig
+from quisy_tts.core.interfaces import CacheService, CleanupService, TTSEngine, TTSServiceInterface
+from quisy_tts.engine import QwenTextToSpeech
+from quisy_tts.services.cache_service import FileCacheService
+from quisy_tts.services.cleanup_service import FileCleanupService
+from quisy_tts.services.ssml_processor import SSMLProcessor
+from quisy_tts.services.tts_service import TTSService
+from quisy_tts.services.voice_audio_integrity import VoiceAudioIntegrityService
+from quisy_tts.services.voice_service import VoiceService
+from quisy_tts.services.text_splitter import get_text_splitter
 
 
 class QuisyTTS:

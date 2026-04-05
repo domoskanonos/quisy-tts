@@ -1,6 +1,6 @@
 import asyncio
 from api.websocket_status_manager import status_ws_manager
-from services.voice_audio_integrity import VoiceAudioIntegrityService
+from quisy_tts.services.voice_audio_integrity import VoiceAudioIntegrityService
 
 
 async def ensure_reference_audio(service, voice_id: str, force: bool = False) -> None:

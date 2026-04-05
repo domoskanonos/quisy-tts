@@ -5,10 +5,10 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
-from config import ProjectConfig
-from src.core.interfaces import VoiceServiceInterface
-from src.schemas.languages import resolve_language
-from domain.voice.models import Voice
+from quisy_tts.config import ProjectConfig
+from quisy_tts.core.interfaces import VoiceServiceInterface
+from quisy_tts.schemas.languages import resolve_language
+from quisy_tts.domain.voice.models import Voice
 
 
 logger = ProjectConfig.get_logger()
@@ -36,6 +36,12 @@ class VoiceService(VoiceServiceInterface):
         print(f"DEBUG: VoiceService init. voices_dir={self._voices_dir}, CWD={Path.cwd()}")
         self._voices_dir.mkdir(parents=True, exist_ok=True)
 
+        # Search for resources in the current project root or packaged location
+        source_db = Path("resources") / "quisy-tts.db"
+        if not source_db.exists():
+            # Fallback for packaged installation
+            source_db = Path(__file__).resolve().parent.parent.parent.parent / "resources" / "quisy-tts.db"
+
         # Use either provided db_path (useful for tests) or a copy of the resources DB
         # in data/app_data as the single authoritative, writable runtime DB.
         db_destination = settings.APP_DIR / "quisy-tts.db"
@@ -49,7 +55,6 @@ class VoiceService(VoiceServiceInterface):
             if not self._db_path.exists():
                 import shutil
 
-                source_db = settings.RESOURCES_DIR / "quisy-tts.db"
                 if source_db.exists():
                     shutil.copy2(source_db, self._db_path)
                     logger.info(f"Copied resources DB to {self._db_path}")

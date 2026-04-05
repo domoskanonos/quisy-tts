@@ -5,9 +5,9 @@ import time
 import shutil
 from pathlib import Path
 
-from config import ProjectConfig
-from core import CacheService
-from schemas import TTSParams
+from quisy_tts.config import ProjectConfig
+from quisy_tts.core import CacheService
+from quisy_tts.schemas import TTSParams
 import asyncio
 import weakref
 

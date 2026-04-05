@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 
-from schemas.languages import resolve_language
+from quisy_tts.schemas.languages import resolve_language
 
 
 class TTSParams(BaseModel):

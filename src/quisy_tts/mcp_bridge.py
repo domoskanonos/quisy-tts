@@ -2,9 +2,9 @@ import os
 import uuid
 import asyncio
 from fastmcp import FastMCP
-from src.quisy_tts import QuisyTTS
-from src.schemas import TTSParams
-from src.audio.processor import AudioProcessor
+from quisy_tts.client import QuisyTTS
+from quisy_tts.schemas import TTSParams
+from quisy_tts.audio.processor import AudioProcessor
 
 # Initialize the MCP server
 mcp = FastMCP("QuisyTTS-Server")

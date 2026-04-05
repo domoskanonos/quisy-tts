@@ -72,9 +72,11 @@ class ProjectSettings(BaseSettings):
     def APP_DIR(self) -> Path:
         return self.BASE_DATA_DIR / "app_data"
 
+    # Path resolution to resources
     @property
     def RESOURCES_DIR(self) -> Path:
-        return self.BASE_DIR / "resources"
+        # Adjusted for library structure
+        return self.BASE_DIR.parent / "resources"
 
     DEFAULT_LANGUAGE: str = "de"
 
