@@ -110,6 +110,13 @@ class QwenTextToSpeech(TTSEngine):
         model = await self.ensure_loaded(params.mode)
         return await self._generate_single(model, text, params)
 
+    async def generate_audio_bytes(self, text: str, params: Any = None) -> tuple[bytes, int]:
+        """Generates audio as raw PCM bytes (16-bit) via qwen-tts (async)."""
+        waveform, sr = await self.generate_audio(text, params)
+        audio_np = waveform.squeeze().cpu().numpy()
+        audio_bytes = (audio_np * 32767).astype(np.int16).tobytes()
+        return audio_bytes, sr
+
     async def _generate_single(self, model: Qwen3TTSModel, text: str, params: TTSParams) -> tuple[Any, int]:
         """Generate audio for a single text chunk."""
         gen_kwargs = {

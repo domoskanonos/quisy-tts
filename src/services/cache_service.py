@@ -84,6 +84,20 @@ class FileCacheService(CacheService):
             shutil.copy2(path, cache_path)
             logger.info(f"Cached audio with key: {key[:8]}...")
 
+    def set_bytes(self, key: str, data: bytes) -> None:
+        """Store audio bytes in cache (asynchronous write)."""
+        cache_path = self.cache_dir / f"cache_{key}.wav"
+
+        def _write_file():
+            try:
+                cache_path.write_bytes(data)
+                logger.info(f"Successfully cached bytes for key: {key[:8]}...")
+            except Exception as e:
+                logger.error(f"Failed to cache bytes for key {key}: {e}")
+
+        # Fire and forget: run file I/O in a background thread to avoid blocking the stream
+        asyncio.create_task(asyncio.to_thread(_write_file))
+
     def cleanup_old_files(self, directory: Path | None = None, max_age_hours: int = 24 * 30) -> int:
         """Remove files older than `max_age_hours` from the cache directory.
 

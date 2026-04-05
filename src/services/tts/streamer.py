@@ -1,8 +1,6 @@
 import numpy as np
 import soundfile as sf
-from pathlib import Path
 from collections.abc import AsyncGenerator
-from config import ProjectConfig
 from core import AudioGenerationError
 from schemas import TTSParams
 from schemas.languages import resolve_language
@@ -56,26 +54,33 @@ async def generate_stream(
             async with lock:
                 chunk_path = service.cache.get(chunk_key)
                 if not chunk_path:
-                    output_path = ProjectConfig.get_settings().AUDIO_DIR / f"cache_{chunk_key}.wav"
                     try:
-                        result_path = await service.engine.generate_and_save(chunk_text, str(output_path), params)
-                        chunk_path = Path(result_path)
-                        service.cache.set(chunk_key, chunk_path)
+                        audio_bytes, sr = await service.engine.generate_audio_bytes(chunk_text, params)
+                        # Yield the actual bytes first to minimize latency
+                        for k in range(0, len(audio_bytes), chunk_size):
+                            yield audio_bytes[k : k + chunk_size]
+
+                        # Cache asynchronously in background
+                        service.cache.set_bytes(chunk_key, audio_bytes)
                     except Exception as e:
                         raise AudioGenerationError(f"Stream generation failed: {e}") from e
 
-        # Stream chunk
-        with sf.SoundFile(str(chunk_path)) as f:
-            while True:
-                data = f.read(dtype="int16", frames=chunk_size // 2)
-                if len(data) == 0:
-                    break
-                yield data.tobytes()
+        else:
+            # Stream chunk from disk cache
+            with sf.SoundFile(str(chunk_path)) as f:
+                while True:
+                    data = f.read(dtype="int16", frames=chunk_size // 2)
+                    if len(data) == 0:
+                        break
+                    yield data.tobytes()
 
         # Yield silence
         if i < len(chunks) - 1:
             try:
-                sr = sf.info(str(chunk_path)).samplerate
+                # Assuming standard 24kHz if we just generated, otherwise check info
+                sr = 24000
+                if chunk_path:
+                    sr = sf.info(str(chunk_path)).samplerate
                 yield np.zeros(int(sr * 0.15), dtype=np.int16).tobytes()
             except Exception:
                 pass

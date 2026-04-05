@@ -100,6 +100,16 @@ class CacheService(ABC):
         """
         ...
 
+    @abstractmethod
+    def set_bytes(self, key: str, data: bytes) -> None:
+        """Store audio bytes in cache.
+
+        Args:
+            key: The cache key.
+            data: The audio data as bytes.
+        """
+        ...
+
 
 class CleanupService(ABC):
     """Abstract interface for file cleanup operations."""
