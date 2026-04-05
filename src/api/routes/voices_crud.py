@@ -117,35 +117,3 @@ def delete_voice(
     deleted = voice_service.delete_voice(voice_id)
     if not deleted:
         raise HTTPException(status_code=404, detail=f"Voice {voice_id} not found")
-
-
-@router.post(
-    "/{voice_id}/audio",
-    response_model=VoiceResponse,
-    summary="Upload reference audio",
-    description="Uploads a custom WAV file to be used as the cloning reference for an existing voice. This overwrites any previous reference audio.",
-)
-async def upload_audio(
-    file: UploadFile = File(...),
-    voice_id: str = Path(..., pattern=r"^[a-z0-9_-]+$"),
-    voice_service: VoiceService = Depends(get_voice_service),
-) -> dict:
-    """Upload or replace the audio file for a voice."""
-    if voice_id in {"terms", "search"}:
-        raise HTTPException(status_code=404, detail=f"Voice {voice_id} not found")
-    if file.content_type and not file.content_type.startswith("audio/"):
-        raise HTTPException(status_code=400, detail="Only audio files are allowed")
-
-    audio_data = await file.read()
-
-    if len(audio_data) > 50 * 1024 * 1024:  # 50 MB limit
-        raise HTTPException(status_code=400, detail="Audio file too large (max 50 MB)")
-
-    voice = voice_service.set_audio(
-        voice_id=voice_id,
-        audio_data=audio_data,
-        original_filename=file.filename or "upload.wav",
-    )
-    if voice is None:
-        raise HTTPException(status_code=404, detail=f"Voice {voice_id} not found")
-    return voice
