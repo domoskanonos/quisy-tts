@@ -1,6 +1,5 @@
 import os
 import uuid
-import httpx
 from fastmcp import FastMCP
 from schemas import TTSParams
 from api.dependencies import get_tts_service, get_voice_service, get_voice_audio_integrity
