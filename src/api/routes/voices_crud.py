@@ -19,14 +19,24 @@ router: APIRouter = APIRouter(tags=["Voice Management"])
 # ─── CRUD Operations ─────────────────────────────────────────
 
 
-@router.get("/", response_model=VoiceListResponse)
+@router.get(
+    "/",
+    response_model=VoiceListResponse,
+    summary="List all voices",
+    description="Returns a list of all registered voices, including both system defaults and custom user voices.",
+)
 def list_voices(voice_service: VoiceService = Depends(get_voice_service)) -> dict[str, Any]:
     """List all registered voices (defaults + custom)."""
     voices = voice_service.list_voices()
     return {"voices": voices, "total": len(voices)}
 
 
-@router.get("/{voice_id}", response_model=VoiceResponse)
+@router.get(
+    "/{voice_id}",
+    response_model=VoiceResponse,
+    summary="Get voice details",
+    description="Retrieves detailed metadata for a specific voice by its unique identifier.",
+)
 def get_voice(
     voice_id: str = Path(..., pattern=r"^[a-z0-9_-]+$"), voice_service: VoiceService = Depends(get_voice_service)
 ) -> dict:
@@ -39,7 +49,13 @@ def get_voice(
     return voice
 
 
-@router.post("/", response_model=dict, status_code=200)
+@router.post(
+    "/",
+    response_model=dict,
+    status_code=200,
+    summary="Create custom voice",
+    description="Creates a new voice entry. The system uses the provided `instruct` and `text` to generate a unique reference audio using the VoiceDesign model (1.7B). This audio is then used for future cloning requests.",
+)
 async def create_voice(
     data: VoiceCreate,
     service: TTSService = Depends(get_tts_service),
@@ -80,7 +96,12 @@ async def create_voice(
     return {"status": "success", "voice_id": voice["voice_id"]}
 
 
-@router.delete("/{voice_id}", status_code=204)
+@router.delete(
+    "/{voice_id}",
+    status_code=204,
+    summary="Delete voice",
+    description="Permanently removes a custom voice and its associated reference audio file from the system.",
+)
 def delete_voice(
     voice_id: str = Path(..., pattern=r"^[a-z0-9_-]+$"), voice_service: VoiceService = Depends(get_voice_service)
 ) -> None:
@@ -98,7 +119,12 @@ def delete_voice(
         raise HTTPException(status_code=404, detail=f"Voice {voice_id} not found")
 
 
-@router.post("/{voice_id}/audio", response_model=VoiceResponse)
+@router.post(
+    "/{voice_id}/audio",
+    response_model=VoiceResponse,
+    summary="Upload reference audio",
+    description="Uploads a custom WAV file to be used as the cloning reference for an existing voice. This overwrites any previous reference audio.",
+)
 async def upload_audio(
     file: UploadFile = File(...),
     voice_id: str = Path(..., pattern=r"^[a-z0-9_-]+$"),

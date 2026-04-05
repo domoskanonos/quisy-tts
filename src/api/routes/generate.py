@@ -17,7 +17,16 @@ settings = ProjectConfig.get_settings()
 router: APIRouter = APIRouter(tags=["Generation"])
 
 
-@router.post("/generate", response_model=None)
+@router.post(
+    "/generate",
+    response_model=None,
+    summary="Standard Text-to-Speech",
+    description=(
+        "Generates audio from text using a specified voice. "
+        "The style instructions (instruct) are automatically retrieved from the database "
+        "based on the `voice_id`. This is the recommended endpoint for simple, high-quality narration."
+    ),
+)
 async def generate_audio(
     request: GenerateRequest,
     background_tasks: BackgroundTasks,
@@ -53,7 +62,15 @@ async def generate_audio(
     )
 
 
-@router.post("/ssml")
+@router.post(
+    "/ssml",
+    summary="SSML Audio Generation",
+    description=(
+        "Converts SSML (Speech Synthesis Markup Language) to audio. "
+        "Allows for multi-speaker dialogs, custom pauses using `<break>`, "
+        "and granular control over the speech output. The root element must be `<speak>`."
+    ),
+)
 async def generate_ssml(
     ssml: str = Body(
         ...,

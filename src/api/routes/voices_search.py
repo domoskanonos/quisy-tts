@@ -14,7 +14,11 @@ def _get_service() -> VoiceService:
     return VoiceService()
 
 
-@router.get("/terms")
+@router.get(
+    "/terms",
+    summary="Get top style terms",
+    description="Analyzes all voice instructions in the database and returns the top 50 most frequently used descriptive terms (e.g., 'calm', 'narrator', 'deep'). Useful for building search filters or tag clouds.",
+)
 def get_terms() -> dict[str, Any]:
     """Return top 50 instruct terms (from FTS or derived table)."""
     service = _get_service()
@@ -25,12 +29,18 @@ def get_terms() -> dict[str, Any]:
     return {"terms": terms}
 
 
-@router.get("/search")
+@router.get(
+    "/search",
+    summary="Search voices",
+    description="Advanced search for voices using free-text `q` (searching name, instructions, and examples) and specific comma-separated `terms` (filtering by style). Supports pagination via `limit` and `offset`.",
+)
 def search_voices(
-    q: str | None = Query(None, max_length=200),
-    terms: str | None = Query(None),
-    limit: int = Query(20, ge=1, le=200),
-    offset: int = Query(0, ge=0),
+    q: str | None = Query(None, max_length=200, description="Free-text search query (e.g., 'news reporter')"),
+    terms: str | None = Query(
+        None, description="Comma-separated style terms to filter by (e.g., 'male,calm,narrator')"
+    ),
+    limit: int = Query(20, ge=1, le=200, description="Maximum number of results to return"),
+    offset: int = Query(0, ge=0, description="Number of results to skip for pagination"),
 ):
     """Search voices by free text `q` and comma-separated `terms` (chips)."""
     service = _get_service()
