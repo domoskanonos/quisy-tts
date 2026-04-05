@@ -59,7 +59,7 @@ async def generate_ssml(
         ...,
         description="The SSML content to generate audio from.",
         examples=[
-            '<speak><speaker name="german_audiobook_male_narrator_01">Hallo, dies ist ein Test mit SSML.</speaker></speak>'
+            '<speak><speaker name="german_audiobook_female_narrator_01">Hallo, dies ist ein Test mit SSML.</speaker></speak>'
         ],
     ),
 ):

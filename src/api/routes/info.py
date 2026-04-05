@@ -21,11 +21,12 @@ def read_root() -> dict[str, Any]:
         "architecture": "Clean Architecture (Hexagonal)",
         "backend": "qwen-tts",
         "available_endpoints": [
-            "/generate/base/0.6b",
-            "/generate/base/1.7b",
-            "/generate/voice-design/1.7b",
-            "/generate/custom-voice/0.6b",
-            "/generate/custom-voice/1.7b",
+            "/api/generate/generate",
+            "/api/generate/ssml",
+            "/api/voices/",
+            "/api/voices/search",
+            "/api/voices/terms",
+            "/api/audio",
         ],
     }
 
