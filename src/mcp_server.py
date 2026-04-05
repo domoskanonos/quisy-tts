@@ -1,5 +1,6 @@
 import os
 import uuid
+from pathlib import Path
 from fastmcp import FastMCP
 from schemas import TTSParams
 from api.dependencies import get_tts_service, get_voice_service, get_voice_audio_integrity
@@ -19,10 +20,27 @@ settings = ProjectConfig.get_settings()
 base_audio_url = f"http://localhost:{settings.PORT}/audio"
 
 
-def get_audio_url(file_path: str) -> str:
+def get_audio_url(file_path: str | Path) -> str:
     """Converts a local file path to an accessible URL."""
-    filename = os.path.basename(file_path)
+    filename = os.path.basename(str(file_path))
     return f"{base_audio_url}/{filename}"
+
+
+def validate_safe_filename(filename: str) -> str:
+    """
+    Ensures the filename is just a filename without directory components
+    to prevent path traversal attacks.
+    """
+    if not filename:
+        raise ValueError("Filename cannot be empty.")
+
+    # Remove any directory components
+    safe_name = os.path.basename(filename)
+
+    if safe_name != filename:
+        raise ValueError(f"Invalid filename: '{filename}'. Directory components are not allowed.")
+
+    return safe_name
 
 
 @mcp.tool
@@ -163,7 +181,8 @@ async def concatenate_audio(audio_files: list[str]) -> str:
     Useful for combining several generated sentences or adding intros/outros.
 
     Args:
-        audio_files: A list of filenames (e.g., ['file1.wav', 'file2.wav']) that already exist on the server (either generated or uploaded).
+        audio_files: A list of filenames (e.g., ['file1.wav', 'file2.wav']) that already exist on the server.
+                    Only filenames without directory components are allowed.
 
     Returns:
         A public URL to the final concatenated WAV file.
@@ -171,8 +190,13 @@ async def concatenate_audio(audio_files: list[str]) -> str:
     # Search for files in AUDIO_DIR and UPLOAD_DIR
     input_paths = []
     for f in audio_files:
-        p_out = settings.AUDIO_DIR / f
-        p_up = settings.UPLOAD_DIR / f
+        try:
+            safe_f = validate_safe_filename(f)
+        except ValueError as e:
+            return f"Error: {e}"
+
+        p_out = settings.AUDIO_DIR / safe_f
+        p_up = settings.UPLOAD_DIR / safe_f
 
         if p_out.exists():
             input_paths.append(str(p_out))
@@ -182,9 +206,9 @@ async def concatenate_audio(audio_files: list[str]) -> str:
             return f"Error: File '{f}' not found in output or upload directories."
 
     output_filename = f"concat_{uuid.uuid4()}.wav"
-    output_path = os.path.join(settings.AUDIO_DIR, output_filename)
+    output_path = settings.AUDIO_DIR / output_filename
 
-    if not AudioProcessor.concatenate_audio(input_paths, output_path):
+    if not AudioProcessor.concatenate_audio(input_paths, str(output_path)):
         return "Error: Concatenation failed."
 
     return get_audio_url(output_path)

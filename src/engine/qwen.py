@@ -153,7 +153,7 @@ class QwenTextToSpeech(TTSEngine):
             )
 
         # Base/Custom mode = voice clone
-        ref_audio_path = self._resolve_ref_audio(params)
+        ref_audio_path = params.reference_audio_path
         self.logger.debug(
             f"Debug: _generate_sync | ref_audio_path: {ref_audio_path} | ref_text length: {len(params.ref_text or '')} | ref_text: '{params.ref_text}'"
         )
@@ -191,24 +191,3 @@ class QwenTextToSpeech(TTSEngine):
                 yield audio_bytes[k : k + chunk_size]
 
         return _generator()
-
-    def _resolve_ref_audio(self, params: TTSParams) -> str | None:
-        """Resolve reference audio path."""
-        from services.voice_service import VoiceService
-
-        if params.reference_audio:
-            path = self.settings.VOICES_DIR / VoiceService.get_voice_filename(params.reference_audio)
-            if path.exists():
-                return str(path)
-
-        default_voice_id = getattr(self.settings, "DEFAULT_VOICE_ID", None)
-        if default_voice_id:
-            vs = VoiceService(self.settings.VOICES_DIR)
-            voice = vs.get_voice(default_voice_id)
-            if voice:
-                path = self.settings.VOICES_DIR / VoiceService.get_voice_filename(default_voice_id)
-                if path.exists():
-                    return str(path)
-
-        voices = list(self.settings.VOICES_DIR.glob("*.wav"))
-        return str(voices[0]) if voices else None

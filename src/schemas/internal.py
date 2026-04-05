@@ -14,6 +14,7 @@ class TTSParams(BaseModel):
     # presence before generation.
     language: str | None = None
     reference_audio: str | None = None
+    reference_audio_path: str | None = None
     ref_text: str | None = None
     mode: str = "base"
     instruct: str | None = None

@@ -350,16 +350,36 @@ class VoiceService(VoiceServiceInterface):
     def get_audio_path(self, voice_id: str) -> Path | None:
         """Return the full path to the audio file for a voice, or None."""
         voice = self.get_voice(voice_id)
-        if voice is None or voice.get("audio_filename") is None:
+        if voice is None:
             return None
 
-        # Only serve generated audio from the voices directory. Resources/voices
-        # shipped with the project are explicitly ignored per runtime policy.
-        filename = voice["audio_filename"]
-        if not filename:
-            return None
-
+        # Always use voice_{voice_id}.wav naming convention
+        filename = self.get_voice_filename(voice_id)
         audio_path = self._voices_dir / filename
         if not audio_path.exists():
             return None
         return audio_path
+
+    def resolve_reference_audio(self, voice_id: str | None = None) -> str | None:
+        """Resolve a voice_id to an absolute file path on disk.
+        If no voice_id is provided, or the voice is not found, it falls back
+        to the default voice or the first available .wav in the voices directory.
+        """
+        settings = ProjectConfig.get_settings()
+
+        # 1. Try requested voice
+        if voice_id:
+            path = self._voices_dir / self.get_voice_filename(voice_id)
+            if path.exists():
+                return str(path)
+
+        # 2. Try default voice
+        default_voice_id = getattr(settings, "DEFAULT_VOICE_ID", None)
+        if default_voice_id:
+            path = self._voices_dir / self.get_voice_filename(default_voice_id)
+            if path.exists():
+                return str(path)
+
+        # 3. Fallback to any .wav in voices directory
+        voices = list(self._voices_dir.glob("*.wav"))
+        return str(voices[0]) if voices else None

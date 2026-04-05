@@ -1,13 +1,13 @@
 """Core package - Domain layer (Ports in Hexagonal Architecture)."""
 
-from core.exceptions import (
+from .exceptions import (
     AudioGenerationError,
     EngineUnavailableError,
     InvalidLanguageError,
     ReferenceAudioNotFoundError,
     TTSError,
 )
-from core.interfaces import CacheService, CleanupService, TTSEngine, TTSServiceInterface, VoiceServiceInterface
+from .interfaces import CacheService, CleanupService, TTSEngine, TTSServiceInterface, VoiceServiceInterface
 
 
 __all__ = [

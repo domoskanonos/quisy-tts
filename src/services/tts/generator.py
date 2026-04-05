@@ -45,6 +45,7 @@ async def generate_audio(
     params = TTSParams(
         language=resolved,
         reference_audio=reference_audio,
+        reference_audio_path=service.voice_service.resolve_reference_audio(reference_audio),
         ref_text=ref_text,
         mode=mode,
         model_size=model_size,
