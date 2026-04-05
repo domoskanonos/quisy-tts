@@ -32,13 +32,17 @@ async def generate_audio(
     # Ensure reference audio exists before generation
     await service.voice_audio_integrity.ensure_audio(request.voice_id, service.generate_audio)
 
+    voice = voice_service.get_voice(request.voice_id)
+    # We already checked for None above, but for type safety:
+    instruct = voice.get("instruct") if voice else None
+
     result_path = await service.generate_audio(
         text=request.text,
         language=request.language,
         mode="base",
         model_size=settings.DEFAULT_MODEL_SIZE,
         reference_audio=request.voice_id,
-        instruct=request.instruct,
+        instruct=instruct,
     )
     background_tasks.add_task(cleanup.cleanup_old_files, settings.AUDIO_DIR, 24)
     return FileResponse(

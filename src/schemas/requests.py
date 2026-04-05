@@ -18,18 +18,13 @@ class GenerateRequest(BaseModel):
     )
     language: str = Field(
         ...,
-        description="Language name (e.g., 'german', 'english'). Allowed values: 'de','en','fr','es','it','pt','ru','ja','ko','zh' or full names like 'german','english'.",
-        json_schema_extra={"example": "de"},
+        description="Language name (e.g., 'german', 'english'). Allowed values: 'german','english','french','spanish','italian','portuguese','russian','japanese','korean','chinese'.",
+        json_schema_extra={"example": "german"},
     )
     voice_id: str = Field(
         ...,
         description="The ID of the voice to use.",
-        json_schema_extra={"example": "german_audiobook_male_narrator_01"},
-    )
-    instruct: str | None = Field(
-        default=None,
-        description="Optional style instruction for the speaker (e.g. 'happy', 'sad').",
-        json_schema_extra={"example": ("Sprich wie ein professioneller Podcaster mit tiefer, ruhiger Stimme.")},
+        json_schema_extra={"example": "german_audiobook_female_narrator_01"},
     )
 
 
@@ -48,8 +43,8 @@ class CreateVoiceRequest(BaseModel):
     )
     language: str = Field(
         ...,
-        description="Language name (e.g., 'german', 'english'). Allowed values: 'de','en','fr','es','it','pt','ru','ja','ko','zh' or full names like 'german','english'.",
-        json_schema_extra={"example": "de"},
+        description="Language name (e.g., 'german', 'english'). Allowed values: 'german','english','french','spanish','italian','portuguese','russian','japanese','korean','chinese'.",
+        json_schema_extra={"example": "german"},
     )
     text: str = Field(
         ...,
@@ -73,13 +68,13 @@ class BaseGenerateRequest(BaseModel):
     )
     language: str = Field(
         ...,
-        description="Language: short code (e.g. 'de') or full name (e.g. 'german'). Allowed: 'de','en','fr','es','it','pt','ru','ja','ko','zh' or corresponding full names.",
-        json_schema_extra={"example": "de"},
+        description="Language: full name (e.g. 'german'). Allowed: 'german','english','french','spanish','italian','portuguese','russian','japanese','korean','chinese'.",
+        json_schema_extra={"example": "german"},
     )
     reference_audio: str = Field(
         ...,
-        description="Voice ID to use as reference (e.g. 'german_audiobook_male_narrator_01').",
-        json_schema_extra={"example": "german_audiobook_male_narrator_01"},
+        description="Voice ID to use as reference (e.g. 'german_audiobook_female_narrator_01').",
+        json_schema_extra={"example": "german_audiobook_female_narrator_01"},
     )
 
 
@@ -98,8 +93,8 @@ class VoiceDesignRequest(BaseModel):
     )
     language: str = Field(
         ...,
-        description="Language: short code (e.g. 'de') or full name (e.g. 'german'). Allowed: 'de','en','fr','es','it','pt','ru','ja','ko','zh' or corresponding full names.",
-        json_schema_extra={"example": "de"},
+        description="Language: full name (e.g. 'german'). Allowed: 'german','english','french','spanish','italian','portuguese','russian','japanese','korean','chinese'.",
+        json_schema_extra={"example": "german"},
     )
     instruct: str = Field(
         ...,
@@ -123,13 +118,13 @@ class CustomVoiceRequest(BaseModel):
     )
     language: str = Field(
         ...,
-        description="Language: short code (e.g. 'de') or full name (e.g. 'german'). Allowed: 'de','en','fr','es','it','pt','ru','ja','ko','zh' or corresponding full names.",
-        json_schema_extra={"example": "de"},
+        description="Language: full name (e.g. 'german'). Allowed: 'german','english','french','spanish','italian','portuguese','russian','japanese','korean','chinese'.",
+        json_schema_extra={"example": "german"},
     )
     voice_id: str = Field(
         ...,
         description="Predefined voice ID (use /voices search to find).",
-        json_schema_extra={"example": "german_audiobook_male_narrator_01"},
+        json_schema_extra={"example": "german_audiobook_female_narrator_01"},
     )
     instruct: str | None = Field(
         default=None,

@@ -42,9 +42,9 @@ class VoiceCreate(BaseModel):
         json_schema_extra={"example": "A calm, professional male voice with a warm tone."},
     )
     language: str = Field(
-        default="de",
-        description="Language of the voice (e.g. de).",
-        json_schema_extra={"example": "de"},
+        default="german",
+        description="Language of the voice (e.g. german).",
+        json_schema_extra={"example": "german"},
     )
 
 
