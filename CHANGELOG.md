@@ -1,6 +1,15 @@
 # CHANGELOG
 
 
+## v0.26.0 (2026-04-05)
+
+### Refactoring
+- Umstellung von einem REST-API/Docker-basierten Dienst auf eine reine Python-Library mit optionalem MCP-Server.
+- Entfernung von `FastAPI`, `uvicorn` und `docker`-Infrastruktur.
+- Etablierung von `src/quisy_tts/client.py` als primäre Library-Schnittstelle.
+- Umwandlung von `src/mcp_server.py` in einen direkt ausführbaren MCP-Server ohne HTTP-Server-Layer.
+- Anpassung der `pyproject.toml` und Dokumentation zur Unterstützung der Library-Architektur.
+
 ## v0.25.0 (2026-04-03)
 
 ### Features

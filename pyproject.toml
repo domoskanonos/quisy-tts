@@ -1,7 +1,7 @@
 [project]
-name = "quisy-tts"
-version = "0.25.0"
-description = "Quisy TTS is a modern, high-performance Text-to-Speech API powered by Qwen3-TTS."
+name = "quisy-mcp-system-tools"
+version = "0.26.0"
+description = "Quisy TTS as an MCP system tool."
 authors = [{ name = "Dominik Bruhn", email = "dominikbruhn@googlemail.com" }]
 license = { text = "MIT" }
 requires-python = ">=3.12"
@@ -10,24 +10,27 @@ dependencies = [
     "pytest>=8.4.2",
     "pytest-asyncio>=0.23.0",
     "pydantic-settings>=2.12.0",
-    "fastapi>=0.115.0",
-    "uvicorn>=0.30.0",
-    "python-multipart>=0.0.9",
     "qwen-tts>=0.1.1",
-    "websockets>=13.0",
     "requests>=2.31.0",
     "huggingface-hub>=0.20.0",
     "soundfile>=0.12.1",
     "numpy>=1.26.0",
-    "spacy>=3.7.0",
+    "spacy>=3.8.0",
     "fastmcp>=2.1.0",
     "mkdocs-plantuml>=0.1.1",
 ]
+
+[project.scripts]
+quisy-mcp-system-tools = "quisy_tts.mcp_bridge:main"
+
 
 [project.optional-dependencies]
 gpu = [
     "torch>=2.0.0",
     "torchaudio>=2.0.0",
+]
+mcp = [
+    "fastmcp>=2.1.0",
 ]
 
 [build-system]
@@ -95,5 +98,4 @@ explicit = true
 torch = { index = "pytorch-cu128" }
 torchaudio = { index = "pytorch-cu128" }
 
-[project.scripts]
-start-dev = "src.uvcli:run"
+

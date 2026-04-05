@@ -7,7 +7,6 @@ from src.schemas import TTSParams
 from src.audio.processor import AudioProcessor
 
 # Initialize the MCP server
-# This can be run via `mcp run src/mcp_server.py`
 mcp = FastMCP("QuisyTTS-Server")
 client = QuisyTTS()
 
@@ -69,7 +68,6 @@ async def generate_ssml(ssml_content: str) -> str:
 async def concatenate_audio(audio_files: list[str]) -> str:
     """Concatenate multiple audio files into a single WAV file."""
     async with generation_semaphore:
-        # Search logic...
         input_paths = []
         for f in audio_files:
             p_out = settings.AUDIO_DIR / f
@@ -85,5 +83,10 @@ async def concatenate_audio(audio_files: list[str]) -> str:
         return str(output_path)
 
 
-if __name__ == "__main__":
+def main():
+    """Main entry point for the MCP server script."""
     mcp.run()
+
+
+if __name__ == "__main__":
+    main()
