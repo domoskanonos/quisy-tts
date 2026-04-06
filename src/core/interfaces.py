@@ -11,7 +11,7 @@ from typing import Any
 import asyncio
 
 
-class TTSEngine(ABC):
+class TTSEngineInterface(ABC):
     """Abstract interface for Text-to-Speech engines.
 
     Allows swapping TTS backends (e.g., Qwen, Coqui, Piper, OpenAI)
@@ -46,7 +46,7 @@ class TTSEngine(ABC):
         ...
 
     @abstractmethod
-    def generate_audio_stream(self, text: str, params: Any, chunk_size: int = 4096) -> AsyncGenerator[bytes, None]:
+    def generate_stream(self, text: str, params: Any, chunk_size: int = 4096) -> AsyncGenerator[bytes, None]:
         """Returns an async generator that yields audio byte chunks for streaming.
 
         Args:

@@ -3,16 +3,23 @@ from typing import Callable, Awaitable, Optional, Union
 
 from config import ProjectConfig
 from src.core.exceptions import AudioGenerationError, ReferenceAudioNotFoundError
-from src.core.interfaces import CacheService, TTSEngine, VoiceServiceInterface
-from src.services.voice_service import VoiceService
+from src.core.interfaces import CacheService, TTSEngineInterface, VoiceServiceInterface
+from src.services.voice_audio_service import VoiceAudioService
 from schemas import TTSParams
 
 logger = ProjectConfig.get_logger()
 
 
 class VoiceAudioIntegrityService:
-    def __init__(self, voice_service: VoiceServiceInterface, engine: TTSEngine, cache: CacheService):
+    def __init__(
+        self,
+        voice_service: VoiceServiceInterface,
+        audio_service: VoiceAudioService,
+        engine: TTSEngineInterface,
+        cache: CacheService,
+    ):
         self.voice_service = voice_service
+        self.audio_service = audio_service
         self.engine = engine
         self.cache = cache
         self.settings = ProjectConfig.get_settings()
@@ -22,7 +29,7 @@ class VoiceAudioIntegrityService:
         voice_id = voice.get("voice_id")
         if not voice_id:
             return False
-        path = Path(self.settings.VOICES_DIR) / VoiceService.get_voice_filename(voice_id)
+        path = Path(self.settings.VOICES_DIR) / self.audio_service.get_filename(voice_id)
         return path.exists() and path.stat().st_size > 0
 
     async def ensure_audio(
@@ -39,8 +46,7 @@ class VoiceAudioIntegrityService:
             raise ReferenceAudioNotFoundError(f"Voice '{voice_id}' not found in database.")
 
         # Check physical existence.
-        # The filename is now strictly voice_{voice_id}.wav
-        audio_path = Path(self.settings.VOICES_DIR) / VoiceService.get_voice_filename(voice_id)
+        audio_path = Path(self.settings.VOICES_DIR) / self.audio_service.get_filename(voice_id)
 
         # If it exists and is not forced, we are done!
         if audio_path.exists() and audio_path.stat().st_size > 0 and not force:
@@ -63,7 +69,7 @@ class VoiceAudioIntegrityService:
             self.logger.info(f"Automatic generation: starting reference audio generation for voice {voice_id}")
 
             # Define path directly according to convention
-            target_path = Path(self.settings.VOICES_DIR) / VoiceService.get_voice_filename(voice_id)
+            target_path = Path(self.settings.VOICES_DIR) / self.audio_service.get_filename(voice_id)
 
             # Build params object for engine directly
             params = TTSParams(

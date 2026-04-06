@@ -1,6 +1,6 @@
 """Engine package - qwen-tts based TTS adapter (Infrastructure layer)."""
 
-from core import TTSEngine
+from core.interfaces import TTSEngineInterface
 from engine.qwen import QwenTextToSpeech
 
-__all__ = ["TTSEngine", "QwenTextToSpeech"]
+__all__ = ["TTSEngineInterface", "QwenTextToSpeech"]

@@ -7,12 +7,12 @@ from core.exceptions import (
     ReferenceAudioNotFoundError,
     TTSError,
 )
-from core.interfaces import CacheService, CleanupService, TTSEngine, TTSServiceInterface, VoiceServiceInterface
+from core.interfaces import CacheService, CleanupService, TTSEngineInterface, TTSServiceInterface, VoiceServiceInterface
 
 
 __all__ = [
     # Interfaces
-    "TTSEngine",
+    "TTSEngineInterface",
     "CacheService",
     "CleanupService",
     "TTSServiceInterface",

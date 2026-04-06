@@ -10,9 +10,10 @@ import numpy as np
 from qwen_tts import Qwen3TTSModel
 
 from audio.processor import AudioUtils
-from core import TTSEngine
+from core.interfaces import TTSEngineInterface
 from schemas import TTSParams
 from schemas.languages import resolve_language
+from services.voice_audio_service import VoiceAudioService
 
 # Centralized generation config for consistency
 QWEN_GENERATION_CONFIG = {
@@ -27,7 +28,7 @@ QWEN_GENERATION_CONFIG = {
 INTER_CHUNK_SILENCE_SECS = 0.15
 
 
-class QwenTextToSpeech(TTSEngine):
+class QwenTextToSpeech(TTSEngineInterface):
     """Qwen3-TTS implementation using the official qwen-tts package (Async).
     Loads separate models per generation mode lazily on first use.
     """
@@ -169,9 +170,7 @@ class QwenTextToSpeech(TTSEngine):
         await loop.run_in_executor(None, AudioUtils.save_waveform, waveform, sr, output_path)
         return output_path
 
-    def generate_audio_stream(
-        self, text: str, params: Any = None, chunk_size: int = 4096
-    ) -> AsyncGenerator[bytes, None]:
+    def generate_stream(self, text: str, params: Any = None, chunk_size: int = 4096) -> AsyncGenerator[bytes, None]:
         """Stream audio by generating a single text chunk and yielding bytes."""
         if params is None:
             params = TTSParams()
@@ -187,21 +186,18 @@ class QwenTextToSpeech(TTSEngine):
 
     def _resolve_ref_audio(self, params: TTSParams) -> str | None:
         """Resolve reference audio path."""
-        from services.voice_service import VoiceService
+        audio_service = VoiceAudioService(self.settings.VOICES_DIR)
 
         if params.reference_audio:
-            path = self.settings.VOICES_DIR / VoiceService.get_voice_filename(params.reference_audio)
+            path = self.settings.VOICES_DIR / audio_service.get_filename(params.reference_audio)
             if path.exists():
                 return str(path)
 
         default_voice_id = getattr(self.settings, "DEFAULT_VOICE_ID", None)
         if default_voice_id:
-            vs = VoiceService(self.settings.VOICES_DIR)
-            voice = vs.get_voice(default_voice_id)
-            if voice:
-                path = self.settings.VOICES_DIR / VoiceService.get_voice_filename(default_voice_id)
-                if path.exists():
-                    return str(path)
+            path = self.settings.VOICES_DIR / audio_service.get_filename(default_voice_id)
+            if path.exists():
+                return str(path)
 
         voices = list(self.settings.VOICES_DIR.glob("*.wav"))
         return str(voices[0]) if voices else None

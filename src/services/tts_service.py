@@ -10,7 +10,13 @@ from typing import Any
 from pathlib import Path
 from collections.abc import AsyncGenerator
 import asyncio
-from src.core.interfaces import AudioConverter, CacheService, TTSEngine, TTSServiceInterface, VoiceServiceInterface
+from src.core.interfaces import (
+    AudioConverter,
+    CacheService,
+    TTSEngineInterface,
+    TTSServiceInterface,
+    VoiceServiceInterface,
+)
 from src.services.ssml_processor import SSMLProcessor
 from src.services.voice_audio_integrity import VoiceAudioIntegrityService
 from services.text_splitter import get_text_splitter
@@ -28,7 +34,7 @@ class TTSService(TTSServiceInterface):
 
     def __init__(
         self,
-        engine: TTSEngine,
+        engine: TTSEngineInterface,
         cache: CacheService,
         voice_service: VoiceServiceInterface,
         ssml_processor: SSMLProcessor,

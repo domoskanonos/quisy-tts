@@ -132,3 +132,7 @@ class VoiceService(VoiceServiceInterface):
         if not voice:
             return None
         return self.audio_service.get_audio_path(voice_id, voice.get("audio_filename"))
+
+    def get_voice_filename(self, voice_id: str) -> str:
+        """Centralized naming convention for voice files."""
+        return self.audio_service.get_filename(voice_id)

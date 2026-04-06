@@ -2,13 +2,14 @@
 
 import logging
 from config import ProjectConfig
-from src.core.interfaces import CacheService, CleanupService, TTSEngine, TTSServiceInterface
+from src.core.interfaces import CacheService, CleanupService, TTSEngineInterface, TTSServiceInterface
 from engine import QwenTextToSpeech
 from infrastructure.cache_service import FileCacheService
 from infrastructure.cleanup_service import FileCleanupService
 from services.ssml_processor import SSMLProcessor
 from services.voice_audio_integrity import VoiceAudioIntegrityService
 from services.voice_service import VoiceService
+from services.voice_audio_service import VoiceAudioService
 from services.tts_service import TTSService
 from services.text_splitter import get_text_splitter
 
@@ -20,7 +21,7 @@ def get_logger() -> logging.Logger:
     return ProjectConfig.get_logger()
 
 
-def get_tts_engine() -> TTSEngine:
+def get_tts_engine() -> TTSEngineInterface:
     """Returns the TTS engine instance."""
     return QwenTextToSpeech(
         settings=ProjectConfig.get_settings(), logger=get_logger(), text_splitter=get_text_splitter()
@@ -46,8 +47,14 @@ def get_ssml_processor() -> SSMLProcessor:
     return SSMLProcessor(get_voice_service())
 
 
+def get_voice_audio_service() -> VoiceAudioService:
+    return VoiceAudioService(ProjectConfig.get_settings().VOICES_DIR)
+
+
 def get_voice_audio_integrity() -> VoiceAudioIntegrityService:
-    return VoiceAudioIntegrityService(get_voice_service(), get_tts_engine(), get_cache_service())
+    return VoiceAudioIntegrityService(
+        get_voice_service(), get_voice_audio_service(), get_tts_engine(), get_cache_service()
+    )
 
 
 def get_audio_converter() -> AudioConverter:

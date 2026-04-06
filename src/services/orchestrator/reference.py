@@ -16,7 +16,9 @@ async def ensure_reference_audio(service, voice_id: str, force: bool = False) ->
             skip_integrity_check=True,
         )
 
-    integrity_service = VoiceAudioIntegrityService(service.voice_service, service.engine, service.cache)
+    integrity_service = VoiceAudioIntegrityService(
+        service.voice_service, service.audio_service, service.engine, service.cache
+    )
     await integrity_service.ensure_audio(voice_id, _generator_callback, force=force)
 
 
