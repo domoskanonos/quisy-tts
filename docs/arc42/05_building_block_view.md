@@ -1,18 +1,20 @@
 # 05. Building Block View
 
-This section provides an overview of the system's architecture at different levels of abstraction, following Hexagonal Architecture principles to ensure modularity and separation of concerns.
+This section provides an overview of the system's architecture, following Hexagonal Architecture principles to ensure modularity and separation of concerns.
 
 ## Level 1: White Box
 
 The system is organized into the following key packages:
 
 *   **API Layer (`src/api`):** Handles incoming HTTP/WebSocket requests, parameter validation, and routing.
-*   **Schemas (`src/schemas`):** Defines data contracts (request/response models) used for input validation and API communication.
-*   **Services (`src/services`):** The orchestration layer containing business logic for voice management, SSML processing, and TTS coordination.
-*   **Audio (`src/audio`):** Dedicated to audio post-processing and manipulation.
-*   **Engine (`src/engine`):** Infrastructure adapters implementing the actual TTS synthesis logic (e.g., Qwen).
-*   **Core (`src/core`):** Domain definitions, including interfaces (ports) and domain-specific exceptions.
-*   **Models (`src/models`):** Persistent data structures and domain entities.
+*   **Schemas (`src/schemas`):** Defines data contracts (request/response models).
+*   **Services (`src/services`):** The orchestration layer containing business logic.
+    *   **Orchestrator (`src/services/orchestrator`):** Centralizes TTS generation flow (streaming, SSML processing).
+*   **Domain (`src/domain`):** Core business logic and domain entities (e.g., Voice models).
+*   **Repositories (`src/repositories`):** Abstracts data access layers (e.g., SQLite interaction).
+*   **Infrastructure (`src/infrastructure`):** Infrastructure adapters (e.g., audio conversion, caching, cleanup).
+*   **Engine (`src/engine`):** Infrastructure adapters implementing the actual TTS synthesis logic.
+*   **Core (`src/core`):** Interfaces (ports) and domain-specific exceptions.
 
 ## Diagram (PlantUML)
 
@@ -20,17 +22,20 @@ The system is organized into the following key packages:
 @startuml
 [FastAPI Routes] as API <<API Layer>>
 [Data Contracts] as Schemas <<Schemas>>
-[Orchestration] as Services <<Services>>
-[Audio Processing] as Audio <<Audio>>
+[Services] as Services <<Services>>
+[Orchestration] as Orchestrator <<Orchestrator>>
+[Domain Logic] as Domain <<Domain>>
+[Repositories] as Repos <<Repositories>>
+[Infrastructure] as Infra <<Infrastructure>>
 [TTS Engines] as Engine <<Engine>>
-[Interfaces/Ports] as Core <<Core>>
-[Domain Entities] as Models <<Models>>
+[Core Interfaces] as Core <<Core>>
 
 API --> Schemas : uses
-API --> Services : calls
-Services --> Models : manages
-Services --> Audio : processes
-Services --> Core : implements/uses
+API --> Orchestrator : calls
+Orchestrator --> Services : uses
+Services --> Domain : manages
+Domain --> Repos : persists
+Services --> Infra : uses
 Services --> Engine : invokes
 Engine --> Core : implements
 @enduml
