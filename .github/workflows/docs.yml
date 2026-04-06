@@ -17,6 +17,8 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install mkdocs mkdocs-material mkdocs-kroki-plugin
       - name: Build Docs
+        env:
+          DISABLE_MKDOCS_2_WARNING: "true"
         run: |
           mkdocs build
       - name: Deploy to GitHub Pages
