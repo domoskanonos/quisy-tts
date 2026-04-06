@@ -1,6 +1,6 @@
 site_name: Quisy TTS
-site_url: https://your-username.github.io/quisy-tts/
-repo_url: https://github.com/your-username/quisy-tts/
+site_url: https://domoskanonos.github.io/quisy-tts/
+repo_url: https://github.com/domoskanonos/quisy-tts/
 
 theme:
   name: material
@@ -16,4 +16,16 @@ plugins:
 
 nav:
   - Home: index.md
-  - Architecture: arc42/01_introduction.md
+  - Architecture:
+      - Introduction: arc42/01_introduction.md
+      - Constraints: arc42/02_architecture_constraints.md
+      - Context: arc42/03_system_scope_and_context.md
+      - Solution Strategy: arc42/04_solution_strategy.md
+      - Building Block View: arc42/05_building_block_view.md
+      - Runtime View: arc42/06_runtime_view.md
+      - Deployment View: arc42/07_deployment_view.md
+      - Concepts: arc42/08_concepts.md
+      - Design Decisions: arc42/09_design_decisions.md
+      - Quality Requirements: arc42/10_quality_requirements.md
+      - Risks: arc42/11_risks_and_technical_debt.md
+      - Glossary: arc42/12_glossary.md

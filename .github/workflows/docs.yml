@@ -1,11 +1,11 @@
-name: Build Documentation
+name: Build and Deploy Documentation
 on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+
+permissions:
+  contents: write
 
 jobs:
   build-docs:
@@ -14,14 +14,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: |
-          # Install MkDocs and theme + plantuml plugin
           python -m pip install --upgrade pip
           python -m pip install mkdocs mkdocs-material mkdocs-plantuml plantuml
       - name: Build Docs
         run: |
           mkdocs build
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          name: site
-          path: site/
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
