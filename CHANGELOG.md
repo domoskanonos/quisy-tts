@@ -1,6 +1,20 @@
 # CHANGELOG
 
 
+## v0.29.0 (2026-04-06)
+
+### Chores
+
+- Update TextSplitterService to return full text as a single chunk and adjust tests accordingly;
+  bump version to 0.28.0
+  ([`6843cb3`](https://github.com/domoskanonos/quisy-tts/commit/6843cb35ff85662226c7591b6c125d309b1e1dad))
+
+### Features
+
+- Add description field to voice management and update audio processing to support MP3 export
+  ([`90ba829`](https://github.com/domoskanonos/quisy-tts/commit/90ba8294d4100664d308faa4241945d9f4019bfb))
+
+
 ## v0.28.0 (2026-04-06)
 
 ### Chores
