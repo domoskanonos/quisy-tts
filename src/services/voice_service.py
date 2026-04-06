@@ -88,128 +88,13 @@ class VoiceService(VoiceServiceInterface):
         return conn
 
     def _init_db(self) -> None:
-        """Create table, run migrations, and seed default voices if empty."""
+        """Create table and run migrations."""
         with self._get_conn() as conn:
             conn.execute(_CREATE_TABLE_SQL)
             self._migrate(conn)
 
-            # Check if default voices already exist
-            # Note: We rely on the naming convention (default_*) or just count.
-            count = conn.execute("SELECT COUNT(*) FROM voices WHERE voice_id LIKE 'default_%'").fetchone()[0]
-
-            if count == 0:
-                self._seed_defaults(conn)
-
     def _migrate(self, conn: sqlite3.Connection) -> None:
         """Run schema migrations for existing databases."""
-        # Check if 'language' column exists
-        columns = {row[1] for row in conn.execute("PRAGMA table_info(voices)").fetchall()}
-        if "language" not in columns:
-            logger.info("Migrating voices table: adding 'language' column...")
-            conn.execute("ALTER TABLE voices ADD COLUMN language TEXT NOT NULL DEFAULT 'german'")
-            conn.commit()
-
-        # Remove 'is_default' column if it still exists
-        if "is_default" in columns:
-            logger.info("Migrating voices table: dropping 'is_default' column...")
-            conn.execute("ALTER TABLE voices DROP COLUMN is_default")
-            conn.commit()
-
-        # No-op: system_prompt removed from schema
-
-        # Normalize existing language values to canonical form (resolve_language)
-        try:
-            rows = conn.execute("SELECT voice_id, language FROM voices").fetchall()
-            for r in rows:
-                vid = r[0]
-                lang = (r[1] or "").strip()
-                if not lang:
-                    continue
-                resolved = resolve_language(lang)
-                if resolved != lang.lower():
-                    logger.info(f"Normalizing language for voice {vid}: '{lang}' -> '{resolved}'")
-                    conn.execute("UPDATE voices SET language = ? WHERE voice_id = ?", (resolved, vid))
-            conn.commit()
-        except Exception as e:
-            logger.warning(f"Failed to normalize voice languages during migration: {e}")
-
-        # Ensure FTS5 virtual table for full-text search exists and is synced.
-        try:
-            cur = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='voices_fts'")
-            if cur.fetchone() is None:
-                logger.info("Creating FTS5 virtual table 'voices_fts' for full-text search...")
-                # Use content='voices' so we don't duplicate storage; content_rowid maps to voices.rowid
-                conn.execute(
-                    "CREATE VIRTUAL TABLE IF NOT EXISTS voices_fts USING fts5(name, instruct, example_text, content='voices', content_rowid='rowid', tokenize='unicode61')"
-                )
-                # Rebuild index from existing voices
-                conn.execute("INSERT INTO voices_fts(voices_fts) VALUES('rebuild')")
-
-                # Triggers to keep the FTS index in sync
-                conn.execute(
-                    "CREATE TRIGGER IF NOT EXISTS voices_ai AFTER INSERT ON voices BEGIN "
-                    "INSERT INTO voices_fts(rowid, name, instruct, example_text) VALUES (new.rowid, new.name, new.instruct, new.example_text); END;"
-                )
-                conn.execute(
-                    "CREATE TRIGGER IF NOT EXISTS voices_ad AFTER DELETE ON voices BEGIN "
-                    "DELETE FROM voices_fts WHERE rowid = old.rowid; END;"
-                )
-                conn.execute(
-                    "CREATE TRIGGER IF NOT EXISTS voices_au AFTER UPDATE ON voices BEGIN "
-                    "UPDATE voices_fts SET name = new.name, instruct = new.instruct, example_text = new.example_text WHERE rowid = old.rowid; END;"
-                )
-                conn.commit()
-        except Exception as e:
-            # FTS5 may not be available in the SQLite build; warn but continue.
-            logger.warning(f"Failed to create or initialize FTS5 table: {e}")
-
-    def _seed_defaults(self, conn: sqlite3.Connection) -> None:
-        """Insert all default voices."""
-        # Import DEFAULT_VOICES lazily to avoid circular imports during tests /
-        # runtime initialization. Prefer the regular package import but fall
-        # back to loading the module directly from the file system if that
-        # triggers an import-time circular dependency.
-        try:
-            import services.default_voices
-
-            DEFAULT_VOICES = services.default_voices.DEFAULT_VOICES
-        except Exception:
-            from importlib import util
-            from pathlib import Path
-
-            dv_path = Path(__file__).resolve().parents[0] / "default_voices.py"
-            spec = util.spec_from_file_location("services.default_voices", str(dv_path))
-            if spec and spec.loader:
-                dv_mod = util.module_from_spec(spec)
-                spec.loader.exec_module(dv_mod)
-                DEFAULT_VOICES = dv_mod.DEFAULT_VOICES
-            else:
-                raise ImportError("Could not load default_voices")
-
-        now = datetime.now(UTC).isoformat()
-        for i, voice in enumerate(DEFAULT_VOICES):
-            voice_id = f"default_{i + 1:03d}"
-            conn.execute(
-                """INSERT INTO voices (voice_id, name, example_text, instruct, language, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (
-                    voice_id,
-                    voice["name"],
-                    voice["example_text"],
-                    voice.get("instruct"),
-                    voice.get("language", "german"),
-                    now,
-                    now,
-                ),
-            )
-
-        # Log how many defaults were seeded (DEFAULT_VOICES is available here
-        # because we imported it lazily above).
-        try:
-            logger.info(f"Seeded {len(DEFAULT_VOICES)} default voices into SQLite.")
-        except Exception:
-            # Logging should never break DB initialization
-            pass
 
     # ─── Helper ──────────────────────────────────────────────────
 

@@ -10,8 +10,9 @@ theme:
 
 plugins:
   - search
-  - plantuml:
-      puml_url: http://www.plantuml.com/plantuml/svg/
+  # The installed plugin provides the entrypoint 'plantuml-colocator'
+  # (package: mkdocs-plantuml / mkdocsplantuml). Use that plugin id here.
+  - plantuml-colocator
 
 nav:
   - Home: index.md

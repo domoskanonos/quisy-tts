@@ -55,6 +55,6 @@ async def test_generate_audio_calls_generator():
 
     services.tts.generator.generate_audio = AsyncMock(return_value=Path("test.wav"))
 
-    result = await service.generate_audio(text="hello", language="en")
+    result = await service.generate_audio(text="hello", language="english")
 
     assert result == Path("test.wav")

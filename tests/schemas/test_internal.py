@@ -3,7 +3,7 @@ from schemas.internal import TTSParams
 
 
 def test_tts_params_copy():
-    params = TTSParams(language="en", mode="test", model_size="3B")
+    params = TTSParams(language="english", mode="test", model_size="3B")
     copied = params.model_copy()
     assert copied.language == params.language
     assert copied.mode == params.mode
@@ -12,8 +12,8 @@ def test_tts_params_copy():
 
 
 def test_tts_params_resolved_language_success():
-    # resolve_language for "en" is "english"
-    params = TTSParams(language="en")
+    # resolve_language for "english" is "english"
+    params = TTSParams(language="english")
     assert params.resolved_language == "english"
 
 

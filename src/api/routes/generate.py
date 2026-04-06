@@ -17,7 +17,16 @@ settings = ProjectConfig.get_settings()
 router: APIRouter = APIRouter(tags=["Generation"])
 
 
-@router.post("/generate", response_model=None)
+@router.post(
+    "/generate",
+    response_model=None,
+    summary="Standard Text-to-Speech",
+    description=(
+        "Generates audio from text using a specified voice. "
+        "The style instructions (instruct) are automatically retrieved from the database "
+        "based on the `voice_id`. This is the recommended endpoint for simple, high-quality narration."
+    ),
+)
 async def generate_audio(
     request: GenerateRequest,
     background_tasks: BackgroundTasks,
@@ -32,13 +41,17 @@ async def generate_audio(
     # Ensure reference audio exists before generation
     await service.voice_audio_integrity.ensure_audio(request.voice_id, service.generate_audio)
 
+    voice = voice_service.get_voice(request.voice_id)
+    # We already checked for None above, but for type safety:
+    instruct = voice.get("instruct") if voice else None
+
     result_path = await service.generate_audio(
         text=request.text,
         language=request.language,
         mode="base",
         model_size=settings.DEFAULT_MODEL_SIZE,
         reference_audio=request.voice_id,
-        instruct=request.instruct,
+        instruct=instruct,
     )
     background_tasks.add_task(cleanup.cleanup_old_files, settings.AUDIO_DIR, 24)
     return FileResponse(
@@ -49,13 +62,21 @@ async def generate_audio(
     )
 
 
-@router.post("/ssml")
+@router.post(
+    "/ssml",
+    summary="SSML Audio Generation",
+    description=(
+        "Converts SSML (Speech Synthesis Markup Language) to audio. "
+        "Allows for multi-speaker dialogs, custom pauses using `<break>`, "
+        "and granular control over the speech output. The root element must be `<speak>`."
+    ),
+)
 async def generate_ssml(
     ssml: str = Body(
         ...,
         description="The SSML content to generate audio from.",
         examples=[
-            '<speak><speaker name="german_audiobook_male_narrator_01">Hallo, dies ist ein Test mit SSML.</speaker></speak>'
+            '<speak><speaker name="german_audiobook_female_narrator_01">Hallo, dies ist ein Test mit SSML.</speaker></speak>'
         ],
     ),
 ):

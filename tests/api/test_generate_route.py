@@ -38,7 +38,9 @@ def test_generate_audio_endpoint():
     mock_voice_service.get_voice.return_value = {"id": "test_voice"}
 
     # Test request
-    response = client.post("/api/generate/generate", json={"text": "Hello", "language": "en", "voice_id": "test_voice"})
+    response = client.post(
+        "/api/generate/generate", json={"text": "Hello", "language": "english", "voice_id": "test_voice"}
+    )
 
     assert response.status_code == 200
     assert response.headers["Content-Type"] == "audio/wav"
@@ -50,7 +52,7 @@ def test_generate_audio_voice_not_found():
     mock_voice_service.get_voice.return_value = None
 
     response = client.post(
-        "/api/generate/generate", json={"text": "Hello", "language": "en", "voice_id": "nonexistent"}
+        "/api/generate/generate", json={"text": "Hello", "language": "english", "voice_id": "nonexistent"}
     )
 
     assert response.status_code == 400

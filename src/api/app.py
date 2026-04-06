@@ -52,7 +52,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app: FastAPI = FastAPI(
     title="Cosmo TTS API",
-    description="Production-ready Text-to-Speech API.",
+    description=(
+        "Production-ready Text-to-Speech API using Qwen-TTS models (1.7B/0.6B).\n\n"
+        "### Key Features\n"
+        "* **High-Quality TTS**: Generate speech from text with automatic style application based on selected voices.\n"
+        "* **Voice Cloning**: Use reference WAV files for highly accurate voice imitation.\n"
+        "* **Voice Design**: Create new voices from natural language descriptions (requires 1.7B model).\n"
+        "* **SSML Engine**: Advanced support for multiple speakers, breaks, and expressive control via markup.\n"
+        "* **Smart Voice Management**: Full CRUD for voices, including advanced FTS5-based searching and style term discovery.\n"
+        "* **Audio Processing**: Utilities for uploading temporary audio and concatenating multiple files into one.\n\n"
+        "### Usage Guidelines\n"
+        "* **Language Format**: Always use full language names (e.g., `'german'`, `'english'`) instead of short codes.\n"
+        "* **Automatic Styles**: For standard generation, `instruct` tags are automatically retrieved from the database to match the voice's unique character.\n"
+        "* **API Prefix**: All functional endpoints are prefixed with `/api`."
+    ),
     version="3.0.0",
     lifespan=lifespan,
     docs_url="/api/docs",

@@ -76,7 +76,7 @@ class ProjectSettings(BaseSettings):
     def RESOURCES_DIR(self) -> Path:
         return self.BASE_DIR / "resources"
 
-    DEFAULT_LANGUAGE: str = "de"
+    DEFAULT_LANGUAGE: str = "german"
 
     # When set, this should be a voice `id` existing in the SQLite voices
     # database (e.g. the seeded ids `german_audiobook_male_narrator_01`, ...). If provided, the
