@@ -10,9 +10,7 @@ theme:
 
 plugins:
   - search
-  # The installed plugin provides the entrypoint 'plantuml-colocator'
-  # (package: mkdocs-plantuml / mkdocsplantuml). Use that plugin id here.
-  - plantuml-colocator
+  - plantuml
 
 nav:
   - Home: index.md
