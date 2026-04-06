@@ -1,6 +1,35 @@
 # CHANGELOG
 
 
+## v0.28.0 (2026-04-06)
+
+### Chores
+
+- Remove unused imports (ruff --fix)
+  ([`95cd6f4`](https://github.com/domoskanonos/quisy-tts/commit/95cd6f458e71115845ed4e95b2273fafe9d2ef96))
+
+- Update documentation workflow and configuration
+  ([`b3b832a`](https://github.com/domoskanonos/quisy-tts/commit/b3b832a34bdaaee4e0155f493d8493b31a300eb0))
+
+- Update qusy-tts version to 0.27.0 in uv.lock
+  ([`b63b4dc`](https://github.com/domoskanonos/quisy-tts/commit/b63b4dca1fd970bf3a63892b3afd05aa929f88a0))
+
+- **docs**: Install plantuml plugin in CI and remove unsupported puml_url from mkdocs config
+  ([`46c4232`](https://github.com/domoskanonos/quisy-tts/commit/46c42327a3eb95513b0650bfc9140d32a31228c9))
+
+### Refactoring
+
+- Implement in-memory streaming and async caching to reduce TTFB
+  ([`68c6912`](https://github.com/domoskanonos/quisy-tts/commit/68c69128a7c300caaa39073407b8fd465e3c4880))
+
+- Added generate_audio_bytes to QwenTextToSpeech to get raw PCM data. - Refactored generate_stream
+  to yield bytes directly from the engine. - Introduced set_bytes to CacheService for background
+  (non-blocking) disk I/O. - Cleaned up unused imports as per ruff recommendations.
+
+- Update import statements and enhance audio file handling with validation
+  ([`cd1d12e`](https://github.com/domoskanonos/quisy-tts/commit/cd1d12e835234b6e1ae010563b1f8cffb1b1b361))
+
+
 ## v0.27.0 (2026-04-05)
 
 ### Chores
@@ -9,6 +38,9 @@
   ([`e142600`](https://github.com/domoskanonos/quisy-tts/commit/e142600f581c0b1f99e5bfad71b4e8cd68994d5e))
 
 ### Features
+
+- Code structure for improved readability and maintainability
+  ([`9a7b27a`](https://github.com/domoskanonos/quisy-tts/commit/9a7b27a68aa045c91da13145d66a305ffae4c31e))
 
 - Update language identifiers to full names and remove default voices
   ([`e96046d`](https://github.com/domoskanonos/quisy-tts/commit/e96046d786e717749e567e5e7fb6cd44529cac14))
