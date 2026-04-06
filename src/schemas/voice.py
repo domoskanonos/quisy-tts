@@ -38,14 +38,14 @@ class VoiceCreate(BaseModel):
     instruct: str = Field(
         ...,
         max_length=500,
-        description="Instruct text describing the voice style for Qwen TTS.",
+        description="Instruct text describing the voice style for Qwen TTS. MUST BE IN ENGLISH.",
         json_schema_extra={"example": "A calm, professional male voice with a warm tone."},
     )
-    description: str = Field(
+    name: str = Field(
         ...,
         max_length=500,
-        description="A short description of the voice.",
-        json_schema_extra={"example": "A professional narrator for podcasts."},
+        description="A short name for the voice.",
+        json_schema_extra={"example": "Podcast Narrator"},
     )
     language: str = Field(
         default="german",

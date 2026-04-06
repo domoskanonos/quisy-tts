@@ -67,7 +67,7 @@ async def create_voice(
         name=data.voice_id,
         example_text=data.text,
         instruct=data.instruct,
-        description=data.description,
+        voice_name=data.name,
         language=data.language,
     )
     if voice is None:
