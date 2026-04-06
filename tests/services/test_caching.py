@@ -3,7 +3,7 @@ from schemas import TTSParams
 import shutil
 
 # This would need a running engine or mock, but let's test the CacheService directly
-from services.cache_service import FileCacheService
+from infrastructure.cache_service import FileCacheService
 
 
 def test_cache_service():

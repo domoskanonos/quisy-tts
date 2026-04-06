@@ -4,8 +4,8 @@ import logging
 from config import ProjectConfig
 from src.core.interfaces import CacheService, CleanupService, TTSEngine, TTSServiceInterface
 from engine import QwenTextToSpeech
-from services.cache_service import FileCacheService
-from services.cleanup_service import FileCleanupService
+from infrastructure.cache_service import FileCacheService
+from infrastructure.cleanup_service import FileCleanupService
 from services.ssml_processor import SSMLProcessor
 from services.tts_service import TTSService
 from services.voice_audio_integrity import VoiceAudioIntegrityService

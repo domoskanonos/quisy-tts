@@ -3,7 +3,7 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock
 from pathlib import Path
 from services.tts_service import TTSService
-import services.tts.generator
+from services.orchestrator import generator
 
 
 @pytest.mark.asyncio
@@ -110,7 +110,7 @@ async def test_generate_audio_calls_generator():
 
     # We need to mock the generator module function
 
-    services.tts.generator.generate_audio = AsyncMock(return_value=Path("test.wav"))
+    generator.generate_audio = AsyncMock(return_value=Path("test.wav"))
 
     result = await service.generate_audio(text="hello", language="english")
 

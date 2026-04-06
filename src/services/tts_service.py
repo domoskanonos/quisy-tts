@@ -15,7 +15,7 @@ from src.services.ssml_processor import SSMLProcessor
 from src.services.voice_audio_integrity import VoiceAudioIntegrityService
 from services.text_splitter import get_text_splitter
 from schemas import TTSParams
-from services.tts import ssml, generator, streamer
+from services.orchestrator import ssml, generator, streamer
 
 
 class TTSService(TTSServiceInterface):

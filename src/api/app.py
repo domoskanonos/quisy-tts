@@ -32,7 +32,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # generation is intentionally postponed to a background task so the API
     # becomes responsive immediately.
     logger.info("Application starting...")
-    print("Application starting...")
     try:
         settings.APP_DIR.mkdir(parents=True, exist_ok=True)
         startup_log = settings.APP_DIR / "startup.log"

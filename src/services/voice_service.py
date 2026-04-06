@@ -34,7 +34,7 @@ class VoiceService(VoiceServiceInterface):
     def __init__(self, voices_dir: Path | None = None, db_path: Path | None = None) -> None:
         settings = ProjectConfig.get_settings()
         self._voices_dir = voices_dir or settings.VOICES_DIR
-        print(f"DEBUG: VoiceService init. voices_dir={self._voices_dir}, CWD={Path.cwd()}")
+        logger.debug(f"VoiceService init. voices_dir={self._voices_dir}, CWD={Path.cwd()}")
         self._voices_dir.mkdir(parents=True, exist_ok=True)
 
         # Use either provided db_path (useful for tests) or a copy of the resources DB
@@ -272,8 +272,11 @@ class VoiceService(VoiceServiceInterface):
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                 (voice_id, name, example_text, instruct, voice_name, resolve_language(language), now, now),
             )
-            # Rebuild FTS index
-            conn.execute("INSERT INTO voices_fts(voices_fts) VALUES('rebuild')")
+            # Rebuild FTS index if it exists
+            try:
+                conn.execute("INSERT INTO voices_fts(voices_fts) VALUES('rebuild')")
+            except sqlite3.OperationalError:
+                pass
             conn.commit()
 
         return self.get_voice(voice_id)
@@ -343,8 +346,11 @@ class VoiceService(VoiceServiceInterface):
 
         with self._get_conn() as conn:
             conn.execute("DELETE FROM voices WHERE voice_id = ?", (voice_id,))
-            # Rebuild FTS index
-            conn.execute("INSERT INTO voices_fts(voices_fts) VALUES('rebuild')")
+            # Rebuild FTS index if it exists
+            try:
+                conn.execute("INSERT INTO voices_fts(voices_fts) VALUES('rebuild')")
+            except sqlite3.OperationalError:
+                pass
             conn.commit()
 
         logger.info(f"Voice deleted: {voice_id}")
