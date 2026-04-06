@@ -1,7 +1,16 @@
 # CHANGELOG
 
 
+## v0.32.0 (2026-04-06)
+
+
 ## v0.31.0 (2026-04-06)
+
+### Features
+
+- Update documentation workflow by removing obsolete plantuml-colocator plugin and ensuring
+  dependencies are installed correctly
+  ([`1ee65be`](https://github.com/domoskanonos/quisy-tts/commit/1ee65be434fe19d322b6f3725c318a95b712599f))
 
 
 ## v0.30.0 (2026-04-06)
