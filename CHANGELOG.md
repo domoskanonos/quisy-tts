@@ -1,6 +1,9 @@
 # CHANGELOG
 
 
+## v0.31.0 (2026-04-06)
+
+
 ## v0.30.0 (2026-04-06)
 
 ### Features
@@ -18,6 +21,9 @@
   vscode.code-workspace as they are no longer needed. - Introduced new architecture documentation
   covering constraints, system scope, solution strategy, runtime view, deployment view, concepts,
   design decisions, quality requirements, risks, and glossary.
+
+- Update documentation workflow and fix site URLs in mkdocs configuration
+  ([`83417a1`](https://github.com/domoskanonos/quisy-tts/commit/83417a113409f5441ce21e3937fd2b5886793e99))
 
 ### Refactoring
 

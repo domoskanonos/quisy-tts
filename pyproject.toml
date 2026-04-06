@@ -1,6 +1,6 @@
 [project]
 name = "quisy-tts"
-version = "0.30.0"
+version = "0.31.0"
 description = "Quisy TTS is a modern, high-performance Text-to-Speech API powered by Qwen3-TTS."
 authors = [{ name = "Dominik Bruhn", email = "dominikbruhn@googlemail.com" }]
 license = { text = "MIT" }
