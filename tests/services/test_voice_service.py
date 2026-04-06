@@ -1,6 +1,4 @@
 import pytest
-import sqlite3
-from pathlib import Path
 from src.services.voice_service import VoiceService
 
 
@@ -37,3 +35,18 @@ def test_delete_voice(voice_service):
     voice = voice_service.create_voice(name="v1", example_text="ex1")
     assert voice_service.delete_voice(voice["voice_id"]) is True
     assert voice_service.get_voice(voice["voice_id"]) is None
+
+
+def test_create_voice_invalid_text(voice_service):
+    with pytest.raises(ValueError, match="example_text is mandatory"):
+        voice_service.create_voice(name="v1", example_text="")
+
+
+def test_update_voice(voice_service):
+    voice = voice_service.create_voice(name="v1", example_text="ex1")
+    updated = voice_service.update_voice(voice["voice_id"], name="v1_new")
+    assert updated["name"] == "v1_new"
+
+
+def test_update_voice_not_found(voice_service):
+    assert voice_service.update_voice("nonexistent", name="new") is None

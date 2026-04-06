@@ -115,3 +115,25 @@ async def test_generate_audio_calls_generator():
     result = await service.generate_audio(text="hello", language="english")
 
     assert result == Path("test.wav")
+
+
+@pytest.mark.asyncio
+async def test_get_lock_exception_handling():
+    # Setup
+    cache = MagicMock()
+    # Mock get_lock to raise exception
+    cache.get_lock.side_effect = Exception("error")
+
+    service = TTSService(
+        engine=MagicMock(),
+        cache=cache,
+        voice_service=MagicMock(),
+        ssml_processor=MagicMock(),
+        voice_audio_integrity=MagicMock(),
+        audio_converter=MagicMock(),
+        logger=MagicMock(),
+    )
+
+    # Should catch exception and return internal lock
+    lock = service._get_lock("key")
+    assert isinstance(lock, asyncio.Lock)
