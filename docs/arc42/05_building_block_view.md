@@ -18,7 +18,7 @@ The system is organized into the following key packages:
 
 ## Diagram (PlantUML)
 
-```plantuml
+```kroki-plantuml
 @startuml
 [FastAPI Routes] as API <<API Layer>>
 [Data Contracts] as Schemas <<Schemas>>

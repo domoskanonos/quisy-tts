@@ -10,8 +10,9 @@ theme:
 
 plugins:
   - search
-  - plantuml:
-      puml_url: http://www.plantuml.com/plantuml
+  - kroki:
+      DiagramTypes:
+        - plantuml
 
 nav:
   - Home: index.md
