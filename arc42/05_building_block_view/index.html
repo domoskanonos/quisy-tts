@@ -797,27 +797,7 @@
 <li><strong>Core (<code>src/core</code>):</strong> Interfaces (ports) and domain-specific exceptions.</li>
 </ul>
 <h2 id="diagram-plantuml">Diagram (PlantUML)</h2>
-<pre><code class="language-plantuml">@startuml
-[FastAPI Routes] as API &lt;&lt;API Layer&gt;&gt;
-[Data Contracts] as Schemas &lt;&lt;Schemas&gt;&gt;
-[Services] as Services &lt;&lt;Services&gt;&gt;
-[Orchestration] as Orchestrator &lt;&lt;Orchestrator&gt;&gt;
-[Domain Logic] as Domain &lt;&lt;Domain&gt;&gt;
-[Repositories] as Repos &lt;&lt;Repositories&gt;&gt;
-[Infrastructure] as Infra &lt;&lt;Infrastructure&gt;&gt;
-[TTS Engines] as Engine &lt;&lt;Engine&gt;&gt;
-[Core Interfaces] as Core &lt;&lt;Core&gt;&gt;
-
-API --&gt; Schemas : uses
-API --&gt; Orchestrator : calls
-Orchestrator --&gt; Services : uses
-Services --&gt; Domain : manages
-Domain --&gt; Repos : persists
-Services --&gt; Infra : uses
-Services --&gt; Engine : invokes
-Engine --&gt; Core : implements
-@enduml
-</code></pre>
+<p><img alt="Kroki" src="https://kroki.io/plantuml/svg/eNptksFqwzAMhu95Cr9AXyCY0tFtUCisNL2VHYSnZmaxHWSnsLefZDtZM3axpf__JCPhXUxAaXJDc32FmJ5OB3UOU8L4riAqSbWW8wjfSNttc32GBGoffCIwqVCd-UTHt9Y1Eq5DultT-8yJIDUU5o2Yj9wp2eAz-KsEYvgxzY8HB9arY-ityXwVtC6BMGccQ7RcYOvjWWDk0RDw4G_EI9Nk0kSY0SwxurYEvlw69eJ762vTEjNaAkH2gZA7JKQbzINnTWu5GGlkk5vNdtlYq6aIcZFX07fKwDDEZiXm4nmZtXrJxawLaZUDDz27VRCvLKJVI1K0Mf2pLLP_17PO2irr7-GL3SqIlwdkx40DOvTcdIf-Q_7TD-VQzBQ=?" /></p>
 
 
 
