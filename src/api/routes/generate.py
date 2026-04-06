@@ -10,6 +10,7 @@ from services.voice_service import VoiceService
 from core import CleanupService
 from schemas import TTSParams
 import os
+from pydub import AudioSegment
 
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
@@ -91,9 +92,19 @@ async def generate_ssml(
 
         result_path = await tts_service.generate_from_ssml(ssml, base_params)
 
+        # Convert to MP3
+        wav_path = result_path
+        mp3_path = wav_path.with_suffix(".mp3")
+        audio = AudioSegment.from_wav(str(wav_path))
+        audio.export(str(mp3_path), format="mp3")
+
         # Return URL
-        filename = os.path.basename(result_path)
-        return {"url": f"http://{settings.HOST}:{settings.PORT}/audio/{filename}"}
+        filename_wav = os.path.basename(wav_path)
+        filename_mp3 = os.path.basename(mp3_path)
+        return {
+            "wav_url": f"http://{settings.HOST}:{settings.PORT}/audio/{filename_wav}",
+            "mp3_url": f"http://{settings.HOST}:{settings.PORT}/audio/{filename_mp3}",
+        }
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

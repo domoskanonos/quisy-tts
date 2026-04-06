@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS voices (
     name TEXT NOT NULL,
     example_text TEXT NOT NULL,
     instruct TEXT,
+    description TEXT,
     language TEXT NOT NULL DEFAULT 'german',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -106,6 +107,7 @@ class VoiceService(VoiceServiceInterface):
             "name": row["name"],
             "example_text": row["example_text"],
             "instruct": row["instruct"],
+            "description": row["description"],
             "language": row["language"],
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
@@ -214,6 +216,7 @@ class VoiceService(VoiceServiceInterface):
         name: str,
         example_text: str,
         instruct: str | None = None,
+        description: str | None = None,
         language: str = "german",
     ) -> dict | None:
         """Create a new user voice."""
@@ -248,9 +251,9 @@ class VoiceService(VoiceServiceInterface):
 
         with self._get_conn() as conn:
             conn.execute(
-                """INSERT INTO voices (voice_id, name, example_text, instruct, language, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (voice_id, name, example_text, instruct, resolve_language(language), now, now),
+                """INSERT INTO voices (voice_id, name, example_text, instruct, description, language, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (voice_id, name, example_text, instruct, description, resolve_language(language), now, now),
             )
             # Rebuild FTS index
             conn.execute("INSERT INTO voices_fts(voices_fts) VALUES('rebuild')")
@@ -264,6 +267,7 @@ class VoiceService(VoiceServiceInterface):
         name: str | None = None,
         example_text: str | None = None,
         instruct: str | None = None,
+        description: str | None = None,
         language: str | None = None,
     ) -> dict | None:
         """Update voice metadata. Returns updated voice or None if not found."""
@@ -284,9 +288,13 @@ class VoiceService(VoiceServiceInterface):
         if instruct is not None:
             updates.append("instruct = ?")
             params.append(instruct)
+        if description is not None:
+            updates.append("description = ?")
+            params.append(description)
         if language is not None:
             updates.append("language = ?")
             params.append(language)
+
         # system_prompt removed from update fields
 
         if not updates:

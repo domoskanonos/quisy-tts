@@ -13,23 +13,22 @@ async def generate_from_ssml(service, ssml_content: str, base_params) -> Path:
     combined_audio = []
     sample_rate = 24000
 
-    # Ensure reference audio exists; provide the service.generate_audio
-    # callback so the integrity service can invoke generation if needed.
-    # Move integrity check outside the loop to ensure it runs only once per SSML generation.
+    # Ensure integrity check...
     unique_speakers = {task.speaker for task in tasks if isinstance(task, TextTask)}
     for speaker in unique_speakers:
         voice = service.voice_service.get_voice(speaker)
         if not voice:
             raise AudioGenerationError(f"Speaker ID {speaker} not found")
-        service.logger.info(f"Debug: SSML checking integrity for {voice['voice_id']}")
+        service.logger.info(f"SSML: Checking integrity for {voice['voice_id']}")
         try:
             await service.voice_audio_integrity.ensure_audio(voice["voice_id"], service.generate_audio)
         except Exception as e:
-            service.logger.error(f"Debug: SSML integrity check FAILED for {voice['voice_id']}: {e}")
+            service.logger.error(f"SSML: Integrity check FAILED for {voice['voice_id']}: {e}")
             raise
 
-    for task in tasks:
+    for i, task in enumerate(tasks):
         if isinstance(task, TextTask):
+            service.logger.info(f"SSML: Processing text task {i + 1}/{len(tasks)} (speaker={task.speaker})")
             voice = service.voice_service.get_voice(task.speaker)
             if not voice:
                 raise AudioGenerationError(f"Speaker ID {task.speaker} not found")
@@ -54,12 +53,13 @@ async def generate_from_ssml(service, ssml_content: str, base_params) -> Path:
                 instruct=voice.get("instruct"),
                 speaker=voice["voice_id"],
             )
-            service.logger.info(f"Debug: SSML audio generated at {chunk_path}")
+            service.logger.info(f"SSML: Chunk {i + 1} generated at {chunk_path}")
 
             data, sr = sf.read(str(chunk_path))
             combined_audio.append(data)
             sample_rate = sr
         elif isinstance(task, BreakTask):
+            service.logger.info(f"SSML: Processing break task {i + 1} ({task.duration_ms}ms)")
             silence_samples = int(sample_rate * (task.duration_ms / 1000))
             combined_audio.append(np.zeros(silence_samples, dtype=np.float32))
 

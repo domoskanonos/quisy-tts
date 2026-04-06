@@ -161,6 +161,7 @@ class VoiceServiceInterface(ABC):
         name: str,
         example_text: str,
         instruct: str | None = None,
+        description: str | None = None,
         language: str = "german",
     ) -> dict | None:
         """Create voice."""
@@ -173,6 +174,7 @@ class VoiceServiceInterface(ABC):
         name: str | None = None,
         example_text: str | None = None,
         instruct: str | None = None,
+        description: str | None = None,
         language: str | None = None,
     ) -> dict | None:
         """Update voice."""
