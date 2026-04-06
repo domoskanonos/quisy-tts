@@ -1,16 +1,15 @@
 """Generation routes for voice management."""
 
+from pathlib import Path
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException
 from fastapi.responses import FileResponse
 from api.dependencies import get_tts_service, get_cleanup_service, get_voice_service
 from config import ProjectConfig
-from schemas.requests import GenerateRequest
+from schemas.requests import GenerateRequest, GenerateSSMLResponse
 from services import TTSService
 from services.voice_service import VoiceService
 from core import CleanupService
 from schemas import TTSParams
-import os
-from pydub import AudioSegment
 
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
@@ -65,6 +64,7 @@ async def generate_audio(
 
 @router.post(
     "/ssml",
+    response_model=GenerateSSMLResponse,
     summary="SSML Audio Generation",
     description=(
         "Converts SSML (Speech Synthesis Markup Language) to audio. "
@@ -80,31 +80,25 @@ async def generate_ssml(
             '<speak><speaker name="german_audiobook_female_narrator_01">Hallo, dies ist ein Test mit SSML.</speaker></speak>'
         ],
     ),
-):
+    service: TTSService = Depends(get_tts_service),
+) -> GenerateSSMLResponse:
     """Generate audio from SSML."""
-    tts_service = get_tts_service()
-
     try:
-        # Base parameters for the generation. The SSML must include speaker
-        # elements with explicit voice IDs. Language is always provided via
-        # API calls or SSML speakers; do not hardcode a language here.
+        # Base parameters for the generation
         base_params = TTSParams(mode="custom_voice", model_size=settings.DEFAULT_MODEL_SIZE)
 
-        result_path = await tts_service.generate_from_ssml(ssml, base_params)
+        # Generate audio (WAV and MP3)
+        wav_path, mp3_path = await service.generate_from_ssml(ssml, base_params)
 
-        # Convert to MP3
-        wav_path = result_path
-        mp3_path = wav_path.with_suffix(".mp3")
-        audio = AudioSegment.from_wav(str(wav_path))
-        audio.export(str(mp3_path), format="mp3")
+        # Return URLs
+        def get_audio_url(file_path: Path) -> str:
+            filename = file_path.name
+            return f"http://{settings.HOST}:{settings.PORT}/audio/{filename}"
 
-        # Return URL
-        filename_wav = os.path.basename(wav_path)
-        filename_mp3 = os.path.basename(mp3_path)
-        return {
-            "wav_url": f"http://{settings.HOST}:{settings.PORT}/audio/{filename_wav}",
-            "mp3_url": f"http://{settings.HOST}:{settings.PORT}/audio/{filename_mp3}",
-        }
+        return GenerateSSMLResponse(
+            wav_url=get_audio_url(wav_path),
+            mp3_url=get_audio_url(mp3_path),
+        )
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

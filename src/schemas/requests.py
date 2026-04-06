@@ -141,3 +141,10 @@ class ConcatenateAudioRequest(BaseModel):
         description="List of filenames of audio files to concatenate.",
         json_schema_extra={"example": ["audio1.wav", "audio2.wav"]},
     )
+
+
+class GenerateSSMLResponse(BaseModel):
+    """Response for SSML generation."""
+
+    wav_url: str = Field(..., description="URL to the generated WAV audio file.")
+    mp3_url: str = Field(..., description="URL to the generated MP3 audio file.")

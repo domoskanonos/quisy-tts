@@ -152,8 +152,8 @@ async def generate_ssml(ssml_content: str) -> str:
         A public URL to the resulting multi-speaker WAV file.
     """
     base_params = TTSParams(mode="base", model_size="1.7B")
-    result_path = await tts_service.generate_from_ssml(ssml_content, base_params)
-    return get_audio_url(str(result_path))
+    wav_path, _ = await tts_service.generate_from_ssml(ssml_content, base_params)
+    return get_audio_url(str(wav_path))
 
 
 @mcp.tool
