@@ -10,7 +10,8 @@ theme:
 
 plugins:
   - search
-  - plantuml
+  - plantuml:
+      puml_url: http://www.plantuml.com/plantuml
 
 nav:
   - Home: index.md
