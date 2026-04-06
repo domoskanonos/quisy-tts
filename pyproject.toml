@@ -19,7 +19,6 @@ dependencies = [
     "huggingface-hub>=0.20.0",
     "soundfile>=0.12.1",
     "numpy>=1.26.0",
-    "spacy>=3.7.0",
     "fastmcp>=2.1.0",
     "mkdocs-plantuml>=0.1.1",
 ]
