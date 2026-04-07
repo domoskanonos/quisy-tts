@@ -64,10 +64,10 @@ async def create_voice(
     """Create a new voice entry, generate its reference audio, and return status."""
     # 1. Create DB entry
     voice = voice_service.create_voice(
-        name=data.voice_id,
+        voice_id=data.voice_id,
         example_text=data.text,
         instruct=data.instruct,
-        voice_name=data.name,
+        name=data.name,
         language=data.language,
     )
     if voice is None:

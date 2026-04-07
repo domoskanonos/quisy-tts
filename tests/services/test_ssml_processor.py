@@ -21,6 +21,7 @@ class MockVoiceService(VoiceServiceInterface):
         self,
         name: str,
         example_text: str,
+        voice_id: str | None = None,
         instruct: str | None = None,
         description: str | None = None,
         language: str = "german",

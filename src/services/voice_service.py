@@ -49,6 +49,7 @@ class VoiceService(VoiceServiceInterface):
         self,
         name: str,
         example_text: str,
+        voice_id: str | None = None,
         instruct: str | None = None,
         language: str = "german",
     ) -> dict | None:
@@ -56,25 +57,14 @@ class VoiceService(VoiceServiceInterface):
         if not example_text or not example_text.strip():
             raise ValueError("example_text is mandatory for creating a new voice.")
 
-        # ID Generation logic
         import uuid
-        import re
 
-        def _id_available(cid: str) -> bool:
-            return self.repository.get_by_id(cid) is None
-
-        if name and re.match(r"^[a-zA-Z0-9_-]{1,100}$", name) and _id_available(name):
-            voice_id = name
-        elif name and re.match(r"^[a-zA-Z0-9_-]{1,100}$", name):
-            for i in range(1, 1001):
-                candidate = f"{name}-{i}"
-                if _id_available(candidate):
-                    voice_id = candidate
-                    break
-            else:
-                voice_id = uuid.uuid4().hex[:12]
-        else:
+        # Generate a new unique voice_id if not provided
+        if voice_id is None:
             voice_id = uuid.uuid4().hex[:12]
+
+        if self.repository.get_by_id(voice_id) is not None:
+            raise ValueError(f"Voice with ID {voice_id} already exists.")
 
         return self.repository.create(voice_id, name, example_text, instruct, language)
 
@@ -84,6 +74,7 @@ class VoiceService(VoiceServiceInterface):
         name: str | None = None,
         example_text: str | None = None,
         instruct: str | None = None,
+        description: str | None = None,
         language: str | None = None,
     ) -> dict | None:
         """Update voice metadata."""
@@ -98,6 +89,8 @@ class VoiceService(VoiceServiceInterface):
             updates["example_text"] = example_text
         if instruct is not None:
             updates["instruct"] = instruct
+        if description is not None:
+            updates["description"] = description
         if language is not None:
             updates["language"] = language
 
