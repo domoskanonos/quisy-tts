@@ -1,5 +1,4 @@
 import sqlite3
-import pytest
 from src.domain.voice.models import Voice
 from config import ProjectConfig
 
