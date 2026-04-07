@@ -1,6 +1,9 @@
 # CHANGELOG
 
 
+## v0.34.0 (2026-04-07)
+
+
 ## v0.33.0 (2026-04-06)
 
 ### Bug Fixes
@@ -9,6 +12,9 @@
   ([`87709db`](https://github.com/domoskanonos/quisy-tts/commit/87709dba6269d08fad59d9c3a09e2eedc971af3c))
 
 ### Features
+
+- Update database version to 0.32.0 and add test script for database connectivity
+  ([`7eccdf0`](https://github.com/domoskanonos/quisy-tts/commit/7eccdf0f75b3abcf3f6ac905df05fc89f67434e0))
 
 - Update documentation workflow by replacing plantuml plugin with kroki and adjusting installation
   steps
