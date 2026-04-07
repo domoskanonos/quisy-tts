@@ -9,7 +9,7 @@ services:
       - ./src:/app/src
       - ./output:/app/output
       - ./resources:/app/resources
-      - ${APP_DIR:-./app_data}:/app/app_data
+      - ${APP_DIR:-./database}:/app/database
       # Mount cache directory to persist models
       - ~/.cache/huggingface:/root/.cache/huggingface
     deploy:

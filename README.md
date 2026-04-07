@@ -190,7 +190,7 @@ All settings are managed via Pydantic and can be overridden by environment varia
 | `MODELS_DIR` | Directory to store model checkpoints | `models` |
 | `VOICES_DIR` | Directory for reference audio files | `voices` |
 | `AUDIO_DIR` | Directory for generated audio files | `audio` |
-| `APP_DIR` | Application data directory (preload/cache) | `app_data` |
+| `APP_DIR` | Application data directory (preload/cache) | `database` |
 
 ---
 

@@ -13,7 +13,6 @@ def test_create_and_get_voice(voice_service):
         name="test_voice",
         example_text="Dies ist ein Test.",
         instruct="Ein ruhiger Test.",
-        voice_name="Test Voice",
     )
     assert voice is not None
     assert voice["name"] == "test_voice"

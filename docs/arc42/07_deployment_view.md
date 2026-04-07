@@ -1,6 +1,6 @@
 # 07. Deployment View
 
-*   **Local Development:** Run via `uv run start-dev`. Uses `sqlite` in `data/app_data/`.
+*   **Local Development:** Run via `uv run start-dev`. Uses `sqlite` in `data/database/`.
 *   **Docker Container:**
     *   Base image: `python:3.12-slim` + CUDA dependencies.
     *   Exposed Port: 8045.

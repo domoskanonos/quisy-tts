@@ -50,7 +50,6 @@ class VoiceService(VoiceServiceInterface):
         name: str,
         example_text: str,
         instruct: str | None = None,
-        voice_name: str | None = None,
         language: str = "german",
     ) -> dict | None:
         """Create a new user voice."""
@@ -77,7 +76,7 @@ class VoiceService(VoiceServiceInterface):
         else:
             voice_id = uuid.uuid4().hex[:12]
 
-        return self.repository.create(voice_id, name, example_text, instruct, voice_name, language)
+        return self.repository.create(voice_id, name, example_text, instruct, language)
 
     def update_voice(
         self,
@@ -85,7 +84,6 @@ class VoiceService(VoiceServiceInterface):
         name: str | None = None,
         example_text: str | None = None,
         instruct: str | None = None,
-        voice_name: str | None = None,
         language: str | None = None,
     ) -> dict | None:
         """Update voice metadata."""
@@ -100,8 +98,6 @@ class VoiceService(VoiceServiceInterface):
             updates["example_text"] = example_text
         if instruct is not None:
             updates["instruct"] = instruct
-        if voice_name is not None:
-            updates["voice_name"] = voice_name
         if language is not None:
             updates["language"] = language
 

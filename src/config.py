@@ -70,7 +70,7 @@ class ProjectSettings(BaseSettings):
 
     @property
     def APP_DIR(self) -> Path:
-        return self.BASE_DATA_DIR / "app_data"
+        return self.BASE_DATA_DIR / "database"
 
     @property
     def RESOURCES_DIR(self) -> Path:

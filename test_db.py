@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 
-db_path = Path("data/app_data/quisy-tts.db")
+db_path = Path("data/database/quisy-tts.db")
 print(f"Path exists: {db_path.exists()}")
 print(f"Path is file: {db_path.is_file()}")
 print(f"Path is absolute: {db_path.absolute()}")
