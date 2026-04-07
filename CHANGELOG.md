@@ -1,7 +1,26 @@
 # CHANGELOG
 
 
+## v0.33.0 (2026-04-06)
+
+### Bug Fixes
+
+- Correct casing for diagram_types in mkdocs.yml and set environment variable for mkdocs build
+  ([`87709db`](https://github.com/domoskanonos/quisy-tts/commit/87709dba6269d08fad59d9c3a09e2eedc971af3c))
+
+### Features
+
+- Update documentation workflow by replacing plantuml plugin with kroki and adjusting installation
+  steps
+  ([`51e2bba`](https://github.com/domoskanonos/quisy-tts/commit/51e2bba76a13d7720d06d22c2d43ae1679633595))
+
+
 ## v0.32.0 (2026-04-06)
+
+### Features
+
+- Reorganize documentation workflow and configure plantuml plugin
+  ([`48c8ebe`](https://github.com/domoskanonos/quisy-tts/commit/48c8ebe7635e37a6abb14458c1c3eeb436615004))
 
 
 ## v0.31.0 (2026-04-06)
