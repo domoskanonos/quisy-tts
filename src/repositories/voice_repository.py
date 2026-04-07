@@ -21,24 +21,21 @@ class VoiceRepository:
         return conn
 
     def _init_db(self) -> None:
+        import shutil
+
         if not self._db_path.parent.exists():
             self._db_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with self._get_conn() as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS voices (
-                    voice_id TEXT PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    example_text TEXT NOT NULL,
-                    instruct TEXT,
-                    language TEXT NOT NULL DEFAULT 'german',
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL
-                )
-            """)
-            conn.commit()
+        # Copy from resources if not exists
+        if not self._db_path.exists():
+            resource_db = ProjectConfig.get_settings().RESOURCES_DIR / "quisy-tts.db"
+            if resource_db.exists():
+                shutil.copy2(resource_db, self._db_path)
+            else:
+                raise FileNotFoundError(f"Resources database not found at {resource_db}")
 
-            # Run migration/rebuild if needed
+        # Ensure migration is run
+        with self._get_conn() as conn:
             self._migrate(conn)
 
     def _migrate(self, conn: sqlite3.Connection) -> None:

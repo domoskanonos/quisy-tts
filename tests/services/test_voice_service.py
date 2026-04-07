@@ -27,7 +27,7 @@ def test_list_voices(voice_service):
     voice_service.create_voice(name="v2", example_text="ex2")
 
     voices = voice_service.list_voices()
-    assert len(voices) == 2
+    assert len(voices) == 63 + 2
 
 
 def test_delete_voice(voice_service):
