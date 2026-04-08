@@ -29,6 +29,7 @@ class VoiceRepository:
         # Copy from resources if not exists
         if not self._db_path.exists():
             resource_db = ProjectConfig.get_settings().RESOURCES_DIR / "quisy-tts.db"
+            print(f"DEBUG: Checking for database at {resource_db}, exists: {resource_db.exists()}")
             if resource_db.exists():
                 shutil.copy2(resource_db, self._db_path)
             else:

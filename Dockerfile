@@ -78,6 +78,7 @@ COPY --from=builder /app/.venv /app/.venv
 
 # Copy source code and config
 COPY src/ src/
+COPY resources/ resources/
 COPY .env.example .env
 
 # Expose API port
