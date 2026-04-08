@@ -1,6 +1,17 @@
 # CHANGELOG
 
 
+## v0.35.0 (2026-04-07)
+
+### Features
+
+- Entferne ungenutztes pytest-Import aus dem Test für die Datenbankschema-Konsistenz
+  ([`6fda1a5`](https://github.com/domoskanonos/quisy-tts/commit/6fda1a5dd8c45511bcab022f92054cecd25d4ca4))
+
+- Füge Test zur Überprüfung der Konsistenz zwischen der Datenbankschema und dem Voice-Modell hinzu
+  ([`daf9562`](https://github.com/domoskanonos/quisy-tts/commit/daf9562e0fecc4ede29d95edc067e68845d09c63))
+
+
 ## v0.34.0 (2026-04-07)
 
 
