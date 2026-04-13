@@ -75,7 +75,10 @@ class QwenTextToSpeech(TTSEngineInterface):
                 return self._models[mode]
 
             model_name = self.model_map[mode]
-            self.logger.info(f"Loading Qwen3-TTS model for mode '{mode}': {model_name}...")
+            self.logger.info(
+                f"Loading Qwen3-TTS model for mode '{mode}': {model_name}... "
+                "(Download may occur if not cached, this can take a few minutes)"
+            )
             start_time = time.time()
 
             # Run blocking model load in thread pool
