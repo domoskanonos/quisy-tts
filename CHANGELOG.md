@@ -1,12 +1,20 @@
 # CHANGELOG
 
 
+## v0.37.0 (2026-04-13)
+
+
 ## v0.36.1 (2026-04-13)
 
 ### Bug Fixes
 
 - Downgrade model version to 0.6 in configuration files
   ([`1af8089`](https://github.com/domoskanonos/quisy-tts/commit/1af808944024cc8d3c1453c7ddbbcace83e485ca))
+
+### Features
+
+- Code structure for improved readability and maintainability
+  ([`a729ab8`](https://github.com/domoskanonos/quisy-tts/commit/a729ab8afbd99f33ddf1747b3a2fbb0d5be3a0a4))
 
 
 ## v0.36.0 (2026-04-08)
