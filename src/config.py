@@ -1,10 +1,10 @@
 import logging
 import os
+import sqlite3
 import sys
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-import sqlite3
 
 
 class ProjectSettings(BaseSettings):
@@ -23,7 +23,7 @@ class ProjectSettings(BaseSettings):
     BASE_DATA_DIR: Path = BASE_DIR / "data"
 
     # TTS Settings
-    MODEL: str = "1.7"
+    MODEL: str = "0.6"
 
     @property
     def DEFAULT_MODEL_SIZE(self) -> str:
