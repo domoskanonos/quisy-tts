@@ -95,6 +95,7 @@ class ProjectConfig:
     def get_settings(cls) -> ProjectSettings:
         if cls._settings is None:
             cls._settings = ProjectSettings()
+        assert cls._settings is not None
         return cls._settings
 
     @classmethod
@@ -112,6 +113,7 @@ class ProjectConfig:
             )
             cls._logger = logging.getLogger("project")
             cls._logger.setLevel(cls.get_settings().LOG_LEVEL)
+        assert cls._logger is not None
         return cls._logger
 
 

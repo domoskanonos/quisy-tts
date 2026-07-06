@@ -72,7 +72,8 @@ class TestSSMLParsing:
             processor.parse("<speak><speaker>Hallo</speaker></speak>")
 
     def test_unknown_speaker_raises(self, processor: SSMLProcessor) -> None:
-        processor.voice_service.get_voice.return_value = None
+        mock_service: MagicMock = processor.voice_service  # type: ignore[assignment]
+        mock_service.get_voice.return_value = None
         with pytest.raises(ValueError, match="Unknown speaker ID"):
             processor.parse('<speak><speaker name="unknown">Hallo</speaker></speak>')
 
