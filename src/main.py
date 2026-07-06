@@ -17,7 +17,6 @@ import uvicorn
 from api import app
 from config import ProjectConfig
 
-
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
 

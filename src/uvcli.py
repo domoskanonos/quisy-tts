@@ -23,7 +23,7 @@ try:
     from dotenv import load_dotenv
 
     load_dotenv()
-except Exception:
+except ImportError:
     # python-dotenv is optional for runtime; env vars still work
     pass
 

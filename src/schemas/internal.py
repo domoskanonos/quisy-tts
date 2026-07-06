@@ -8,10 +8,6 @@ from schemas.languages import resolve_language
 class TTSParams(BaseModel):
     """Internal parameters for TTS generation."""
 
-    # The caller (API layer) must provide the language. No default language is
-    # set here to avoid implicit selection inside services. It may be None when
-    # TTSParams is used as a transient template, but callers must validate
-    # presence before generation.
     language: str | None = None
     reference_audio: str | None = None
     ref_text: str | None = None
@@ -19,6 +15,7 @@ class TTSParams(BaseModel):
     instruct: str | None = None
     speaker: str | None = None
     model_size: str = "1.7B"
+    ref_audio_path: str | None = None
 
     @property
     def resolved_language(self) -> str:

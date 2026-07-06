@@ -1,20 +1,24 @@
 """Generation routes for voice management."""
 
 from pathlib import Path
-from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException
+
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
-from api.dependencies import get_tts_service, get_cleanup_service, get_voice_service
+from slowapi import Limiter
+
+from api.dependencies import get_cleanup_service, get_tts_service, get_voice_service
 from config import ProjectConfig
+from core import CleanupService
+from schemas import TTSParams
 from schemas.requests import GenerateRequest, GenerateSSMLResponse
 from services import TTSService
 from services.voice_service import VoiceService
-from core import CleanupService
-from schemas import TTSParams
 
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
 
 router: APIRouter = APIRouter(tags=["Generation"])
+limiter = Limiter(key_func=lambda r: r.client.host if r.client else "unknown")
 
 
 @router.post(
@@ -27,30 +31,30 @@ router: APIRouter = APIRouter(tags=["Generation"])
         "based on the `voice_id`. This is the recommended endpoint for simple, high-quality narration."
     ),
 )
+@limiter.limit("30 per minute")
 async def generate_audio(
-    request: GenerateRequest,
+    request: Request,
+    body: GenerateRequest,
     background_tasks: BackgroundTasks,
     service: TTSService = Depends(get_tts_service),
     cleanup: CleanupService = Depends(get_cleanup_service),
     voice_service: VoiceService = Depends(get_voice_service),
 ) -> FileResponse:
     """Generate audio using base mode (voice cloning) with default model."""
-    if voice_service.get_voice(request.voice_id) is None:
-        raise HTTPException(status_code=400, detail=f"Voice ID '{request.voice_id}' not found")
+    if voice_service.get_voice(body.voice_id) is None:
+        raise HTTPException(status_code=400, detail=f"Voice ID '{body.voice_id}' not found")
 
-    # Ensure reference audio exists before generation
-    await service.voice_audio_integrity.ensure_audio(request.voice_id, service.generate_audio)
+    await service.voice_audio_integrity.ensure_audio(body.voice_id, service.generate_audio)
 
-    voice = voice_service.get_voice(request.voice_id)
-    # We already checked for None above, but for type safety:
+    voice = voice_service.get_voice(body.voice_id)
     instruct = voice.get("instruct") if voice else None
 
     result_path = await service.generate_audio(
-        text=request.text,
-        language=request.language,
+        text=body.text,
+        language=body.language,
         mode="base",
         model_size=settings.DEFAULT_MODEL_SIZE,
-        reference_audio=request.voice_id,
+        reference_audio=body.voice_id,
         instruct=instruct,
     )
     background_tasks.add_task(cleanup.cleanup_old_files, settings.AUDIO_DIR, 24)
@@ -93,7 +97,7 @@ async def generate_ssml(
         # Return URLs
         def get_audio_url(file_path: Path) -> str:
             filename = file_path.name
-            return f"http://{settings.HOST}:{settings.PORT}/audio/{filename}"
+            return f"{settings.BASE_URL}/audio/{filename}"
 
         return GenerateSSMLResponse(
             wav_url=get_audio_url(wav_path),
@@ -101,7 +105,7 @@ async def generate_ssml(
         )
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         logger.exception("Unexpected error in SSML generation")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

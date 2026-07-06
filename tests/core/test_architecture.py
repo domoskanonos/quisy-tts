@@ -1,17 +1,7 @@
-from services.text_splitter import get_text_splitter
-from infrastructure.cache_service import FileCacheService
-from schemas import TTSParams
 from pathlib import Path
 
-
-def test_spacy_splitting():
-    text = "Dies ist Satz 1. Dies ist Satz 2. Dies ist Satz 3."
-    splitter = get_text_splitter(max_chunk_chars=10)  # Small limit to force split
-    chunks = splitter.split(text, language="german")
-
-    # Since the current TextSplitterService doesn't split, assert 1 chunk
-    assert len(chunks) == 1
-    assert chunks[0] == text
+from infrastructure.cache_service import FileCacheService
+from schemas import TTSParams
 
 
 def test_cache_persistence():

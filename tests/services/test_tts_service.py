@@ -1,9 +1,11 @@
 import asyncio
-import pytest
-from unittest.mock import MagicMock, AsyncMock
 from pathlib import Path
-from services.tts_service import TTSService
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
 from services.orchestrator import generator
+from services.tts_service import TTSService
 
 
 @pytest.mark.asyncio

@@ -1,10 +1,12 @@
-import os
 import uuid
+from pathlib import Path
+
 from fastmcp import FastMCP
-from schemas import TTSParams
-from api.dependencies import get_tts_service, get_voice_service, get_voice_audio_integrity
-from config import ProjectConfig
+
+from api.dependencies import get_tts_service, get_voice_audio_integrity, get_voice_service
 from audio.processor import AudioProcessor
+from config import ProjectConfig
+from schemas import TTSParams
 
 # Initialize MCP server
 mcp = FastMCP("QuisyTTS-Voice-Engine")
@@ -16,12 +18,12 @@ voice_audio_integrity_service = get_voice_audio_integrity()
 settings = ProjectConfig.get_settings()
 
 # Base URL for audio files
-base_audio_url = f"http://localhost:{settings.PORT}/audio"
+base_audio_url = f"{settings.BASE_URL}/audio"
 
 
 def get_audio_url(file_path: str) -> str:
     """Converts a local file path to an accessible URL."""
-    filename = os.path.basename(file_path)
+    filename = Path(file_path).name
     return f"{base_audio_url}/{filename}"
 
 
@@ -182,7 +184,7 @@ async def concatenate_audio(audio_files: list[str]) -> str:
             return f"Error: File '{f}' not found in output or upload directories."
 
     output_filename = f"concat_{uuid.uuid4()}.wav"
-    output_path = os.path.join(settings.AUDIO_DIR, output_filename)
+    output_path = str(settings.AUDIO_DIR / output_filename)
 
     if not AudioProcessor.concatenate_audio(input_paths, output_path):
         return "Error: Concatenation failed."

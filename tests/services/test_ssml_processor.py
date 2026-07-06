@@ -1,107 +1,106 @@
+"""Tests for SSML processor parsing logic."""
+
 import pytest
-from pathlib import Path
-from src.services.ssml_processor import SSMLProcessor, TextTask, BreakTask
-from src.core.interfaces import VoiceServiceInterface
+
+from services.ssml_processor import BreakTask, SSMLProcessor, TextTask
+from unittest.mock import MagicMock
 
 
-# Create a mock voice service that returns a valid voice for "default_014"
-class MockVoiceService(VoiceServiceInterface):
-    def list_voices(self) -> list[dict]:
-        return []
-
-    def get_voice(self, voice_id: str) -> dict | None:
-        if voice_id == "default_014":
-            return {"voice_id": "default_014"}
-        return None
-
-    def get_voice_by_name(self, name: str) -> dict | None:
-        return self.get_voice(name)
-
-    def create_voice(
-        self,
-        name: str,
-        example_text: str,
-        voice_id: str | None = None,
-        instruct: str | None = None,
-        description: str | None = None,
-        language: str = "german",
-    ) -> dict | None:
-        return None
-
-    def update_voice(
-        self,
-        voice_id: str,
-        name: str | None = None,
-        example_text: str | None = None,
-        instruct: str | None = None,
-        description: str | None = None,
-        language: str | None = None,
-    ) -> dict | None:
-        return None
-
-    def delete_voice(self, voice_id: str) -> bool:
-        return False
-
-    def set_audio(self, voice_id: str, audio_data: bytes, original_filename: str) -> dict | None:
-        return None
-
-    def get_audio_path(self, voice_id: str) -> Path | None:
-        return None
+@pytest.fixture
+def processor() -> SSMLProcessor:
+    mock_voice_service = MagicMock()
+    mock_voice_service.get_voice.return_value = {
+        "voice_id": "test_voice",
+        "name": "Test Voice",
+        "example_text": "Hello",
+        "instruct": "A calm voice",
+        "language": "german",
+    }
+    return SSMLProcessor(mock_voice_service)
 
 
-def test_ssml_parsing_full():
-    processor = SSMLProcessor(MockVoiceService())
+class TestSSMLParsing:
+    def test_single_speaker(self, processor: SSMLProcessor) -> None:
+        xml = '<speak><speaker name="test_voice">Hallo Welt</speaker></speak>'
+        tasks = processor.parse(xml)
+        assert len(tasks) == 1
+        assert isinstance(tasks[0], TextTask)
+        assert tasks[0].text == "Hallo Welt"
+        assert tasks[0].speaker == "test_voice"
 
-    xml_content = """<speak>
-  <speaker name="default_014">
-    Willkommen zum heutigen Gedankenanstoß:
-    <break time="800ms"/>
-    Sind das meine Wünsche.
-    <break time="800ms"/>
-    Textblock nach dem Break.
-    <break time="800ms"/>
-    Ich wünsche dir einen schönen Start in den Tag. Bis bald.
-  </speaker>
-</speak>"""
+    def test_multiple_speakers(self, processor: SSMLProcessor) -> None:
+        xml = (
+            '<speak>'
+            '<speaker name="test_voice">Hallo</speaker>'
+            '<speaker name="test_voice">Welt</speaker>'
+            '</speak>'
+        )
+        tasks = processor.parse(xml)
+        assert len(tasks) == 2
+        assert tasks[0].text == "Hallo"
+        assert tasks[1].text == "Welt"
 
-    tasks = processor.parse(xml_content)
+    def test_break_tag_ms(self, processor: SSMLProcessor) -> None:
+        xml = '<speak><speaker name="test_voice">Hallo</speaker><break time="500ms"/></speak>'
+        tasks = processor.parse(xml)
+        assert len(tasks) == 2
+        assert isinstance(tasks[1], BreakTask)
+        assert tasks[1].duration_ms == 500
 
-    # Assertions based on verified logic
-    assert len(tasks) == 7  # 4 TextTasks + 3 BreakTasks
+    def test_break_tag_s(self, processor: SSMLProcessor) -> None:
+        xml = '<speak><speaker name="test_voice">Hallo</speaker><break time="1.5s"/></speak>'
+        tasks = processor.parse(xml)
+        assert isinstance(tasks[1], BreakTask)
+        assert tasks[1].duration_ms == 1500
 
-    assert isinstance(tasks[0], TextTask)
-    assert tasks[0].text == "Willkommen zum heutigen Gedankenanstoß:"
-    assert tasks[0].speaker == "default_014"
+    def test_invalid_xml_raises_value_error(self, processor: SSMLProcessor) -> None:
+        with pytest.raises(ValueError, match="Invalid XML syntax"):
+            processor.parse("<not valid xml>")
 
-    assert isinstance(tasks[1], BreakTask)
-    assert tasks[1].duration_ms == 800
+    def test_missing_speak_root_raises(self, processor: SSMLProcessor) -> None:
+        with pytest.raises(ValueError, match="Root tag must be"):
+            processor.parse('<speaker name="test_voice">Hallo</speaker>')
 
-    assert isinstance(tasks[2], TextTask)
-    assert tasks[2].text == "Sind das meine Wünsche."
+    def test_text_without_speaker_raises(self, processor: SSMLProcessor) -> None:
+        with pytest.raises(ValueError, match="Text found without a speaker"):
+            processor.parse("<speak>Loose text</speak>")
 
-    assert isinstance(tasks[3], BreakTask)
-    assert tasks[3].duration_ms == 800
+    def test_speaker_missing_name_attr_raises(self, processor: SSMLProcessor) -> None:
+        with pytest.raises(ValueError, match="missing 'name' attribute"):
+            processor.parse('<speak><speaker>Hallo</speaker></speak>')
 
-    assert isinstance(tasks[4], TextTask)
-    assert tasks[4].text == "Textblock nach dem Break."
+    def test_unknown_speaker_raises(self, processor: SSMLProcessor) -> None:
+        processor.voice_service.get_voice.return_value = None
+        with pytest.raises(ValueError, match="Unknown speaker ID"):
+            processor.parse('<speak><speaker name="unknown">Hallo</speaker></speak>')
 
-    assert isinstance(tasks[5], BreakTask)
-    assert tasks[5].duration_ms == 800
+    def test_unsupported_tag_raises(self, processor: SSMLProcessor) -> None:
+        with pytest.raises(ValueError, match="Unsupported tag"):
+            processor.parse('<speak><foo>bar</foo></speak>')
 
-    assert isinstance(tasks[6], TextTask)
-    assert tasks[6].text == "Ich wünsche dir einen schönen Start in den Tag. Bis bald."
+    def test_break_missing_time_attr_raises(self, processor: SSMLProcessor) -> None:
+        with pytest.raises(ValueError, match="missing 'time' attribute"):
+            processor.parse('<speak><break/></speak>')
 
+    def test_break_invalid_time_format_raises(self, processor: SSMLProcessor) -> None:
+        with pytest.raises(ValueError, match="Invalid break time format"):
+            processor.parse('<speak><break time="5minutes"/></speak>')
 
-def test_ssml_invalid_speaker():
-    processor = SSMLProcessor(MockVoiceService())
-    xml_content = '<speak><speaker name="unknown">Text</speaker></speak>'
-    with pytest.raises(ValueError, match="Unknown speaker ID: unknown"):
-        processor.parse(xml_string=xml_content)
+    def test_empty_speak_returns_empty_list(self, processor: SSMLProcessor) -> None:
+        tasks = processor.parse("<speak></speak>")
+        assert tasks == []
 
-
-def test_ssml_no_speaker():
-    processor = SSMLProcessor(MockVoiceService())
-    xml_content = "<speak>Text without speaker</speak>"
-    # Based on the improvement, it now raises ValueError
-    with pytest.raises(ValueError, match="Text found without a speaker"):
-        processor.parse(xml_string=xml_content)
+    def test_nested_break_between_speakers(self, processor: SSMLProcessor) -> None:
+        xml = (
+            '<speak>'
+            '<speaker name="test_voice">Erste Zeile</speaker>'
+            '<break time="1s"/>'
+            '<speaker name="test_voice">Zweite Zeile</speaker>'
+            '</speak>'
+        )
+        tasks = processor.parse(xml)
+        assert len(tasks) == 3
+        assert isinstance(tasks[0], TextTask)
+        assert isinstance(tasks[1], BreakTask)
+        assert isinstance(tasks[2], TextTask)
+        assert tasks[1].duration_ms == 1000

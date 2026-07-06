@@ -1,9 +1,11 @@
-import pytest
-import numpy as np
-from unittest.mock import MagicMock, AsyncMock, patch
-from src.services.orchestrator.ssml import _process_task
-from services.ssml_processor import TextTask, BreakTask
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import numpy as np
+import pytest
+
+from services.ssml_processor import BreakTask, TextTask
+from src.services.orchestrator.ssml import _process_task
 
 
 @pytest.mark.asyncio
@@ -26,7 +28,6 @@ async def test_process_text_task():
     with patch("src.services.orchestrator.ssml.sf") as mock_sf:
         mock_sf.read.return_value = (np.array([0.1, 0.2]), 24000)
         data, sr = await _process_task(service, task, 0, 1, 24000, base_params)
-        print(f"DEBUG: data={data}")
         assert data is not None
         assert len(data) == 2
 

@@ -1,5 +1,7 @@
-import pytest
 import sqlite3
+
+import pytest
+
 from services.voice_search_service import VoiceSearchService
 
 

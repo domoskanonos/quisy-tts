@@ -3,6 +3,7 @@
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path
+
 from api.dependencies import get_tts_service, get_voice_service
 from config import ProjectConfig
 from schemas.voice import VoiceCreate, VoiceListResponse, VoiceResponse
@@ -92,7 +93,7 @@ async def create_voice(
         logger.error(f"Failed to generate reference audio for voice {voice['voice_id']}: {e}")
         # Delete voice entry since generation failed?
         voice_service.delete_voice(voice["voice_id"])
-        raise HTTPException(status_code=503, detail=f"Voice created but audio generation failed: {e}")
+        raise HTTPException(status_code=503, detail=f"Voice created but audio generation failed: {e}") from e
 
     return {"status": "success", "voice_id": voice["voice_id"]}
 

@@ -8,7 +8,6 @@ from api.dependencies import get_tts_service
 from config import ProjectConfig
 from services import TTSService
 
-
 logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
 
@@ -90,8 +89,8 @@ async def websocket_status_endpoint(websocket: WebSocket) -> None:
             data = await websocket.receive_text()
             try:
                 payload = json.loads(data)
-            except Exception:
-                # Ignore invalid JSON
+            except json.JSONDecodeError:
+                logger.warning(f"Status WS received invalid JSON: {data[:80]}")
                 continue
 
             action = payload.get("action")

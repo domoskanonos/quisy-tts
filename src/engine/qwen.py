@@ -1,5 +1,7 @@
 """Qwen3-TTS engine implementation using the official qwen-tts package."""
 
+from __future__ import annotations
+
 import asyncio
 import time
 from collections.abc import AsyncGenerator
@@ -10,12 +12,11 @@ import numpy as np
 from qwen_tts import Qwen3TTSModel
 
 from audio.processor import AudioUtils
+from core.exceptions import ReferenceAudioNotFoundError
 from core.interfaces import TTSEngineInterface
 from schemas import TTSParams
 from schemas.languages import resolve_language
-from services.voice_audio_service import VoiceAudioService
 
-# Centralized generation config for consistency
 QWEN_GENERATION_CONFIG = {
     "temperature": 0.9,
     "top_p": 1.0,
@@ -24,24 +25,19 @@ QWEN_GENERATION_CONFIG = {
     "max_new_tokens": 2048,
 }
 
-# Silence duration between chunks in seconds
-INTER_CHUNK_SILENCE_SECS = 0.15
-
 
 class QwenTextToSpeech(TTSEngineInterface):
     """Qwen3-TTS implementation using the official qwen-tts package (Async).
     Loads separate models per generation mode lazily on first use.
     """
 
-    def __init__(self, settings: Any, logger: Any, text_splitter: Any) -> None:
-        """Initialize the Qwen Text-to-Speech engine."""
+    def __init__(self, settings: Any, logger: Any) -> None:
         self.settings = settings
         self.logger = logger
         self.logger.info("Initializing Qwen3-TTS backend (Lazy, multi-model)...")
 
         self._models: dict[str, Qwen3TTSModel] = {}
 
-        # Determine model map based on configured version
         version = self.settings.MODEL
         if version == "1.7":
             self.model_map = {
@@ -59,7 +55,6 @@ class QwenTextToSpeech(TTSEngineInterface):
             raise ValueError(f"Unsupported model version: {version}")
 
         self._locks: dict[str, asyncio.Lock] = {mode: asyncio.Lock() for mode in self.model_map}
-        self._text_splitter = text_splitter
 
     async def ensure_loaded(self, mode: str = "base") -> Qwen3TTSModel:
         """Ensure the model for a given mode is loaded. Safe to call concurrently."""
@@ -81,7 +76,6 @@ class QwenTextToSpeech(TTSEngineInterface):
             )
             start_time = time.time()
 
-            # Run blocking model load in thread pool
             loop = asyncio.get_running_loop()
             try:
                 model = await loop.run_in_executor(None, self._load_model_sync, model_name)
@@ -105,11 +99,8 @@ class QwenTextToSpeech(TTSEngineInterface):
             kwargs["dtype"] = dtype
         return Qwen3TTSModel.from_pretrained(model_name, **kwargs)
 
-    async def generate_audio(self, text: str, params: Any = None) -> tuple[Any, int]:
+    async def generate_audio(self, text: str, params: TTSParams) -> tuple[Any, int]:
         """Generates audio waveform via qwen-tts (async)."""
-        if params is None:
-            params = TTSParams()
-
         self.logger.info(f"Starting audio generation | Mode: {params.mode} | Text Length: {len(text)}")
         model = await self.ensure_loaded(params.mode)
         return await self._generate_single(model, text, params)
@@ -127,7 +118,7 @@ class QwenTextToSpeech(TTSEngineInterface):
         if not params.language:
             raise ValueError("language must be provided in TTSParams for generation")
 
-        resolved_lang = getattr(params, "resolved_language", None) or resolve_language(params.language)
+        resolved_lang = params.resolved_language or resolve_language(params.language)
 
         loop = asyncio.get_running_loop()
         wavs, sr = await loop.run_in_executor(
@@ -149,34 +140,29 @@ class QwenTextToSpeech(TTSEngineInterface):
                 text=text, language=resolved_lang, instruct=params.instruct or "", **gen_kwargs
             )
 
-        # Base/Custom mode = voice clone
-        ref_audio_path = self._resolve_ref_audio(params)
-        self.logger.debug(
-            f"Debug: _generate_sync | ref_audio_path: {ref_audio_path} | ref_text length: {len(params.ref_text or '')} | ref_text: '{params.ref_text}'"
-        )
+        ref_audio_path = params.ref_audio_path
         if not ref_audio_path:
-            from core.exceptions import ReferenceAudioNotFoundError
+            raise ReferenceAudioNotFoundError(
+                "No reference audio path provided. The application layer must resolve ref_audio_path before calling the engine."
+            )
 
-            raise ReferenceAudioNotFoundError("No reference audio found.")
-
+        self.logger.debug(
+            f"Engine generate | ref_audio_path: {ref_audio_path} | ref_text length: {len(params.ref_text or '')}"
+        )
         return model.generate_voice_clone(
             text=text, language=resolved_lang, ref_audio=ref_audio_path, ref_text=params.ref_text or "", **gen_kwargs
         )
 
-    async def generate_and_save(self, text: str, output_path: str, params: Any = None) -> str:
+    async def generate_and_save(self, text: str, output_path: str, params: TTSParams) -> str:
         """Generates audio and saves it to a file (async)."""
-        if params is None:
-            params = TTSParams()
         waveform, sr = await self.generate_audio(text, params)
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, AudioUtils.save_waveform, waveform, sr, output_path)
         return output_path
 
-    def generate_stream(self, text: str, params: Any = None, chunk_size: int = 4096) -> AsyncGenerator[bytes, None]:
+    def generate_stream(self, text: str, params: TTSParams, chunk_size: int = 4096) -> AsyncGenerator[bytes, None]:
         """Stream audio by generating a single text chunk and yielding bytes."""
-        if params is None:
-            params = TTSParams()
 
         async def _generator():
             waveform, _ = await self.generate_audio(text, params)
@@ -186,21 +172,3 @@ class QwenTextToSpeech(TTSEngineInterface):
                 yield audio_bytes[k : k + chunk_size]
 
         return _generator()
-
-    def _resolve_ref_audio(self, params: TTSParams) -> str | None:
-        """Resolve reference audio path."""
-        audio_service = VoiceAudioService(self.settings.VOICES_DIR)
-
-        if params.reference_audio:
-            path = self.settings.VOICES_DIR / audio_service.get_filename(params.reference_audio)
-            if path.exists():
-                return str(path)
-
-        default_voice_id = getattr(self.settings, "DEFAULT_VOICE_ID", None)
-        if default_voice_id:
-            path = self.settings.VOICES_DIR / audio_service.get_filename(default_voice_id)
-            if path.exists():
-                return str(path)
-
-        voices = list(self.settings.VOICES_DIR.glob("*.wav"))
-        return str(voices[0]) if voices else None

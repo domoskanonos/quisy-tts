@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+
 from domain.voice.models import Voice
 
 logger = logging.getLogger("project")

@@ -24,8 +24,8 @@ def get_terms() -> dict[str, Any]:
     service = _get_service()
     try:
         terms = service.get_top_instruct_terms()
-    except Exception:
-        raise HTTPException(status_code=500, detail="Failed to retrieve terms")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to retrieve terms") from e
     return {"terms": terms}
 
 

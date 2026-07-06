@@ -6,10 +6,14 @@ SSML processing, and audio format conversion.
 """
 
 from __future__ import annotations
-from typing import Any
-from pathlib import Path
-from collections.abc import AsyncGenerator
+
 import asyncio
+from collections.abc import AsyncGenerator
+from pathlib import Path
+from typing import Any
+
+from schemas import TTSParams
+from services.orchestrator import generator, ssml, streamer
 from src.core.interfaces import (
     AudioConverter,
     CacheService,
@@ -19,9 +23,6 @@ from src.core.interfaces import (
 )
 from src.services.ssml_processor import SSMLProcessor
 from src.services.voice_audio_integrity import VoiceAudioIntegrityService
-from services.text_splitter import get_text_splitter
-from schemas import TTSParams
-from services.orchestrator import ssml, generator, streamer
 
 
 class TTSService(TTSServiceInterface):
@@ -61,7 +62,6 @@ class TTSService(TTSServiceInterface):
         self.audio_converter = audio_converter
         self.logger = logger
         self._locks: dict[str, asyncio.Lock] = {}
-        self.text_splitter = get_text_splitter()
 
     def _get_lock(self, key: str) -> asyncio.Lock:
         """Retrieves or creates an asyncio.Lock for a given cache key.
@@ -75,8 +75,8 @@ class TTSService(TTSServiceInterface):
                 lock = cache_lock(key)
                 if isinstance(lock, asyncio.Lock):
                     return lock
-            except Exception:
-                pass
+            except Exception as e:
+                self.logger.warning(f"Failed to get lock from cache service: {e}")
 
         lock = self._locks.get(key)
         if lock is None:
@@ -101,19 +101,62 @@ class TTSService(TTSServiceInterface):
 
         return wav_path, mp3_path
 
-    async def generate_audio(self, *args: Any, **kwargs: Any) -> Path:
+    async def generate_audio(
+        self,
+        text: str,
+        language: str,
+        mode: str,
+        model_size: str,
+        reference_audio: str | None = None,
+        ref_text: str | None = None,
+        instruct: str | None = None,
+        speaker: str | None = None,
+        skip_integrity_check: bool = False,
+    ) -> Path:
         """Generates audio from text/parameters.
 
         Returns:
             Path to the generated audio file.
         """
-        return await generator.generate_audio(self, *args, **kwargs)
+        return await generator.generate_audio(
+            self,
+            text=text,
+            language=language,
+            mode=mode,
+            model_size=model_size,
+            reference_audio=reference_audio,
+            ref_text=ref_text,
+            instruct=instruct,
+            speaker=speaker,
+            skip_integrity_check=skip_integrity_check,
+        )
 
-    async def generate_stream(self, *args: Any, **kwargs: Any) -> AsyncGenerator[bytes, None]:
+    def generate_stream(
+        self,
+        text: str,
+        language: str,
+        mode: str,
+        model_size: str,
+        reference_audio: str | None = None,
+        ref_text: str | None = None,
+        instruct: str | None = None,
+        speaker: str | None = None,
+        chunk_size: int = 4096,
+    ) -> AsyncGenerator[bytes, None]:
         """Generates an audio stream from text/parameters.
 
         Yields:
             Audio bytes chunks.
         """
-        async for chunk in streamer.generate_stream(self, *args, **kwargs):
-            yield chunk
+        return streamer.generate_stream(
+            self,
+            text=text,
+            language=language,
+            mode=mode,
+            model_size=model_size,
+            reference_audio=reference_audio,
+            ref_text=ref_text,
+            instruct=instruct,
+            speaker=speaker,
+            chunk_size=chunk_size,
+        )

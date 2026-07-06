@@ -1,15 +1,19 @@
+import logging
 import sqlite3
-from pathlib import Path
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
+
 from config import ProjectConfig
 from schemas.languages import resolve_language
 
-logger = ProjectConfig.get_logger()
+logger = logging.getLogger("project")
 
 
 class VoiceRepository:
     """Repository for CRUD operations on voice metadata."""
+
+    _ALLOWED_UPDATE_COLUMNS = frozenset({"name", "example_text", "instruct", "description", "language", "updated_at"})
 
     def __init__(self, db_path: Path) -> None:
         self._db_path = db_path
@@ -18,6 +22,8 @@ class VoiceRepository:
     def _get_conn(self) -> sqlite3.Connection:
         conn = sqlite3.connect(str(self._db_path))
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         return conn
 
     def _init_db(self) -> None:
@@ -26,16 +32,14 @@ class VoiceRepository:
         if not self._db_path.parent.exists():
             self._db_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Copy from resources if not exists
         if not self._db_path.exists():
             resource_db = ProjectConfig.get_settings().RESOURCES_DIR / "quisy-tts.db"
-            print(f"DEBUG: Checking for database at {resource_db}, exists: {resource_db.exists()}")
+            logger.debug(f"Checking for database at {resource_db}, exists: {resource_db.exists()}")
             if resource_db.exists():
                 shutil.copy2(resource_db, self._db_path)
             else:
                 raise FileNotFoundError(f"Resources database not found at {resource_db}")
 
-        # Ensure migration is run
         with self._get_conn() as conn:
             self._migrate(conn)
 
@@ -43,17 +47,7 @@ class VoiceRepository:
         cursor = conn.execute("PRAGMA table_info(voices)")
         columns = {row[1]: row for row in cursor.fetchall()}
 
-        # Remove redundant voice_name column if exists
         if "voice_name" in columns:
-            # Drop column is not directly supported in SQLite for older versions,
-            # but we can do a temp table migration if really necessary.
-            # However, since the column is NULL for all, we can just ignore it for now or
-            # rebuild the table if requested. Given the requirement, I will do a table rebuild.
-
-            # Simple approach: If it exists, just ignore it in queries,
-            # but user requested removal.
-
-            # Let's do a table rebuild for cleanliness
             conn.execute(
                 "CREATE TABLE voices_new AS SELECT voice_id, name, example_text, instruct, language, created_at, updated_at FROM voices"
             )
@@ -96,34 +90,36 @@ class VoiceRepository:
                 "INSERT INTO voices (voice_id, name, example_text, instruct, language, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (voice_id, name, example_text, instruct, resolve_language(language), now, now),
             )
-            # Rebuild FTS if it exists
             try:
                 conn.execute("INSERT INTO voices_fts(voices_fts) VALUES('rebuild')")
-            except sqlite3.OperationalError:
-                pass
+            except sqlite3.OperationalError as e:
+                logger.debug(f"FTS rebuild skipped (table may not exist): {e}")
             conn.commit()
         return self.get_by_id(voice_id)
 
     def update(self, voice_id: str, updates: dict[str, Any]) -> dict | None:
+        invalid = set(updates) - self._ALLOWED_UPDATE_COLUMNS
+        if invalid:
+            raise ValueError(f"Invalid update columns: {invalid}")
+
         now = datetime.now(UTC).isoformat()
         updates["updated_at"] = now
 
-        sql_updates = ", ".join([f"{k} = ?" for k in updates.keys()])
+        sql_updates = ", ".join([f"{k} = ?" for k in updates])
         params = list(updates.values())
         params.append(voice_id)
 
         with self._get_conn() as conn:
-            conn.execute(f"UPDATE voices SET {sql_updates} WHERE voice_id = ?", params)
+            conn.execute(f"UPDATE voices SET {sql_updates} WHERE voice_id = ?", params)  # noqa: S608
             conn.commit()
         return self.get_by_id(voice_id)
 
     def delete(self, voice_id: str) -> bool:
         with self._get_conn() as conn:
             conn.execute("DELETE FROM voices WHERE voice_id = ?", (voice_id,))
-            # Rebuild FTS if it exists
             try:
                 conn.execute("INSERT INTO voices_fts(voices_fts) VALUES('rebuild')")
-            except sqlite3.OperationalError:
-                pass
+            except sqlite3.OperationalError as e:
+                logger.debug(f"FTS rebuild skipped (table may not exist): {e}")
             conn.commit()
         return True

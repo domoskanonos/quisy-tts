@@ -10,6 +10,7 @@ from typing import Any
 
 import numpy as np
 import soundfile as sf
+
 from config import ProjectConfig
 from core import AudioGenerationError
 from schemas.languages import resolve_language
@@ -82,7 +83,7 @@ async def _process_task(
 
         data, sr = sf.read(str(chunk_path))
         return data, sr
-    elif isinstance(task, BreakTask):
+    if isinstance(task, BreakTask):
         service.logger.info(f"SSML: Processing break task {i + 1} ({task.duration_ms}ms)")
         silence_samples = int(sample_rate * (task.duration_ms / 1000))
         return np.zeros(silence_samples, dtype=np.float32), sample_rate

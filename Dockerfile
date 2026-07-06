@@ -45,12 +45,6 @@ COPY README.md .
 # Install project
 RUN uv sync --frozen --no-dev --extra gpu
 
-# Pre-install spaCy models
-RUN .venv/bin/python -m ensurepip --upgrade && \
-    .venv/bin/python -m pip install spacy && \
-    .venv/bin/python -m spacy download de_core_news_sm && \
-    .venv/bin/python -m spacy download en_core_web_sm
-
 # Stage 2: Runtime (uses NVIDIA runtime image for GPU inference)
 FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04 AS runtime
 
@@ -85,4 +79,4 @@ COPY .env.example .env
 EXPOSE 8045
 
 # Run commands
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8045"]
+CMD ["uvicorn", "api.app:app", "--host", "0.0.0.0", "--port", "8045"]

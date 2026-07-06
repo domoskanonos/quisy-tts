@@ -4,11 +4,16 @@ This module defines abstract base classes for external dependencies,
 ensuring loose coupling between the application/services and infrastructure.
 """
 
+from __future__ import annotations
+
+import asyncio
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import Any
-import asyncio
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from schemas.internal import TTSParams
 
 
 class TTSEngineInterface(ABC):
@@ -19,12 +24,8 @@ class TTSEngineInterface(ABC):
     """
 
     @abstractmethod
-    async def generate_audio(self, text: str, params: Any) -> tuple[Any, int]:
+    async def generate_audio(self, text: str, params: TTSParams) -> tuple[Any, int]:
         """Generates an audio waveform from text.
-
-        Args:
-            text: The text to be converted to speech.
-            params: Engine-specific generation parameters.
 
         Returns:
             A tuple of (waveform tensor, sample rate).
@@ -32,13 +33,8 @@ class TTSEngineInterface(ABC):
         ...
 
     @abstractmethod
-    async def generate_and_save(self, text: str, output_path: str, params: Any) -> str:
+    async def generate_and_save(self, text: str, output_path: str, params: TTSParams) -> str:
         """Generates audio and saves it to a file.
-
-        Args:
-            text: The text to be converted to speech.
-            output_path: Path to the destination audio file.
-            params: Engine-specific generation parameters.
 
         Returns:
             Path to the saved audio file as a string.
@@ -46,17 +42,8 @@ class TTSEngineInterface(ABC):
         ...
 
     @abstractmethod
-    def generate_stream(self, text: str, params: Any, chunk_size: int = 4096) -> AsyncGenerator[bytes, None]:
-        """Returns an async generator that yields audio byte chunks for streaming.
-
-        Args:
-            text: The text to be converted to speech.
-            params: Engine-specific generation parameters.
-            chunk_size: Size of byte chunks to yield.
-
-        Yields:
-            Audio bytes chunks.
-        """
+    def generate_stream(self, text: str, params: TTSParams, chunk_size: int = 4096) -> AsyncGenerator[bytes, None]:
+        """Returns an async generator that yields audio byte chunks for streaming."""
         ...
 
 
@@ -64,47 +51,23 @@ class CacheService(ABC):
     """Abstract interface for caching generated audio assets."""
 
     @abstractmethod
-    def get_key(self, text: str, params: Any) -> str:
-        """Generates a unique cache key based on text and parameters.
-
-        Args:
-            text: The input text.
-            params: Generation parameters.
-
-        Returns:
-            A unique cache key string.
-        """
+    def get_key(self, text: str, params: TTSParams) -> str:
+        """Generates a unique cache key based on text and parameters."""
         ...
 
     @abstractmethod
     def get(self, key: str) -> Path | None:
-        """Retrieves path to cached audio by its key.
-
-        Args:
-            key: The cache key.
-
-        Returns:
-            Path to the cached audio file, or None if not found.
-        """
+        """Retrieves path to cached audio by its key."""
         ...
 
     @abstractmethod
-    def get_lock(self, key: str) -> "asyncio.Lock":
-        """Returns an asyncio.Lock associated with a specific cache key.
-
-        This facilitates atomic check-generate-set operations by preventing
-        concurrent generation of the same asset.
-        """
+    def get_lock(self, key: str) -> asyncio.Lock:
+        """Returns an asyncio.Lock associated with a specific cache key."""
         ...
 
     @abstractmethod
     def set(self, key: str, path: Path) -> None:
-        """Stores a path to generated audio in the cache under a specific key.
-
-        Args:
-            key: The cache key.
-            path: Path to the generated audio file.
-        """
+        """Stores a path to generated audio in the cache under a specific key."""
         ...
 
 
@@ -114,10 +77,6 @@ class CleanupService(ABC):
     @abstractmethod
     def cleanup_old_files(self, directory: Path, max_age_hours: int = 24) -> int:
         """Removes files in a directory that exceed a maximum age.
-
-        Args:
-            directory: Directory to clean.
-            max_age_hours: Age threshold in hours.
 
         Returns:
             Number of files removed.
@@ -129,12 +88,8 @@ class TTSServiceInterface(ABC):
     """Abstract interface for the main TTS orchestration service."""
 
     @abstractmethod
-    async def generate_from_ssml(self, ssml_content: str, base_params: Any) -> tuple[Path, Path]:
+    async def generate_from_ssml(self, ssml_content: str, base_params: TTSParams) -> tuple[Path, Path]:
         """Generates audio from SSML content.
-
-        Args:
-            ssml_content: The SSML markup string.
-            base_params: Global generation parameters.
 
         Returns:
             A tuple of (WAV file path, MP3 file path).
@@ -142,7 +97,18 @@ class TTSServiceInterface(ABC):
         ...
 
     @abstractmethod
-    async def generate_audio(self, *args: Any, **kwargs: Any) -> Path:
+    async def generate_audio(
+        self,
+        text: str,
+        language: str,
+        mode: str,
+        model_size: str,
+        reference_audio: str | None = None,
+        ref_text: str | None = None,
+        instruct: str | None = None,
+        speaker: str | None = None,
+        skip_integrity_check: bool = False,
+    ) -> Path:
         """Generates audio from input text and configuration.
 
         Returns:
@@ -151,12 +117,19 @@ class TTSServiceInterface(ABC):
         ...
 
     @abstractmethod
-    def generate_stream(self, *args: Any, **kwargs: Any) -> AsyncGenerator[bytes, None]:
-        """Generates an audio stream from input text and configuration.
-
-        Yields:
-            Audio bytes chunks.
-        """
+    def generate_stream(
+        self,
+        text: str,
+        language: str,
+        mode: str,
+        model_size: str,
+        reference_audio: str | None = None,
+        ref_text: str | None = None,
+        instruct: str | None = None,
+        speaker: str | None = None,
+        chunk_size: int = 4096,
+    ) -> AsyncGenerator[bytes, None]:
+        """Generates an audio stream from input text and configuration."""
         ...
 
 
@@ -165,35 +138,17 @@ class VoiceServiceInterface(ABC):
 
     @abstractmethod
     def list_voices(self) -> list[dict]:
-        """Lists all registered voices.
-
-        Returns:
-            A list of voice configuration dictionaries.
-        """
+        """Lists all registered voices."""
         ...
 
     @abstractmethod
     def get_voice(self, voice_id: str) -> dict | None:
-        """Retrieves voice details by its ID.
-
-        Args:
-            voice_id: The unique identifier of the voice.
-
-        Returns:
-            The voice configuration dictionary, or None if not found.
-        """
+        """Retrieves voice details by its ID."""
         ...
 
     @abstractmethod
     def get_voice_by_name(self, name: str) -> dict | None:
-        """Retrieves voice details by its name.
-
-        Args:
-            name: The display name of the voice.
-
-        Returns:
-            The voice configuration dictionary, or None if not found.
-        """
+        """Retrieves voice details by its name."""
         ...
 
     @abstractmethod
@@ -206,11 +161,7 @@ class VoiceServiceInterface(ABC):
         description: str | None = None,
         language: str = "german",
     ) -> dict | None:
-        """Creates a new voice entry.
-
-        Returns:
-            The created voice configuration, or None if creation fails.
-        """
+        """Creates a new voice entry."""
         ...
 
     @abstractmethod
@@ -223,44 +174,22 @@ class VoiceServiceInterface(ABC):
         description: str | None = None,
         language: str | None = None,
     ) -> dict | None:
-        """Updates an existing voice entry.
-
-        Returns:
-            The updated voice configuration, or None if update fails.
-        """
+        """Updates an existing voice entry."""
         ...
 
     @abstractmethod
     def delete_voice(self, voice_id: str) -> bool:
-        """Deletes a voice entry.
-
-        Args:
-            voice_id: The unique identifier of the voice to delete.
-
-        Returns:
-            True if successfully deleted, False otherwise.
-        """
+        """Deletes a voice entry."""
         ...
 
     @abstractmethod
     def set_audio(self, voice_id: str, audio_data: bytes, original_filename: str) -> dict | None:
-        """Uploads and associates audio reference data with a voice.
-
-        Returns:
-            The updated voice configuration, or None if update fails.
-        """
+        """Uploads and associates audio reference data with a voice."""
         ...
 
     @abstractmethod
     def get_audio_path(self, voice_id: str) -> Path | None:
-        """Retrieves the file path to a voice's reference audio.
-
-        Args:
-            voice_id: The unique identifier of the voice.
-
-        Returns:
-            Path to the audio file, or None if not available.
-        """
+        """Retrieves the file path to a voice's reference audio."""
         ...
 
 
@@ -270,9 +199,6 @@ class AudioConverter(ABC):
     @abstractmethod
     def convert_to_mp3(self, input_path: Path) -> Path:
         """Converts an audio file to MP3 format.
-
-        Args:
-            input_path: Path to the input audio file (typically WAV).
 
         Returns:
             Path to the resulting MP3 file.

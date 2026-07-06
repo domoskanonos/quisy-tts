@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -7,7 +6,7 @@ class Voice:
     voice_id: str
     name: str
     example_text: str
-    instruct: Optional[str]
+    instruct: str | None
     language: str
     created_at: str
     updated_at: str

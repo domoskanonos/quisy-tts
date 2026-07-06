@@ -1,11 +1,11 @@
+from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Callable, Awaitable, Optional, Union
 
 from config import ProjectConfig
+from schemas import TTSParams
 from src.core.exceptions import AudioGenerationError, ReferenceAudioNotFoundError
 from src.core.interfaces import CacheService, TTSEngineInterface, VoiceServiceInterface
 from src.services.voice_audio_service import VoiceAudioService
-from schemas import TTSParams
 
 logger = ProjectConfig.get_logger()
 
@@ -35,7 +35,7 @@ class VoiceAudioIntegrityService:
     async def ensure_audio(
         self,
         voice_id: str,
-        generator_callback: Optional[Callable[[str, str, str, str, Optional[str]], Awaitable[Union[str, Path]]]] = None,
+        generator_callback: Callable[[str, str, str, str, str | None], Awaitable[str | Path]] | None = None,
         force: bool = False,
     ) -> None:
         """Ensure a voice with id `voice_id` has an audio file. If missing,

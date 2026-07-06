@@ -1,8 +1,9 @@
-from xml.etree import ElementTree
-from typing import List, Union
-from pydantic import BaseModel
-from src.core.interfaces import VoiceServiceInterface
 import re
+
+from defusedxml import ElementTree
+from pydantic import BaseModel
+
+from src.core.interfaces import VoiceServiceInterface
 
 
 class TextTask(BaseModel):
@@ -14,18 +15,18 @@ class BreakTask(BaseModel):
     duration_ms: int
 
 
-Task = Union[TextTask, BreakTask]
+Task = TextTask | BreakTask
 
 
 class SSMLProcessor:
     def __init__(self, voice_service: VoiceServiceInterface):
         self.voice_service = voice_service
 
-    def parse(self, xml_string: str) -> List[Task]:
+    def parse(self, xml_string: str) -> list[Task]:
         try:
             root = ElementTree.fromstring(xml_string)
         except ElementTree.ParseError as e:
-            raise ValueError(f"Invalid XML syntax: {e}")
+            raise ValueError(f"Invalid XML syntax: {e}") from e
 
         if root.tag != "speak":
             raise ValueError("Root tag must be <speak>")
@@ -33,7 +34,7 @@ class SSMLProcessor:
         if root.text and root.text.strip():
             raise ValueError("Text found without a speaker")
 
-        tasks: List[Task] = []
+        tasks: list[Task] = []
 
         def _process_element(element, current_speaker: str | None):
             # Skip comments

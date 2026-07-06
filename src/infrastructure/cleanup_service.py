@@ -6,7 +6,6 @@ from pathlib import Path
 from config import ProjectConfig
 from core import CleanupService
 
-
 logger = ProjectConfig.get_logger()
 
 

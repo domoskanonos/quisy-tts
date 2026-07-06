@@ -9,19 +9,21 @@ commands to receive events for specific `voice_id`s or for all voices.
 
 import asyncio
 import json
-from typing import Dict, Set
+import logging
 
 from fastapi import WebSocket
+
+logger = logging.getLogger("project")
 
 
 class WebSocketStatusManager:
     def __init__(self) -> None:
         # voice_id -> set of WebSocket
-        self._voice_subscribers: Dict[str, Set[WebSocket]] = {}
+        self._voice_subscribers: dict[str, set[WebSocket]] = {}
         # websockets that subscribed to all voices
-        self._all_subscribers: Set[WebSocket] = set()
+        self._all_subscribers: set[WebSocket] = set()
         # reverse map for cleanup: websocket -> set of voice_ids
-        self._ws_to_voices: Dict[WebSocket, Set[str]] = {}
+        self._ws_to_voices: dict[WebSocket, set[str]] = {}
         self._lock = asyncio.Lock()
 
     async def connect(self, websocket: WebSocket) -> None:
@@ -72,9 +74,8 @@ class WebSocketStatusManager:
     async def _safe_send(self, websocket: WebSocket, message: str) -> None:
         try:
             await websocket.send_text(message)
-        except Exception:
-            # best-effort: ignore send errors; disconnect cleaning happens elsewhere
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to send WS message: {e}")
 
     async def broadcast(self, event: dict) -> None:
         """Broadcast event to all connected subscribers (including those subscribed to all)."""

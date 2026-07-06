@@ -1,10 +1,12 @@
+import uuid
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from schemas.requests import ConcatenateAudioRequest
+
+from api.dependencies import get_cleanup_service
 from audio.processor import AudioProcessor
 from config import ProjectConfig
 from core import CleanupService
-from api.dependencies import get_cleanup_service
-import uuid
+from schemas.requests import ConcatenateAudioRequest
 
 router: APIRouter = APIRouter(tags=["Audio Processing"])
 settings = ProjectConfig.get_settings()
@@ -41,14 +43,14 @@ async def upload_audio(
     filename = f"{uuid.uuid4()}.wav"
     filepath = settings.UPLOAD_DIR / filename
 
-    with open(filepath, "wb") as buffer:
+    with filepath.open("wb") as buffer:
         buffer.write(content)
 
     # Cleanup old files
     cleanup.cleanup_old_files(settings.UPLOAD_DIR, 24)
 
     # Return URL
-    url = f"http://{settings.HOST}:{settings.PORT}/audio/uploads/{filename}"
+    url = f"{settings.BASE_URL}/audio/uploads/{filename}"
     return {"url": url}
 
 
@@ -91,5 +93,5 @@ async def concatenate_audio(
         raise HTTPException(status_code=500, detail="Concatenation failed.")
 
     # Return URL
-    url = f"http://{settings.HOST}:{settings.PORT}/audio/{output_filename}"
+    url = f"{settings.BASE_URL}/audio/{output_filename}"
     return {"url": url}

@@ -1,6 +1,7 @@
 import sqlite3
-from src.domain.voice.models import Voice
+
 from config import ProjectConfig
+from src.domain.voice.models import Voice
 
 
 def test_db_schema_vs_model_consistency():

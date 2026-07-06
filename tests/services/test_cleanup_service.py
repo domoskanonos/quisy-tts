@@ -1,7 +1,8 @@
-from infrastructure.cleanup_service import FileCleanupService
-from pathlib import Path
 import os
 import time
+from pathlib import Path
+
+from infrastructure.cleanup_service import FileCleanupService
 
 
 def test_cleanup_service(tmp_path):
