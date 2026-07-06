@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.38.0 (2026-07-06)
+
+### Features
+
+- Add architecture review prompt for CLI tool enhancement
+  ([`9df5924`](https://github.com/domoskanonos/quisy-tts/commit/9df592431ecccc87151802302f837c9315113818))
+
+
 ## v0.37.0 (2026-04-13)
 
 
