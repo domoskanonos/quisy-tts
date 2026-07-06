@@ -25,29 +25,35 @@ class TestSSMLParsing:
         xml = '<speak><speaker name="test_voice">Hallo Welt</speaker></speak>'
         tasks = processor.parse(xml)
         assert len(tasks) == 1
-        assert isinstance(tasks[0], TextTask)
-        assert tasks[0].text == "Hallo Welt"
-        assert tasks[0].speaker == "test_voice"
+        task = tasks[0]
+        assert isinstance(task, TextTask)
+        assert task.text == "Hallo Welt"
+        assert task.speaker == "test_voice"
 
     def test_multiple_speakers(self, processor: SSMLProcessor) -> None:
         xml = '<speak><speaker name="test_voice">Hallo</speaker><speaker name="test_voice">Welt</speaker></speak>'
         tasks = processor.parse(xml)
         assert len(tasks) == 2
-        assert tasks[0].text == "Hallo"
-        assert tasks[1].text == "Welt"
+        first, second = tasks[0], tasks[1]
+        assert isinstance(first, TextTask)
+        assert isinstance(second, TextTask)
+        assert first.text == "Hallo"
+        assert second.text == "Welt"
 
     def test_break_tag_ms(self, processor: SSMLProcessor) -> None:
         xml = '<speak><speaker name="test_voice">Hallo</speaker><break time="500ms"/></speak>'
         tasks = processor.parse(xml)
         assert len(tasks) == 2
-        assert isinstance(tasks[1], BreakTask)
-        assert tasks[1].duration_ms == 500
+        break_task = tasks[1]
+        assert isinstance(break_task, BreakTask)
+        assert break_task.duration_ms == 500
 
     def test_break_tag_s(self, processor: SSMLProcessor) -> None:
         xml = '<speak><speaker name="test_voice">Hallo</speaker><break time="1.5s"/></speak>'
         tasks = processor.parse(xml)
-        assert isinstance(tasks[1], BreakTask)
-        assert tasks[1].duration_ms == 1500
+        break_task = tasks[1]
+        assert isinstance(break_task, BreakTask)
+        assert break_task.duration_ms == 1500
 
     def test_invalid_xml_raises_value_error(self, processor: SSMLProcessor) -> None:
         with pytest.raises(ValueError, match="Invalid XML syntax"):
@@ -96,7 +102,8 @@ class TestSSMLParsing:
         )
         tasks = processor.parse(xml)
         assert len(tasks) == 3
-        assert isinstance(tasks[0], TextTask)
-        assert isinstance(tasks[1], BreakTask)
-        assert isinstance(tasks[2], TextTask)
-        assert tasks[1].duration_ms == 1000
+        first, middle, last = tasks[0], tasks[1], tasks[2]
+        assert isinstance(first, TextTask)
+        assert isinstance(middle, BreakTask)
+        assert isinstance(last, TextTask)
+        assert middle.duration_ms == 1000
