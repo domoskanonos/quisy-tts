@@ -1,6 +1,30 @@
 # CHANGELOG
 
 
+## v0.39.0 (2026-07-06)
+
+### Bug Fixes
+
+- Clean lint errors and finalize test suite
+  ([`dafd1e2`](https://github.com/domoskanonos/quisy-tts/commit/dafd1e26a4f28867f15f2b3e8fdf6ce8024ca3ed))
+
+- Resolve pyright type errors in config.py and test_ssml_processor.py
+  ([`22cbaea`](https://github.com/domoskanonos/quisy-tts/commit/22cbaea5734c147d97d0ecf8f3c2e43ca7e2946f))
+
+### Features
+
+- Enhance test coverage and improve error handling across services and schemas
+  ([`bb42387`](https://github.com/domoskanonos/quisy-tts/commit/bb42387f3cc7118467346f48b8c88d419c81e2cd))
+
+- Update architecture review prompt for enhanced clarity and focus on modern best practices
+  ([`dbb252f`](https://github.com/domoskanonos/quisy-tts/commit/dbb252faf73f73f73b4a7e1b2c41b752af5c339d))
+
+### Refactoring
+
+- Improve assertions in SSML parsing tests for clarity and consistency
+  ([`6ecc7dc`](https://github.com/domoskanonos/quisy-tts/commit/6ecc7dc5eb9bc954e6e94b7ad733f7ad6c3e2bea))
+
+
 ## v0.38.0 (2026-07-06)
 
 ### Features
