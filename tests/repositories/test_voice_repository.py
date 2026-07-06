@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from repositories.voice_repository import VoiceRepository
+from src.repositories.voice_repository import VoiceRepository
 
 
 @pytest.fixture
@@ -111,8 +111,7 @@ class TestVoiceRepositoryUpdate:
 
     def test_update_nonexistent_returns_none(self, repo: VoiceRepository) -> None:
         result = repo.update("nonexistent", {"name": "X"})
-        assert result is not None
-        assert result == repo.get_by_id("nonexistent")
+        assert result is None
 
 
 class TestVoiceRepositoryDelete:

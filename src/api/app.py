@@ -22,7 +22,9 @@ from mcp_server import mcp
 logger: logging.Logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
 
-APP_VERSION = pkg_version("quisy-tts")
+APP_VERSION = "0.0.0"
+with contextlib.suppress(Exception):
+    APP_VERSION = pkg_version("quisy-tts")
 
 # Rate limiter – defaults to 30/min per IP for generation endpoints
 limiter = Limiter(key_func=get_remote_address, default_limits=["30 per minute"])

@@ -6,16 +6,18 @@ import asyncio
 import time
 from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from qwen_tts import Qwen3TTSModel
 
 from audio.processor import AudioUtils
 from core.exceptions import ReferenceAudioNotFoundError
 from core.interfaces import TTSEngineInterface
 from schemas import TTSParams
 from schemas.languages import resolve_language
+
+if TYPE_CHECKING:
+    pass
 
 QWEN_GENERATION_CONFIG = {
     "temperature": 0.9,
@@ -36,7 +38,7 @@ class QwenTextToSpeech(TTSEngineInterface):
         self.logger = logger
         self.logger.info("Initializing Qwen3-TTS backend (Lazy, multi-model)...")
 
-        self._models: dict[str, Qwen3TTSModel] = {}
+        self._models: dict[str, Any] = {}
 
         version = self.settings.MODEL
         if version == "1.7":
@@ -56,7 +58,7 @@ class QwenTextToSpeech(TTSEngineInterface):
 
         self._locks: dict[str, asyncio.Lock] = {mode: asyncio.Lock() for mode in self.model_map}
 
-    async def ensure_loaded(self, mode: str = "base") -> Qwen3TTSModel:
+    async def ensure_loaded(self, mode: str = "base") -> Any:
         """Ensure the model for a given mode is loaded. Safe to call concurrently."""
         if mode in self._models:
             return self._models[mode]
@@ -89,9 +91,10 @@ class QwenTextToSpeech(TTSEngineInterface):
             self.logger.info(f"Qwen3-TTS model '{mode}' loaded successfully in {elapsed:.2f}s")
             return model
 
-    def _load_model_sync(self, model_name: str) -> Qwen3TTSModel:
+    def _load_model_sync(self, model_name: str) -> Any:
         """Synchronous model loading (runs in thread)."""
         import torch
+        from qwen_tts import Qwen3TTSModel
 
         kwargs: dict[str, Any] = {"device_map": "auto"}
         dtype = getattr(torch, "bfloat16", None)
@@ -105,7 +108,7 @@ class QwenTextToSpeech(TTSEngineInterface):
         model = await self.ensure_loaded(params.mode)
         return await self._generate_single(model, text, params)
 
-    async def _generate_single(self, model: Qwen3TTSModel, text: str, params: TTSParams) -> tuple[Any, int]:
+    async def _generate_single(self, model: Any, text: str, params: TTSParams) -> tuple[Any, int]:
         """Generate audio for a single text chunk."""
         gen_kwargs = {
             "max_new_tokens": QWEN_GENERATION_CONFIG["max_new_tokens"],
@@ -132,7 +135,7 @@ class QwenTextToSpeech(TTSEngineInterface):
         return audio_tensor, sr
 
     def _generate_sync(
-        self, model: Qwen3TTSModel, text: str, params: TTSParams, resolved_lang: str, gen_kwargs: dict
+        self, model: Any, text: str, params: TTSParams, resolved_lang: str, gen_kwargs: dict
     ) -> tuple[list, int]:
         """Synchronous generation logic."""
         if params.mode == "voice_design":

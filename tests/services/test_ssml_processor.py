@@ -1,9 +1,10 @@
 """Tests for SSML processor parsing logic."""
 
+from unittest.mock import MagicMock
+
 import pytest
 
 from services.ssml_processor import BreakTask, SSMLProcessor, TextTask
-from unittest.mock import MagicMock
 
 
 @pytest.fixture
@@ -29,12 +30,7 @@ class TestSSMLParsing:
         assert tasks[0].speaker == "test_voice"
 
     def test_multiple_speakers(self, processor: SSMLProcessor) -> None:
-        xml = (
-            '<speak>'
-            '<speaker name="test_voice">Hallo</speaker>'
-            '<speaker name="test_voice">Welt</speaker>'
-            '</speak>'
-        )
+        xml = '<speak><speaker name="test_voice">Hallo</speaker><speaker name="test_voice">Welt</speaker></speak>'
         tasks = processor.parse(xml)
         assert len(tasks) == 2
         assert tasks[0].text == "Hallo"
@@ -67,7 +63,7 @@ class TestSSMLParsing:
 
     def test_speaker_missing_name_attr_raises(self, processor: SSMLProcessor) -> None:
         with pytest.raises(ValueError, match="missing 'name' attribute"):
-            processor.parse('<speak><speaker>Hallo</speaker></speak>')
+            processor.parse("<speak><speaker>Hallo</speaker></speak>")
 
     def test_unknown_speaker_raises(self, processor: SSMLProcessor) -> None:
         processor.voice_service.get_voice.return_value = None
@@ -76,11 +72,11 @@ class TestSSMLParsing:
 
     def test_unsupported_tag_raises(self, processor: SSMLProcessor) -> None:
         with pytest.raises(ValueError, match="Unsupported tag"):
-            processor.parse('<speak><foo>bar</foo></speak>')
+            processor.parse("<speak><foo>bar</foo></speak>")
 
     def test_break_missing_time_attr_raises(self, processor: SSMLProcessor) -> None:
         with pytest.raises(ValueError, match="missing 'time' attribute"):
-            processor.parse('<speak><break/></speak>')
+            processor.parse("<speak><break/></speak>")
 
     def test_break_invalid_time_format_raises(self, processor: SSMLProcessor) -> None:
         with pytest.raises(ValueError, match="Invalid break time format"):
@@ -92,11 +88,11 @@ class TestSSMLParsing:
 
     def test_nested_break_between_speakers(self, processor: SSMLProcessor) -> None:
         xml = (
-            '<speak>'
+            "<speak>"
             '<speaker name="test_voice">Erste Zeile</speaker>'
             '<break time="1s"/>'
             '<speaker name="test_voice">Zweite Zeile</speaker>'
-            '</speak>'
+            "</speak>"
         )
         tasks = processor.parse(xml)
         assert len(tasks) == 3

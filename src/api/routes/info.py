@@ -13,7 +13,11 @@ settings = ProjectConfig.get_settings()
 
 router: APIRouter = APIRouter(tags=["Info"])
 
-APP_VERSION = pkg_version("quisy-tts")
+APP_VERSION = "0.0.0"
+try:
+    APP_VERSION = pkg_version("quisy-tts")
+except Exception:
+    pass
 
 
 @router.get("/")

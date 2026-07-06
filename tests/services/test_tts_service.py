@@ -114,7 +114,7 @@ async def test_generate_audio_calls_generator():
 
     generator.generate_audio = AsyncMock(return_value=Path("test.wav"))
 
-    result = await service.generate_audio(text="hello", language="english")
+    result = await service.generate_audio(text="hello", language="english", mode="base", model_size="1.7B")
 
     assert result == Path("test.wav")
 

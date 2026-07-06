@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
 from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from api.dependencies import get_cleanup_service, get_tts_service, get_voice_service
 from config import ProjectConfig
@@ -18,7 +19,7 @@ logger = ProjectConfig.get_logger()
 settings = ProjectConfig.get_settings()
 
 router: APIRouter = APIRouter(tags=["Generation"])
-limiter = Limiter(key_func=lambda r: r.client.host if r.client else "unknown")
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post(
