@@ -1,6 +1,5 @@
 """Tests for language resolution."""
 
-
 from schemas.languages import LANGUAGE_MAP, resolve_language
 
 

@@ -1,5 +1,6 @@
 """Info and utility routes."""
 
+import contextlib
 from importlib.metadata import version as pkg_version
 from typing import Any
 
@@ -14,10 +15,8 @@ settings = ProjectConfig.get_settings()
 router: APIRouter = APIRouter(tags=["Info"])
 
 APP_VERSION = "0.0.0"
-try:
+with contextlib.suppress(Exception):
     APP_VERSION = pkg_version("quisy-tts")
-except Exception:
-    pass
 
 
 @router.get("/")
