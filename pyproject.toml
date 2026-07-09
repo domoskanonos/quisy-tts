@@ -1,6 +1,6 @@
 [project]
 name = "quisy-tts"
-version = "0.39.0"
+version = "0.39.1"
 description = "Quisy TTS is a modern, high-performance Text-to-Speech API powered by Qwen3-TTS."
 authors = [{ name = "Dominik Bruhn", email = "dominikbruhn@googlemail.com" }]
 license = { text = "MIT" }
@@ -31,6 +31,7 @@ gpu = [
 
 [project.scripts]
 start-dev = "src.uvcli:run"
+
 
 
 [build-system]
@@ -86,6 +87,7 @@ explicit = true
 [tool.uv.sources]
 torch = { index = "pytorch-cu128" }
 torchaudio = { index = "pytorch-cu128" }
+
 
 
 

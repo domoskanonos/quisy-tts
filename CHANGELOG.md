@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.39.1 (2026-07-09)
+
+### Bug Fixes
+
+- Update model version to 1.7 in configuration files
+  ([`aa92316`](https://github.com/domoskanonos/quisy-tts/commit/aa9231607d43d7a67cc41e13de33948371ba88c4))
+
+
 ## v0.39.0 (2026-07-06)
 
 ### Bug Fixes
