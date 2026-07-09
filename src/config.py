@@ -18,7 +18,7 @@ class ProjectSettings(BaseSettings):
     BASE_DATA_DIR: Path = BASE_DIR / "data"
 
     # TTS Settings
-    MODEL: str = "0.6"
+    MODEL: str = "1.7"
     DEFAULT_VOICE_ID: str | None = None
     DEFAULT_LANGUAGE: str = "german"
 
