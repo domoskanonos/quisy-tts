@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.39.2 (2026-07-17)
+
+### Bug Fixes
+
+- Simplify dependency markers in uv.lock and add new packages
+  ([`321abb2`](https://github.com/domoskanonos/quisy-tts/commit/321abb2f0543bc98a7f0dcfcd36d9e9749140dfe))
+
+
 ## v0.39.1 (2026-07-09)
 
 ### Bug Fixes
