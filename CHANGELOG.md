@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.39.3 (2026-07-17)
+
+### Bug Fixes
+
+- Add exception handlers for TTS errors and update version to 0.39.2
+  ([`99ae6f1`](https://github.com/domoskanonos/quisy-tts/commit/99ae6f1266a5e12330fa7ac112eebf661cfdfdc3))
+
+
 ## v0.39.2 (2026-07-17)
 
 ### Bug Fixes
