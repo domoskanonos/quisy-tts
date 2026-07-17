@@ -17,6 +17,13 @@ from slowapi.util import get_remote_address
 
 from api.routes import audio_processing, generate, info, voices_crud, voices_search, websocket
 from config import ProjectConfig
+from core.exceptions import (
+    AudioGenerationError,
+    EngineUnavailableError,
+    InvalidLanguageError,
+    ReferenceAudioNotFoundError,
+    TTSError,
+)
 from mcp_server import mcp
 
 logger: logging.Logger = ProjectConfig.get_logger()
@@ -91,6 +98,40 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONRe
         status_code=429,
         content={"detail": f"Rate limit exceeded: {exc.detail}"},
     )
+
+
+@app.exception_handler(EngineUnavailableError)
+async def engine_unavailable_handler(request: Request, exc: EngineUnavailableError) -> JSONResponse:
+    logger.error("TTS engine unavailable: %s", exc)
+    return JSONResponse(status_code=503, content={"detail": str(exc) or "TTS engine is currently unavailable"})
+
+
+@app.exception_handler(InvalidLanguageError)
+async def invalid_language_handler(request: Request, exc: InvalidLanguageError) -> JSONResponse:
+    return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+
+@app.exception_handler(ReferenceAudioNotFoundError)
+async def reference_audio_not_found_handler(request: Request, exc: ReferenceAudioNotFoundError) -> JSONResponse:
+    return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+
+@app.exception_handler(AudioGenerationError)
+async def audio_generation_error_handler(request: Request, exc: AudioGenerationError) -> JSONResponse:
+    logger.error("Audio generation failed: %s", exc)
+    return JSONResponse(status_code=500, content={"detail": str(exc) or "Audio generation failed"})
+
+
+@app.exception_handler(TTSError)
+async def tts_error_handler(request: Request, exc: TTSError) -> JSONResponse:
+    logger.error("TTS error: %s", exc)
+    return JSONResponse(status_code=500, content={"detail": str(exc) or "An internal TTS error occurred"})
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.exception("Unhandled exception for %s %s", request.method, request.url.path)
+    return JSONResponse(status_code=500, content={"detail": str(exc) or "Internal server error"})
 
 
 # CORS for Angular frontend
